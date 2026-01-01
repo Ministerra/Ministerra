@@ -1,0 +1,284 @@
+import { memo, useState, useEffect } from 'react';
+import ContentIndis from '../ContentIndis';
+import { humanizeDateTime } from '../../../helpers';
+import AlertMenuStrip from '../menuStrips/AlertMenuStrip';
+
+/** ----------------------------------------------------------------------------
+ * ALERT STRIP COMPONENT
+ * Renders a single alert notification item with icon, text, and optional actions.
+ * Manages its own menu/options state and displays context-aware content.
+ * -------------------------------------------------------------------------- */
+function AlertStrip(props) {
+	// PROPS & STATE -----------------------------------------------------------
+	const { alert, brain, menuView, setMenuView, onRemoveAlert, storeAlertsData, isToast = false, onClick: onToastClick, stripMenu, setStripMenu } = props;
+	const { what, data = {}, created, flag = 'ok', refused, accepted, linked, inter, interPriv } = alert || {};
+	const isMessageToast = isToast && (what === 'message' || what === 'newChat');
+	const [modes, setModes] = useState({ menu: stripMenu === alert?.id, inter: false, privs: false, evePreview: false, profile: false });
+
+	const initialStatus = {
+		refused: refused === true ? true : flag === 'ref' ? true : null,
+		accepted: accepted === true ? true : flag === 'acc' ? true : null,
+		linked: linked || false,
+		inter: inter || null,
+		interPriv: interPriv || null,
+	};
+	const [status, setStatus] = useState(initialStatus);
+
+	// EFFECTS -----------------------------------------------------------------
+
+	// RESTORE MENU FROM BACK NAVIGATION ---
+	useEffect(() => {
+		if (stripMenu === alert?.id && !modes.menu) setModes(prev => ({ ...prev, menu: true }));
+		else if (stripMenu !== alert?.id && modes.menu) setModes(prev => ({ ...prev, menu: null }));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [stripMenu]);
+
+	// CLOSE MENU ON VIEW CHANGE ---
+	useEffect(() => {
+		if (!modes.menu) return;
+		else if (menuView !== 'gallery' && menuView !== 'alerts') setModes(prev => ({ ...prev, menu: null }));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [menuView]);
+
+	// CONTENT FORMATTING ------------------------------------------------------
+	const parseCreatedMs = val => {
+		if (!val) return null;
+		if (typeof val === 'number') return val;
+		const s = String(val);
+		return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? Date.parse(s + 'Z') : Date.parse(s);
+	};
+	const createdMs = parseCreatedMs(created);
+	const createdText = createdMs ? humanizeDateTime({ dateInMs: createdMs }) : '';
+	const fullName = `${(data.first || '') + (data.last ? ' ' + data.last : '')}`.trim();
+	const inviteDir = data?.dir || 'in';
+	const inviteFlagComputed = status.refused === true ? 'ref' : status.accepted ? 'acc' : flag || data?.flag || null;
+	const inviteEventTitle = data?.title || '';
+	const inviteActionTextMap = { acc: 'přijal pozvání na', ref: 'odmítnul pozvání na', del: 'zrušil pozvání na' };
+	const inviteActionText = inviteActionTextMap[inviteFlagComputed] || 'odpověděl na pozvání na';
+	const isOutgoingInvite = what === 'invite' && inviteDir === 'out';
+	const outgoingInviteTitle = `${(fullName || 'Někdo').trim() || 'Někdo'} ${inviteActionText} ${inviteEventTitle || 'událost'}`;
+
+	// TEXT GENERATORS ---
+	const title =
+		what === 'interest'
+			? data.title
+				? `"${data.title}" má nové zájmy!`
+				: 'Tvoje událost má nové zájmy!'
+			: what === 'eve_rating'
+			? data.title
+				? `"${data.title}" má nové hodnocení!`
+				: 'Tvá událost má nové hodnocení!'
+			: what === 'user_rating'
+			? data.first || data.last
+				? `${data.first || ''} ${data.last || ''} má nové hodnocení!`
+				: 'Tvůj uživatel má nové hodnocení!'
+			: what === 'comm_rating'
+			? data.content
+				? `${data.content} má nové hodnocení!`
+				: 'Tvůj komentář má nové hodnocení!'
+			: what === 'comment'
+			? null
+			: what === 'reply'
+			? data.title
+				? `${data.title} má novou odpověď!`
+				: 'Tvoje událost má novou odpověď!'
+			: what === 'invite' && isOutgoingInvite
+			? outgoingInviteTitle
+			: what === 'invite'
+			? `${data.first || ''} ${data.last || ''} Tě pozval`
+			: what === 'link'
+			? `${data.first || ''} ${data.last || ''} požádal o propojení${data.message ? ' se zprávou:' : ''}`
+			: what === 'accept'
+			? `${data.first || ''} ${data.last || ''} přijal propojení`
+			: 'Upozornění';
+
+	let subtitle = '';
+	if (what === 'interest') {
+		const c = { sur: data?.sur, may: data?.may, int: data?.int };
+		const parts = [];
+		if (c.sur) parts.push(`${c.sur >= 0 ? '+' : ''}${c.sur} určitě`);
+		if (c.may) parts.push(`${c.may >= 0 ? '+' : ''}${c.may} možná`);
+		if (c.int) parts.push(`${c.int >= 0 ? '+' : ''}${c.int} sledují`);
+		subtitle = parts.join('  ');
+	} else if (what === 'eve_rating') subtitle = typeof data?.points === 'number' ? `Získala ${data.points >= 0 ? '+' : ''}${data.points} nových bodů!` : data?.title || '';
+	else if (what === 'user_rating')
+		subtitle =
+			typeof data?.points === 'number' || typeof data?.counts === 'number'
+				? `Získal${fullName ? 'a' : ''} ${(data.points ?? data.counts) >= 0 ? '+' : ''}${data.points ?? data.counts} nových bodů!`
+				: '';
+	else if (what === 'comm_rating') subtitle = data?.content || '';
+	else if (what === 'invite')
+		subtitle = isOutgoingInvite
+			? inviteFlagComputed === 'acc'
+				? 'Pozvánka přijata'
+				: inviteFlagComputed === 'ref'
+				? 'Pozvánka odmítnuta'
+				: inviteFlagComputed === 'del'
+				? 'Pozvánka zrušena'
+				: ''
+			: (data?.note || '').trim() || data?.title || '';
+	else if (what === 'link') subtitle = data?.message || '';
+	else if (what === 'message' || what === 'newChat') subtitle = data?.content ? (data.content.length > 80 ? data.content.slice(0, 80) + '...' : data.content) : data?.attach ? '📎 Příloha' : '';
+	else subtitle = data?.content || '';
+
+	// SUBTITLE NODE ---
+	const subtitleNode = subtitle ? <span className={'fs7 marRigS tDarkBlue boldS'}>{subtitle}</span> : null;
+	const originalNode =
+		what === 'reply' && data?.original ? <span className={'fs7 tGrey marLefXs'}>{subtitle ? `· v odpovědi na: „${data.original}”` : `v odpovědi na: „${data.original}”`}</span> : null;
+	const timeNode = createdText ? <span className={'fs7 tGrey marLefXs'}>{subtitle || originalNode ? `· ${createdText}` : createdText}</span> : null;
+
+	// THUMBNAIL LOGIC ---
+	const useUserThumb = new Set(['invite', 'link', 'accept', 'comm_rating', 'comment', 'reply', 'user_rating', 'message', 'newChat']).has(what);
+	let thumbUrl = '/icons/placeholdergood.png';
+	const userIdForThumb = what === 'message' || what === 'newChat' ? data?.user?.id : data?.user || (useUserThumb ? alert?.target : undefined);
+	const userVimg = what === 'message' || what === 'newChat' ? data?.user?.imgVers : data?.imgVers;
+	if (useUserThumb && userVimg && userIdForThumb) thumbUrl = `${import.meta.env.VITE_BACK_END}/public/users/${userIdForThumb}_${userVimg}S.webp`;
+	else if ((what === 'interest' || what === 'eve_rating') && (data?.event || alert?.target)) {
+		// const eid = data?.event || alert?.target;
+		// const vimg = brain?.events?.[eid]?.imgVers;
+		thumbUrl = `${import.meta.env.VITE_BACK_END}/public/events/${Math.floor(Math.random() * 30)}_1S.webp`;
+	}
+
+	// TITLE NODE (RICH TEXT) ---
+	const messageAuthor = data?.user ? `${data.user.first || ''} ${data.user.last || ''}`.trim() : '';
+	const messageChatName = data?.chatName || messageAuthor || 'Nová zpráva';
+	const chatTypeLabel = { private: 'soukromý', group: 'skupinový', free: 'volný' };
+	const newChatTypeText = data?.chatType ? chatTypeLabel[data.chatType] || data.chatType : '';
+	const newChatNameText = data?.chatName && data?.chatType !== 'private' ? ` "${data.chatName}"` : '';
+
+	const titleNode =
+		what === 'message' ? (
+			<span>
+				<span className={'tGreen boldM'}>{messageChatName}</span>
+			</span>
+		) : what === 'newChat' ? (
+			<span>
+				<span className={'tGreen boldM'}>{messageAuthor || 'Někdo'}</span> zahájil {newChatTypeText ? `${newChatTypeText} chat` : 'nový chat'}
+				{newChatNameText && <span className={'tBlue boldM'}>{newChatNameText}</span>}
+			</span>
+		) : what === 'comment' ? (
+			<span>
+				<span className={'tGreen boldM'}>{fullName || 'Někdo'}</span> přidal komentář k <span className={'tBlue boldM'}>{data.title || 'tvojí události'}</span>
+			</span>
+		) : what === 'reply' ? (
+			<span>
+				<span className={'tGreen boldM'}>{fullName || 'Někdo'}</span> odpověděl v <span className={'tBlue boldM'}>{data.title || 'diskuzi'}</span>
+			</span>
+		) : what === 'interest' ? (
+			<span>
+				<span className={'tBlue boldM'}>{data.title || 'Tvoje událost'}</span> má nové zájmy!
+			</span>
+		) : what === 'eve_rating' ? (
+			<span>
+				<span className={'tBlue boldM'}>{data.title || 'Tvoje událost'}</span> má nové hodnocení!
+			</span>
+		) : what === 'user_rating' ? (
+			<span>
+				<span className={'tGreen boldM'}>{fullName || 'Tvůj profil'}</span> má nové hodnocení!
+			</span>
+		) : what === 'comm_rating' ? (
+			<span>
+				<span className={'boldM'}>{data.content || 'Tvůj komentář'}</span> má nové hodnocení!
+			</span>
+		) : what === 'invite' ? (
+			isOutgoingInvite ? (
+				<span>
+					<span className={'tGreen boldM'}>{fullName || 'Někdo'}</span> {inviteActionText} <span className={'tBlue boldM'}>{inviteEventTitle || 'událost'}</span>
+				</span>
+			) : (
+				<span>
+					<span className={'tGreen boldM'}>{fullName || 'Někdo'}</span> Tě pozval na <span className={'tBlue boldM'}>{data.title || 'událost'}</span>
+				</span>
+			)
+		) : what === 'link' ? (
+			<span>
+				<span className={'tGreen boldM'}>{fullName || 'Uživatel'}</span> požádal o propojení
+			</span>
+		) : what === 'accept' ? (
+			<span>
+				<span className={'tGreen boldM'}>{fullName || 'Uživatel'}</span> přijal propojení
+			</span>
+		) : (
+			title
+		);
+
+	// RENDER ------------------------------------------------------------------
+	return (
+		<alert-strip
+			onClick={() => (isMessageToast && onToastClick ? onToastClick() : (setModes(prev => ({ menu: prev.menu ? null : true })), setStripMenu?.(modes.menu ? null : alert?.id)))}
+			class={`flexCol marBotXxxs shaBlue boRadXxs justCen aliStart w100 posRel bInsetBlueTopXxs bHover pointer shaBot borTopLight `}>
+			<strip-body class={`flexCen w100 ${!isToast ? 'padVerXs' : 'bsContentGlow shaMega boRadXs thickBors'}`}>
+				{/* LEFT IMAGE --- */}
+				<image-wrapper class={'posRel w25 mw14 miw8 marRigM'}>
+					<img className={'w100 aspect1610 boRadXxs'} src={thumbUrl} alt='' />
+					<img
+						className={'zinMaXl bgWhite mw4 posAbs shaCon borBot2 cornerBotRightS padAllXxxs boRadM bgTrans marLefXxs boRadXs'}
+						src={`/icons/alerts/${what === 'message' || what === 'newChat' ? 'comment' : what}.png`}
+						alt=''
+					/>
+				</image-wrapper>
+
+				{/* RIGHT CONTENT --- */}
+				<right-side class={`h100 flexCol padRightS justCen ${!isToast ? 'padTopXs' : 'padTopXxxs'}`}>
+					<span className={'boldM lh1 textSha marRigXxs fs7'}>{titleNode}</span>
+					<second-row class={'flexRow aliCen marBotXxxs wrap textLeft'}>
+						{subtitleNode}
+						{originalNode}
+						{timeNode}
+					</second-row>
+					{status.inter || status.refused || status.accepted ? (
+						<ContentIndis
+							status={{ alertAccepted: Boolean(status.inter || status.accepted), alertRefused: status.refused === true }}
+							thisIs={'alert'}
+							isCardOrStrip={true}
+							brain={brain}
+							obj={{}}
+						/>
+					) : null}
+				</right-side>
+			</strip-body>
+
+			{/* MENU --- */}
+			{modes.menu && !isMessageToast && (
+				<AlertMenuStrip
+					alert={alert}
+					brain={brain}
+					storeAlertsData={storeAlertsData}
+					setMenuView={setMenuView}
+					nowAt={'alerts'}
+					modes={modes}
+					setModes={setModes}
+					onRemoveAlert={onRemoveAlert}
+					status={status}
+					setStatus={setStatus}
+					buttons={(function () {
+						const list = ['smazat'];
+						const eventTypesWithActions = new Set(['interest', 'eve_rating', 'comment', 'reply', 'invite', 'comm_rating']);
+						const hasEvent = Boolean(data?.event || alert?.target) && eventTypesWithActions.has(what);
+						const hasUser = Boolean(data?.user || alert?.target) && new Set(['invite', 'link', 'accept', 'user_rating', 'comment', 'reply']).has(what);
+						if (hasEvent) list.unshift('otevřít', 'náhled');
+						if (hasUser || what === 'user_rating') list.unshift('profil');
+
+						if (what === 'invite') {
+							if (status.refused === true) {
+								/* no-op */
+							} else if (status.inter) list.unshift('účast', 'odmítnout');
+							else list.unshift('přijmout', 'odmítnout');
+						}
+
+						const alreadyLinked = (brain.user.unstableObj || brain.user).linkUsers.some(link => link[0] == alert?.target);
+						if (what === 'link' && !alreadyLinked) {
+							if (status.refused === true) list.unshift('připojit');
+							else list.unshift('přijmout', 'odmítnout');
+						}
+						if (['invite', 'link', 'accept'].includes(what)) list.push('galerie');
+						return Array.from(new Set(list));
+					})()}
+				/>
+			)}
+		</alert-strip>
+	);
+}
+
+const areEqual = (prev, next) => prev.alert === next.alert;
+export default memo(AlertStrip, areEqual);

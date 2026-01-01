@@ -1,0 +1,12 @@
+{
+	"ignore": ["node_modules/**", "dist/**"],
+	"watch": ["src/**", "vite.config.js", ".dev-restart"],
+	"ext": "js,jsx,ts,tsx,css,scss,html,json,svg,png,jpg,jpeg",
+	"delay": "200ms",
+	"signal": "SIGTERM",
+	"legacyWatch": true,
+	"exec": "vite"
+}
+
+
+

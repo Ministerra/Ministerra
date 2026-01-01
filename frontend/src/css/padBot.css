@@ -1,0 +1,71 @@
+/* PADDING BOTTOM SCALE ----------------------------------- */
+/* Range: 0.1rem to 50rem. Replaces ad-hoc Xxxl naming */
+
+/* MICRO ----------------------------------- */
+.padBot1 {
+	padding-bottom: 0.1rem;
+}
+.padBot2 {
+	padding-bottom: 0.2rem;
+}
+.padBot3 {
+	padding-bottom: 0.4rem;
+}
+.padBot4 {
+	padding-bottom: 0.6rem;
+}
+.padBot5 {
+	padding-bottom: 0.8rem;
+}
+
+/* SMALL ----------------------------------- */
+.padBot6 {
+	padding-bottom: 1rem;
+}
+.padBot7 {
+	padding-bottom: 1.5rem;
+}
+.padBot8 {
+	padding-bottom: 2rem;
+}
+.padBot9 {
+	padding-bottom: 3rem;
+}
+.padBot10 {
+	padding-bottom: 4rem;
+}
+
+/* MEDIUM ----------------------------------- */
+.padBot11 {
+	padding-bottom: 5rem;
+}
+.padBot12 {
+	padding-bottom: 6rem;
+}
+.padBot13 {
+	padding-bottom: 8rem;
+}
+.padBot14 {
+	padding-bottom: 10rem;
+}
+.padBot15 {
+	padding-bottom: 14rem;
+}
+
+/* LARGE ----------------------------------- */
+.padBot16 {
+	padding-bottom: 18rem;
+}
+.padBot17 {
+	padding-bottom: 24rem;
+}
+.padBot18 {
+	padding-bottom: 30rem;
+}
+.padBot19 {
+	padding-bottom: 38rem;
+}
+.padBot20 {
+	padding-bottom: 50rem;
+}
+

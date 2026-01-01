@@ -1,0 +1,331 @@
+version: '3.8'
+
+networks:
+    ministerra-net:
+        driver: overlay
+        attachable: true
+
+volumes:
+    redis-primary-data:
+    redis-replica1-data:
+    redis-sentinel1-data:
+    redis-sentinel2-data:
+    redis-sentinel3-data:
+    mysql-data:
+        external: true
+        name: ${MYSQL_DATA_VOLUME_NAME:-backend_mysql-data}
+    mysql-replica-data:
+    prometheus-data:
+    grafana-data:
+    loki-data:
+    tempo-data:
+    alertmanager-data:
+    traefik-letsencrypt:
+
+services:
+    # ============================================================================
+    # TRAEFIK (Reverse Proxy & Load Balancer)
+    # ============================================================================
+    traefik:
+        image: traefik:v3.0
+        command:
+            - '--providers.docker=true'
+            - '--providers.docker.exposedbydefault=false'
+            - '--providers.docker.swarmmode=true' # ENABLE SWARM MODE
+            - '--entrypoints.web.address=:80'
+            - '--entrypoints.websecure.address=:443'
+            - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+            - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
+            - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
+            - '--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}'
+            - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+            - '--metrics.prometheus=true'
+            - '--metrics.prometheus.addEntryPointsLabels=true'
+            - '--metrics.prometheus.addrouterslabels=true'
+            - '--api.dashboard=true'
+        ports:
+            - '${TRAEFIK_HTTP_PORT:-80}:80'
+            - '${TRAEFIK_HTTPS_PORT:-443}:443'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - traefik-letsencrypt:/letsencrypt
+        networks:
+            - ministerra-net
+        deploy:
+            mode: global # Run on every node (if you add more nodes later)
+            placement:
+                constraints:
+                    - node.role == manager
+            update_config:
+                parallelism: 1
+                delay: 10s
+
+    # ============================================================================
+    # BACKEND WEB (Scalable HTTP + Socket.IO)
+    # ============================================================================
+    backend-web:
+        image: ministerra-backend:latest
+        environment:
+            - NODE_ENV=production
+            - SWARM_MODE=true # Activate Swarm mode in app.ts
+            - MIN_MODE=false
+            - WORKER_ID={{.Task.Slot}} # Unique ID for each replica
+            - TZ=UTC
+            - BE_PORT=2208
+            - SOCKET_PORT=2209
+            - MONITORING_PORT=9464
+            - MONITORING_TOKEN=${MONITORING_TOKEN}
+            - OTEL_SERVICE_NAME=backend-web
+            - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+            - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+            # Redis Config
+            - REDIS_USE_SENTINEL=true
+            - REDIS_SENTINEL_NAME=mymaster
+            - REDIS_SENTINELS=redis-sentinel1:26379,redis-sentinel2:26379,redis-sentinel3:26379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_SENTINEL_PASSWORD=${REDIS_PASSWORD}
+            # Database Config
+            - HOST=${DB_HOST:-mysql}
+            - DB_PORT=3306
+            - DB_USER=${DB_USER}
+            - DB_PASS=${DB_PASS}
+            - DB_NAME=${DB_NAME}
+            - DB_READ_HOST=${DB_READ_HOST:-mysql-replica}
+            - DB_READ_PORT=3306
+            - DB_READ_SPLIT=1
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 2 # Start with 2 replicas
+            update_config:
+                order: start-first
+                failure_action: rollback
+                delay: 10s
+            labels:
+                - 'traefik.enable=true'
+                # 1. HTTP ROUTER
+                - 'traefik.http.routers.backend.rule=Host(`${APP_HOST}`) && (PathPrefix(`/entrance`) || PathPrefix(`/foundation`) || PathPrefix(`/event`) || PathPrefix(`/gallery`) || PathPrefix(`/user`) || PathPrefix(`/content`) || PathPrefix(`/discussion`) || PathPrefix(`/report`) || PathPrefix(`/editor`) || PathPrefix(`/setup`) || PathPrefix(`/interests`) || PathPrefix(`/locations`) || PathPrefix(`/rating`) || PathPrefix(`/search`) || PathPrefix(`/chat`) || PathPrefix(`/alerts`) || PathPrefix(`/invites`) || PathPrefix(`/devices`) || PathPrefix(`/public`) || PathPrefix(`/metrics`) || PathPrefix(`/admin`))'
+                - 'traefik.http.routers.backend.entrypoints=websecure'
+                - 'traefik.http.routers.backend.tls.certresolver=myresolver'
+                - 'traefik.http.routers.backend.service=backend'
+                # Load Balancer & Port
+                - 'traefik.http.services.backend.loadbalancer.server.port=2208'
+
+                # 2. SOCKET.IO ROUTER (Sticky Sessions!)
+                - 'traefik.http.routers.socket.rule=Host(`${APP_HOST}`) && PathPrefix(`/socket.io`)'
+                - 'traefik.http.routers.socket.entrypoints=websecure'
+                - 'traefik.http.routers.socket.tls.certresolver=myresolver'
+                - 'traefik.http.routers.socket.service=socket'
+                - 'traefik.http.services.socket.loadbalancer.server.port=2209'
+
+                # STICKY SESSIONS CONFIGURATION
+                - 'traefik.http.services.socket.loadbalancer.sticky.cookie=true'
+                - 'traefik.http.services.socket.loadbalancer.sticky.cookie.name=srv_id'
+                - 'traefik.http.services.socket.loadbalancer.sticky.cookie.secure=true'
+                - 'traefik.http.services.socket.loadbalancer.sticky.cookie.httpOnly=true'
+
+    # ============================================================================
+    # BACKEND TASKS (Singleton - Background Jobs)
+    # ============================================================================
+    backend-tasks:
+        image: ministerra-backend:latest
+        environment:
+            - NODE_ENV=production
+            - SWARM_MODE=true
+            - MIN_MODE=true # Re-use min mode logic or just set worker ID to task ID
+            - CONFIG_FORCE_TASK_WORKER=true # Logic you might need to enforce this is the task runner
+            - WORKER_ID=1 # Hardcoded ID to match CONFIG.TASK_WORKER_ID='1'
+            - TZ=UTC
+            - BE_PORT=2208
+            - REDIS_USE_SENTINEL=true
+            - REDIS_SENTINEL_NAME=mymaster
+            - REDIS_SENTINELS=redis-sentinel1:26379,redis-sentinel2:26379,redis-sentinel3:26379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_SENTINEL_PASSWORD=${REDIS_PASSWORD}
+            - HOST=${DB_HOST:-mysql}
+            - DB_PORT=3306
+            - DB_USER=${DB_USER}
+            - DB_PASS=${DB_PASS}
+            - DB_NAME=${DB_NAME}
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 1 # STRICTLY ONE REPLICA for tasks
+            placement:
+                constraints:
+                    - node.role == manager
+            labels:
+                - 'traefik.enable=false' # No traffic routing to this container
+
+    # ============================================================================
+    # FRONTEND
+    # ============================================================================
+    frontend:
+        image: ministerra-frontend:latest
+        environment:
+            - NODE_ENV=production
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 1
+            labels:
+                - 'traefik.enable=true'
+                - 'traefik.http.routers.frontend.rule=Host(`${APP_HOST}`)'
+                - 'traefik.http.routers.frontend.entrypoints=websecure'
+                - 'traefik.http.routers.frontend.tls.certresolver=myresolver'
+                - 'traefik.http.services.frontend.loadbalancer.server.port=80'
+
+    # ============================================================================
+    # INFRASTRUCTURE (Redis, MySQL, Monitoring)
+    # ============================================================================
+    # Redis Cluster
+    redis-primary:
+        image: redis:7.4.7
+        command: sh -c "cp /usr/local/etc/redis/master.conf /data/master.conf && exec redis-server /data/master.conf --requirepass $${REDIS_PASSWORD}"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        volumes:
+            - redis-primary-data:/data
+            - ./systems/redis:/usr/local/etc/redis:ro
+        networks:
+            - ministerra-net
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+
+    redis-replica1:
+        image: redis:7.4.7
+        command: sh -c "cp /usr/local/etc/redis/slave.conf /data/slave.conf && exec redis-server /data/slave.conf --requirepass $${REDIS_PASSWORD} --masterauth $${REDIS_PASSWORD}"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        volumes:
+            - redis-replica1-data:/data
+            - ./systems/redis:/usr/local/etc/redis:ro
+        networks:
+            - ministerra-net
+        depends_on:
+            - redis-primary
+
+    redis-sentinel1:
+        image: redis:7.4.7
+        command: sh -c "cp /usr/local/etc/redis/sentinel1.conf /data/sentinel.conf && sed \"s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g\" /data/sentinel.conf > /data/sentinel.rendered.conf && exec redis-sentinel /data/sentinel.rendered.conf"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+            - redis-sentinel1-data:/data
+        networks:
+            - ministerra-net
+        ports:
+            - '26379:26379'
+
+    redis-sentinel2:
+        image: redis:7.4.7
+        command: sh -c "cp /usr/local/etc/redis/sentinel2.conf /data/sentinel.conf && sed \"s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g\" /data/sentinel.conf > /data/sentinel.rendered.conf && exec redis-sentinel /data/sentinel.rendered.conf"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+            - redis-sentinel2-data:/data
+        networks:
+            - ministerra-net
+        ports:
+            - '26380:26379'
+
+    redis-sentinel3:
+        image: redis:7.4.7
+        command: sh -c "cp /usr/local/etc/redis/sentinel3.conf /data/sentinel.conf && sed \"s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g\" /data/sentinel.conf > /data/sentinel.rendered.conf && exec redis-sentinel /data/sentinel.rendered.conf"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+            - redis-sentinel3-data:/data
+        networks:
+            - ministerra-net
+        ports:
+            - '26381:26379'
+
+    # MySQL
+    mysql:
+        image: mysql:8.0
+        command:
+            - --server-id=1
+            - --log-bin=mysql-bin
+            - --binlog-format=ROW
+            - --gtid-mode=ON
+            - --enforce-gtid-consistency=ON
+            - --sync-binlog=1
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASS}
+        volumes:
+            - mysql-data:/var/lib/mysql
+        networks:
+            - ministerra-net
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+
+    mysql-replica:
+        image: mysql:8.0
+        command:
+            - --server-id=2
+            - --read-only=1
+            - --log-bin=mysql-bin
+            - --binlog-format=ROW
+            - --gtid-mode=ON
+            - --enforce-gtid-consistency=ON
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        volumes:
+            - mysql-replica-data:/var/lib/mysql
+        networks:
+            - ministerra-net
+
+    # Monitoring (Prometheus, Grafana, etc.)
+    # Simplified for brevity - full stack would include all exporters
+    prometheus:
+        image: prom/prometheus:v2.55.1
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=15d
+        volumes:
+            - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus-data:/prometheus
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 1
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    environment:
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+        volumes:
+            - grafana-data:/var/lib/grafana
+            - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 1
+        ports:
+            - '3000:3000'
+
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.98.0
+        command: ['--config=/etc/otelcol/config.yaml']
+        volumes:
+            - ./monitoring/otel-collector/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+        networks:
+            - ministerra-net
+        deploy:
+            mode: replicated
+            replicas: 1

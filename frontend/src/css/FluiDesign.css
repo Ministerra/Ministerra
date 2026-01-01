@@ -1,0 +1,3220 @@
+/* GENERAL SIZING ***********************************************/
+
+.wvw1 {
+	width: 1vw;
+}
+.wvw2 {
+	width: 2vw;
+}
+.wvw3 {
+	width: 3vw;
+}
+.wvw4 {
+	width: 4vw;
+}
+.wvw5 {
+	width: 5vw;
+}
+.wvw6 {
+	width: 6vw;
+}
+.wvw7 {
+	width: 7vw;
+}
+.wvw8 {
+	width: 8vw;
+}
+.wvw9 {
+	width: 9vw;
+}
+.wvw10 {
+	width: 10vw;
+}
+.wvw12 {
+	width: 12vw;
+}
+.wvw14 {
+	width: 14vw;
+}
+
+.wvw16 {
+	width: 16vw;
+}
+.wvw18 {
+	width: 18vw;
+}
+.wvw20 {
+	width: 20vw;
+}
+.wvw24 {
+	width: 24vw;
+}
+.wvw25 {
+	width: 25vw;
+}
+.wvw33 {
+	width: 33.333vw;
+}
+.wvw40 {
+	width: 40vw;
+}
+.wvw45 {
+	width: 45vw;
+}
+.wvw48 {
+	width: 48vw;
+}
+.wvw49 {
+	width: 49vw;
+}
+.wvw50 {
+	width: 50vw;
+}
+.wvw55 {
+	width: 55vw;
+}
+.wvw60 {
+	width: 60vw;
+}
+.wvw65 {
+	width: 65vw;
+}
+.wvw70 {
+	width: 70vw;
+}
+.wvw75 {
+	width: 75vw;
+}
+.wvw80 {
+	width: 80vw;
+}
+.wvw85 {
+	width: 85vw;
+}
+.wvw90 {
+	width: 90vw;
+}
+.wvw95 {
+	width: 95vw;
+}
+.wvw98 {
+	width: 98vw;
+}
+.wvw100 {
+	width: 100vw !important;
+}
+
+.flb0 {
+	flex-basis: 0;
+}
+.flb32 {
+	flex-basis: 32rem;
+}
+.flb50 {
+	flex-basis: 50%;
+}
+.flb20 {
+	flex-basis: 20%;
+}
+
+.flb25 {
+	flex-basis: 25%;
+}
+
+.flb1 {
+	flex-basis: 100%;
+}
+
+.flb75 {
+	flex-basis: 75%;
+}
+
+.flb65 {
+	flex-basis: 65rem;
+}
+
+.w1 {
+	width: 1%;
+}
+.w2 {
+	width: 2%;
+}
+.w3 {
+	width: 3%;
+}
+.w4 {
+	width: 4%;
+}
+.w5 {
+	width: 5%;
+}
+.w6 {
+	width: 6%;
+}
+.w7 {
+	width: 7%;
+}
+.w8 {
+	width: 8%;
+}
+.w9 {
+	width: 9%;
+}
+.w10 {
+	width: 10%;
+}
+.w12 {
+	width: 12%;
+}
+.w14 {
+	width: 14%;
+}
+.passStrength {
+	width: calc(100% / 7);
+}
+.w15 {
+	width: calc(100% / 7);
+}
+.w16 {
+	width: 16%;
+}
+.w18 {
+	width: 18%;
+}
+.w17 {
+	width: calc(100% / 6);
+}
+
+.w20 {
+	width: 20%;
+}
+.w24 {
+	width: 24%;
+}
+.w25 {
+	width: 25%;
+}
+.w30 {
+	width: 30%;
+}
+.w33 {
+	width: 33.333%;
+}
+.w35 {
+	width: 35%;
+}
+.w40 {
+	width: 40%;
+}
+.w45 {
+	width: 45%;
+}
+.w48 {
+	width: 48%;
+}
+.w49 {
+	width: 49%;
+}
+.w50 {
+	width: 50%;
+}
+.w55 {
+	width: 55%;
+}
+.w60 {
+	width: 60%;
+}
+.w65 {
+	width: 65%;
+}
+.w70 {
+	width: 70%;
+}
+.w75 {
+	width: 75%;
+}
+.w80 {
+	width: 80%;
+}
+.w85 {
+	width: 85%;
+}
+.w90 {
+	width: 90%;
+}
+.w95 {
+	width: 95%;
+}
+.w97 {
+	width: 97%;
+}
+.w98 {
+	width: 98%;
+}
+.w99 {
+	width: 99%;
+}
+.w100 {
+	width: 100%;
+}
+.w110 {
+	width: 110%;
+}
+.w120 {
+	width: 120%;
+}
+.w140 {
+	width: 140%;
+}
+.wr0-2 {
+	width: 0.2rem;
+}
+.wr0-3 {
+	width: 0.3rem;
+}
+.wr1 {
+	width: 1rem;
+}
+.wr1-5 {
+	width: 1.5rem;
+}
+.wr2 {
+	width: 2rem;
+}
+.wr3 {
+	width: 3rem;
+}
+.wr4 {
+	width: 4rem;
+}
+.wr5 {
+	width: 5rem;
+}
+.wr6 {
+	width: 6rem;
+}
+.wr7 {
+	width: 7rem;
+}
+.wr8 {
+	width: 8rem;
+}
+.wr9 {
+	width: 9rem;
+}
+.wr10 {
+	width: 10rem;
+}
+.wr12 {
+	width: 12rem;
+}
+.wr14 {
+	width: 14rem;
+}
+.wr16 {
+	width: 16rem;
+}
+.wr18 {
+	width: 18rem;
+}
+.wr20 {
+	width: 20rem;
+}
+.wr24 {
+	width: 24rem;
+}
+.wr25 {
+	width: 25rem;
+}
+.wr32 {
+	width: 32rem;
+}
+.wr33 {
+	width: 33.333rem;
+}
+.wr35 {
+	width: 35rem;
+}
+.wr40 {
+	width: 40rem;
+}
+.wr45 {
+	width: 45rem;
+}
+.wr48 {
+	width: 48rem;
+}
+.wr49 {
+	width: 49rem;
+}
+.wr50 {
+	width: 50rem;
+}
+.wr55 {
+	width: 55rem;
+}
+.wr60 {
+	width: 60rem;
+}
+.wr65 {
+	width: 65rem;
+}
+.wr70 {
+	width: 70rem;
+}
+.wr75 {
+	width: 75rem;
+}
+.wr80 {
+	width: 80rem;
+}
+.wr85 {
+	width: 85rem;
+}
+.wr90 {
+	width: 90rem;
+}
+.wr95 {
+	width: 95rem;
+}
+.wr98 {
+	width: 98rem;
+}
+.wr100 {
+	width: 100rem;
+}
+
+.mw1 {
+	max-width: 1rem;
+}
+.mw2 {
+	max-width: 2rem;
+}
+.mw2-5 {
+	max-width: 2.5rem;
+}
+.mw3 {
+	max-width: 3rem;
+}
+.mw4 {
+	max-width: 4rem;
+}
+.mw5 {
+	max-width: 5rem;
+}
+.mw6 {
+	max-width: 6rem;
+}
+.mw7 {
+	max-width: 7rem;
+}
+.mw8 {
+	max-width: 8rem;
+}
+.mw9 {
+	max-width: 9rem;
+}
+.mw10 {
+	max-width: 10rem;
+}
+.mw50percent {
+	max-width: 918px;
+}
+.mw11 {
+	max-width: 11rem;
+}
+.mw12 {
+	max-width: 12rem;
+}
+.mw13 {
+	max-width: 13rem;
+}
+.mw14 {
+	max-width: 14rem;
+}
+.mw15 {
+	max-width: 15rem;
+}
+.mw16 {
+	max-width: 16rem;
+}
+.mw18 {
+	max-width: 18rem;
+}
+.mw20 {
+	max-width: 20rem;
+}
+.mw22 {
+	max-width: 22rem;
+}
+.mw24 {
+	max-width: 24rem;
+}
+.mw25 {
+	max-width: 25rem;
+}
+.mw28 {
+	max-width: 28rem;
+}
+.mw30 {
+	max-width: 30rem;
+}
+.mw33 {
+	max-width: 33.333rem;
+}
+
+.mw35 {
+	max-width: 35rem;
+}
+.mw36 {
+	max-width: 36rem;
+}
+.mw38 {
+	max-width: 38rem;
+}
+.mw37 {
+	max-width: 37rem;
+}
+.mw40 {
+	max-width: 40rem;
+}
+.mw42 {
+	max-width: 42rem;
+}
+.mw45 {
+	max-width: 45rem;
+}
+.mw48 {
+	max-width: 48rem;
+}
+.mw49 {
+	max-width: 49rem;
+}
+.mw50 {
+	max-width: 50rem;
+}
+.mw55 {
+	max-width: 55rem;
+}
+.mw60 {
+	max-width: 60rem;
+}
+.mw65 {
+	max-width: 65rem;
+}
+.mw70 {
+	max-width: 70rem;
+}
+.mw75 {
+	max-width: 75rem;
+}
+.mw80 {
+	max-width: 80rem;
+}
+.mw84 {
+	max-width: 84rem;
+}
+.mw83 {
+	max-width: 83rem;
+}
+.mw85 {
+	max-width: 85rem;
+}
+.mw90 {
+	max-width: 90rem;
+}
+.mw92 {
+	max-width: 92rem;
+}
+.mw95 {
+	max-width: 95rem;
+}
+.mw96 {
+	max-width: 96rem;
+}
+.mw98 {
+	max-width: 98rem;
+}
+.mw100 {
+	max-width: 100rem;
+}
+.mw110 {
+	max-width: 110rem;
+}
+.mw120 {
+	max-width: 120rem;
+}
+.mw130 {
+	max-width: 130rem;
+}
+.mw135 {
+	max-width: 135rem;
+}
+.mw140 {
+	max-width: 140rem;
+}
+.mw145 {
+	max-width: 145rem;
+}
+.mw150 {
+	max-width: 150rem;
+}
+.mw160 {
+	max-width: 160rem;
+}
+.mw161 {
+	max-width: 161rem;
+}
+.mw165 {
+	max-width: 165rem;
+}
+.mw167 {
+	max-width: 167rem;
+}
+.mw170 {
+	max-width: 170rem;
+}
+.mw175 {
+	max-width: 175rem;
+}
+.mw180 {
+	max-width: 180rem;
+}
+.mw185 {
+	max-width: 185rem;
+}
+.mw190 {
+	max-width: 190rem;
+}
+.mw200 {
+	max-width: 200rem;
+}
+
+.miw0 {
+	min-width: 0;
+}
+.miw1 {
+	min-width: 1rem;
+}
+.miw1-2 {
+	min-width: 1.2rem;
+}
+.miw1-8 {
+	min-width: 1.8rem;
+}
+
+.miw2 {
+	min-width: 2rem;
+}
+.miw2-5 {
+	min-width: 2.5rem;
+}
+.miw3 {
+	min-width: 3rem;
+}
+.miw3-5 {
+	min-width: 3.5rem;
+}
+.miw4 {
+	min-width: 4rem;
+}
+.miw5 {
+	min-width: 5rem;
+}
+.miw6 {
+	min-width: 6rem;
+}
+.miw7 {
+	min-width: 7rem;
+}
+.miw8 {
+	min-width: 8rem;
+}
+.miw9 {
+	min-width: 9rem;
+}
+.miw10 {
+	min-width: 10rem;
+}
+.miw11 {
+	min-width: 11rem;
+}
+.miw12 {
+	min-width: 12rem;
+}
+.miw13 {
+	min-width: 13rem;
+}
+.miw14 {
+	min-width: 14rem;
+}
+.miw16 {
+	min-width: 16rem;
+}
+.miw18 {
+	min-width: 18rem;
+}
+.miw20 {
+	min-width: 20rem;
+}
+.miw24 {
+	min-width: 24rem;
+}
+.miw25 {
+	min-width: 25rem;
+}
+.miw28 {
+	min-width: 28rem;
+}
+
+.miw30 {
+	min-width: 30rem;
+}
+.miw30 {
+	min-width: 30rem;
+}
+.miw32 {
+	min-width: 32rem;
+}
+.miw33 {
+	min-width: 33.333rem;
+}
+
+.miw35 {
+	min-width: 35rem;
+}
+.miw36 {
+	min-width: 36rem;
+}
+
+.miw40 {
+	min-width: 40rem;
+}
+.miw45 {
+	min-width: 45rem;
+}
+.miw48 {
+	min-width: 48rem;
+}
+.miw49 {
+	min-width: 49rem;
+}
+.miw50 {
+	min-width: 50rem;
+}
+.miw55 {
+	min-width: 55rem;
+}
+.miw60 {
+	min-width: 60rem;
+}
+.miw65 {
+	min-width: 65rem;
+}
+.miw70 {
+	min-width: 70rem;
+}
+.miw75 {
+	min-width: 75rem;
+}
+.miw80 {
+	min-width: 80rem;
+}
+.miw85 {
+	min-width: 85rem;
+}
+.miw90 {
+	min-width: 90rem;
+}
+.miw95 {
+	min-width: 95rem;
+}
+.miw98 {
+	min-width: 98rem;
+}
+.miw100 {
+	min-width: 100rem;
+}
+.miw110 {
+	min-width: 110rem;
+}
+.miw120 {
+	min-width: 120rem;
+}
+.miw130 {
+	min-width: 130rem;
+}
+.miw140 {
+	min-width: 140rem;
+}
+.miw150 {
+	min-width: 150rem;
+}
+.miw160 {
+	min-width: 160rem;
+}
+.miw170 {
+	min-width: 170rem;
+}
+.miw180 {
+	min-width: 180rem;
+}
+.miw190 {
+	min-width: 190rem;
+}
+.miw200 {
+	min-width: 200rem;
+}
+
+.h0 {
+	height: 0%;
+}
+.h1 {
+	height: 1%;
+}
+.h2 {
+	height: 2%;
+}
+.h3 {
+	height: 3%;
+}
+.h4 {
+	height: 4%;
+}
+.h5 {
+	height: 5%;
+}
+.h6 {
+	height: 6%;
+}
+.h7 {
+	height: 7%;
+}
+.h8 {
+	height: 8%;
+}
+.h9 {
+	height: 9%;
+}
+.h10 {
+	height: 10%;
+}
+.h12 {
+	height: 12%;
+}
+.h14 {
+	height: 14%;
+}
+.h16 {
+	height: 16%;
+}
+.h18 {
+	height: 18%;
+}
+.h20 {
+	height: 20%;
+}
+.h24 {
+	height: 24%;
+}
+.h25 {
+	height: 25%;
+}
+.h33 {
+	height: 33.333%;
+}
+.h40 {
+	height: 40%;
+}
+.h45 {
+	height: 45%;
+}
+.h48 {
+	height: 48%;
+}
+.h49 {
+	height: 49%;
+}
+.h50 {
+	height: 50%;
+}
+.h55 {
+	height: 55%;
+}
+.h60 {
+	height: 60%;
+}
+.h65 {
+	height: 65%;
+}
+.h70 {
+	height: 70%;
+}
+.h75 {
+	height: 75%;
+}
+.h80 {
+	height: 80%;
+}
+.h85 {
+	height: 85%;
+}
+.h90 {
+	height: 90%;
+}
+.h95 {
+	height: 95%;
+}
+.h98 {
+	height: 98%;
+}
+.h100 {
+	height: 100%;
+}
+.h110 {
+	height: 105%;
+}
+.h120 {
+	height: 120%;
+}
+
+.hvh1 {
+	height: 1vh;
+}
+
+.hvh2 {
+	height: 2vh;
+}
+.hvh3 {
+	height: 3vh;
+}
+.hvh4 {
+	height: 4vh;
+}
+.hvh5 {
+	height: 5vh;
+}
+.hvh6 {
+	height: 6vh;
+}
+.hvh7 {
+	height: 7vh;
+}
+.hvh8 {
+	height: 8vh;
+}
+.hvh9 {
+	height: 9vh;
+}
+.hvh10 {
+	height: 10vh;
+}
+.hvh11 {
+	height: 11vh;
+}
+.hvh12 {
+	height: 12vh;
+}
+.hvh14 {
+	height: 14vh;
+}
+.hvh16 {
+	height: 16vh;
+}
+.hvh18 {
+	height: 18vh;
+}
+.hvh20 {
+	height: 20vh;
+}
+.hvh24 {
+	height: 24vh;
+}
+.hvh25 {
+	height: 25vh;
+}
+.hvh28 {
+	height: 28vh;
+}
+.hvh33 {
+	height: 33.333vh;
+}
+.hvh35 {
+	height: 35vh;
+}
+.hvh40 {
+	height: 40vh;
+}
+.hvh45 {
+	height: 45vh;
+}
+.hvh48 {
+	height: 48vh;
+}
+.hvh49 {
+	height: 49vh;
+}
+.hvh50 {
+	height: 50vh;
+}
+.hvh55 {
+	height: 55vh;
+}
+.hvh60 {
+	height: 60vh;
+}
+.hvh65 {
+	height: 65vh;
+}
+.hvh70 {
+	height: 70vh;
+}
+.hvh75 {
+	height: 75vh;
+}
+.hvh80 {
+	height: 80vh;
+}
+.hvh85 {
+	height: 85vh;
+}
+.hvh90 {
+	height: 90vh;
+}
+.hvh92 {
+	height: 92vh;
+}
+.hvh95 {
+	height: 95vh;
+	height: 95vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.hvh98 {
+	height: 98vh;
+	height: 98vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.hvh100 {
+	height: 100dvh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.hvh120 {
+	height: 120vh;
+}
+.hvh150 {
+	height: 150vh;
+}
+.hAuto {
+	height: auto;
+}
+.hvw1 {
+	height: 1vw;
+}
+
+.hvw2 {
+	height: 2vw;
+}
+.hvw3 {
+	height: 3vw;
+}
+.hvw4 {
+	height: 4vw;
+}
+.hvw5 {
+	height: 5vw;
+}
+.hvw6 {
+	height: 6vw;
+}
+.hvw7 {
+	height: 7vw;
+}
+.hvw8 {
+	height: 8vw;
+}
+.hvw9 {
+	height: 9vw;
+}
+.hvw10 {
+	height: 10vw;
+}
+.hvw11 {
+	height: 11vw;
+}
+.hvw12 {
+	height: 12vw;
+}
+.hvw14 {
+	height: 14vw;
+}
+.hvw16 {
+	height: 16vw;
+}
+.hvw18 {
+	height: 18vw;
+}
+.hvw20 {
+	height: 20vw;
+}
+.hvw22 {
+	height: 22vw;
+}
+.hvw24 {
+	height: 24vw;
+}
+.hvw25 {
+	height: 25vw;
+}
+.hvw28 {
+	height: 28vw;
+}
+.hvw33 {
+	height: 33.333vw;
+}
+.hvw35 {
+	height: 35vw;
+}
+.hvw38 {
+	height: 38vw;
+}
+.hvw40 {
+	height: 40vw;
+}
+.hvw45 {
+	height: 45vw;
+}
+.hvw48 {
+	height: 48vw;
+}
+.hvw49 {
+	height: 49vw;
+}
+.hvw50 {
+	height: 50vw;
+}
+.hvw55 {
+	height: 55vw;
+}
+.hvw60 {
+	height: 60vw;
+}
+.hvw65 {
+	height: 65vw;
+}
+.hvw70 {
+	height: 70vw;
+}
+.hvw75 {
+	height: 75vw;
+}
+.hvw80 {
+	height: 80vw;
+}
+.hvw85 {
+	height: 85vw;
+}
+.hvw90 {
+	height: 90vw;
+}
+.hvw95 {
+	height: 95vw;
+}
+.hvw98 {
+	height: 98vw;
+}
+.hvw100 {
+	height: 100vw;
+}
+.hvw110 {
+	height: 110vw;
+}
+.hvw120 {
+	height: 120vw;
+}
+.hr0-8 {
+	height: 0.8rem;
+}
+.hr0-5 {
+	height: 0.5rem;
+}
+.hr0-3 {
+	height: 0.3rem;
+}
+.hr0-2 {
+	height: 0.2rem;
+}
+.hr0-1 {
+	height: 0.1rem;
+}
+.hr1 {
+	height: 1rem;
+}
+.hr1-5 {
+	height: 1.5rem;
+}
+.hr2 {
+	height: 2rem;
+}
+.hr2-5 {
+	height: 2.5rem;
+}
+.hr3 {
+	height: 3rem;
+}
+.hr3-5 {
+	height: 3.5rem;
+}
+.hr4 {
+	height: 4rem;
+}
+.hr4-5 {
+	height: 4.5rem;
+}
+.hr5 {
+	height: 5rem;
+}
+.hr5-5 {
+	height: 5.5rem;
+}
+.hr6 {
+	height: 6rem;
+}
+.hr7 {
+	height: 7rem;
+}
+.hr8 {
+	height: 8rem;
+}
+.hr9 {
+	height: 9rem;
+}
+.hr9-5 {
+	height: 9.5rem;
+}
+.hr10 {
+	height: 10rem;
+}
+.hr11 {
+	height: 11rem;
+}
+.hr12 {
+	height: 12rem;
+}
+.hr14 {
+	height: 14rem;
+}
+.hr16 {
+	height: 16rem;
+}
+.hr18 {
+	height: 18rem;
+}
+.hr20 {
+	height: 20rem;
+}
+.hr24 {
+	height: 24rem;
+}
+.hr25 {
+	height: 25rem;
+}
+.hr31 {
+	height: 31rem;
+}
+.hr32 {
+	height: 32rem;
+}
+.hr33 {
+	height: 33.333rem;
+}
+.hr35 {
+	height: 35rem;
+}
+.hr37 {
+	height: 37rem;
+}
+.hr38 {
+	height: 38rem;
+}
+.hr40 {
+	height: 40rem;
+}
+.hr45 {
+	height: 45rem;
+}
+.hr48 {
+	height: 48rem;
+}
+.hr49 {
+	height: 49rem;
+}
+.hr50 {
+	height: 50rem;
+}
+.hr55 {
+	height: 55rem;
+}
+.hr60 {
+	height: 60rem;
+}
+.hr65 {
+	height: 65rem;
+}
+.hr70 {
+	height: 70rem;
+}
+.hr75 {
+	height: 75rem;
+}
+.hr80 {
+	height: 80rem;
+}
+.hr85 {
+	height: 85rem;
+}
+.hr90 {
+	height: 90rem;
+}
+.hr95 {
+	height: 95rem;
+}
+.hr98 {
+	height: 98rem;
+}
+.hr100 {
+	height: 100rem;
+}
+.mih0-3 {
+	min-height: 0.3rem;
+}
+.mih0-5 {
+	min-height: 0.5rem;
+}
+.mih1 {
+	min-height: 1rem;
+}
+.mih2 {
+	min-height: 2rem;
+}
+.mih2-5 {
+	min-height: 2.5rem;
+}
+.mih3 {
+	min-height: 3rem;
+}
+.mih4 {
+	min-height: 4rem;
+}
+.mih5 {
+	min-height: 5rem;
+}
+.mih6 {
+	min-height: 6rem;
+}
+.mih7 {
+	min-height: 7rem;
+}
+.mih8 {
+	min-height: 8rem;
+}
+.mih9 {
+	min-height: 9rem;
+}
+.mih10 {
+	min-height: 10rem;
+}
+.mih11 {
+	min-height: 11rem;
+}
+.mih12 {
+	min-height: 12rem;
+}
+.mih14 {
+	min-height: 14rem;
+}
+.mih16 {
+	min-height: 16rem;
+}
+.mih18 {
+	min-height: 18rem;
+}
+.mih20 {
+	min-height: 20rem;
+}
+.mih21 {
+	min-height: 21rem;
+}
+.mih22 {
+	min-height: 22rem;
+}
+.mih24 {
+	min-height: 24rem;
+}
+.mih25 {
+	min-height: 25rem;
+}
+.mih28 {
+	min-height: 28rem;
+}
+.mih30 {
+	min-height: 30rem;
+}
+.mih33 {
+	min-height: 33.333rem;
+}
+.mih35 {
+	min-height: 35rem;
+}
+.mih40 {
+	min-height: 40rem;
+}
+.mih45 {
+	min-height: 45rem;
+}
+.mih48 {
+	min-height: 48rem;
+}
+.mih49 {
+	min-height: 49rem;
+}
+.mih50 {
+	min-height: 50rem;
+}
+.mih55 {
+	min-height: 55rem;
+}
+.mih60 {
+	min-height: 60rem;
+}
+.mih65 {
+	min-height: 65rem;
+}
+.mih70 {
+	min-height: 70rem;
+}
+.mih75 {
+	min-height: 75rem;
+}
+.mih80 {
+	min-height: 80rem;
+}
+.mih85 {
+	min-height: 85rem;
+}
+.mih90 {
+	min-height: 90rem;
+}
+.mih95 {
+	min-height: 95rem;
+}
+.mih98 {
+	min-height: 98rem;
+}
+.mih100 {
+	min-height: 100rem;
+}
+.mihvh100 {
+	min-height: 100dvh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mihvh110 {
+	min-height: 110vh;
+	min-height: 110vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mihvh101 {
+	min-height: 100.1vh;
+	min-height: 100.1vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mihvh40 {
+	min-height: 40vh;
+}
+.mihvh35 {
+	min-height: 35vh;
+}
+.mihvh6 {
+	min-height: 6vh;
+}
+.mihvh5 {
+	min-height: 5vh;
+}
+.mihvh4 {
+	min-height: 4vh;
+}
+
+.mihvh120 {
+	min-height: 120vh;
+}
+.mihvh140 {
+	min-height: 140vh;
+}
+.mhvh4 {
+	max-height: 4vh;
+}
+.mhvh5 {
+	max-height: 5vh;
+}
+.mhvh6 {
+	max-height: 6vh;
+}
+.mhvh7 {
+	max-height: 7vh;
+}
+.mhvh8 {
+	max-height: 8vh;
+}
+.mhvh30 {
+	max-height: 30vh;
+}
+.mhvh33 {
+	max-height: 33.333vh;
+}
+.mhvh35 {
+	max-height: 35vh;
+}
+.mhvh40 {
+	max-height: 40vh;
+}
+.mhvh42 {
+	max-height: 42vh;
+}
+.mhvh45 {
+	max-height: 45vh;
+}
+.mhvh50 {
+	max-height: 50vh;
+}
+.mhvh60 {
+	max-height: 60vh;
+}
+.mhvh65 {
+	max-height: 65vh;
+}
+.mhvh70 {
+	max-height: 70vh;
+}
+.mhvh75 {
+	max-height: 75vh;
+}
+.mhvh80 {
+	max-height: 80vh;
+	max-height: 80vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mhvh85 {
+	max-height: 85vh;
+	max-height: 85vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mhvh100 {
+	max-height: 100dvh;
+}
+.mhvh98 {
+	max-height: 98vh;
+	max-height: 98vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mhvh95 {
+	max-height: 95vh;
+	max-height: 95vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+
+.mhvh90 {
+	max-height: 90vh;
+	max-height: 90vh; /* DYNAMIC VIEWPORT HEIGHT FOR MOBILE KEYBOARD ---------------------------*/
+}
+.mihvh10 {
+	min-height: 10vh;
+}
+
+.mh1 {
+	max-height: 1rem;
+}
+.mh1-2 {
+	max-height: 1.2rem;
+}
+.mh1-3 {
+	max-height: 1.3rem;
+}
+.mh1-4 {
+	max-height: 1.4rem;
+}
+.mh1-5 {
+	max-height: 1.5rem;
+}
+.mh1-6 {
+	max-height: 1.6rem;
+}
+.mh1-7 {
+	max-height: 1.7rem;
+}
+.mh1-8 {
+	max-height: 1.8rem;
+}
+.mh1-9 {
+	max-height: 1.9rem;
+}
+.mh2 {
+	max-height: 2rem;
+}
+.mh3 {
+	max-height: 3rem;
+}
+.mh3-5 {
+	max-height: 3.5rem;
+}
+.mh4 {
+	max-height: 4rem;
+}
+.mh5 {
+	max-height: 5rem;
+}
+.mh6 {
+	max-height: 6rem;
+}
+.mh7 {
+	max-height: 7rem;
+}
+.mh8 {
+	max-height: 8rem;
+}
+.mh9 {
+	max-height: 9rem;
+}
+.mh10 {
+	max-height: 10rem;
+}
+.mh12 {
+	max-height: 12rem;
+}
+.mh14 {
+	max-height: 14rem;
+}
+.mh16 {
+	max-height: 16rem;
+}
+.mh18 {
+	max-height: 18rem;
+}
+.mh20 {
+	max-height: 20rem;
+}
+.mh22 {
+	max-height: 22rem;
+}
+.mh24 {
+	max-height: 24rem;
+}
+.mh25 {
+	max-height: 25rem;
+}
+.mh28 {
+	max-height: 28rem;
+}
+.mh30 {
+	max-height: 30rem;
+}
+.mh31 {
+	max-height: 31rem;
+}
+.mh33 {
+	max-height: 33.333rem;
+}
+.mh35 {
+	max-height: 35rem;
+}
+.mh38 {
+	max-height: 38rem;
+}
+.mh39 {
+	max-height: 39rem;
+}
+.mh40 {
+	max-height: 40rem;
+}
+.mh41 {
+	max-height: 41rem;
+}
+.mh42 {
+	max-height: 42rem;
+}
+.mh43 {
+	max-height: 43rem;
+}
+.mh44 {
+	max-height: 44rem;
+}
+.mh45 {
+	max-height: 45rem;
+}
+.mh48 {
+	max-height: 48rem;
+}
+.mh49 {
+	max-height: 49rem;
+}
+.mh50 {
+	max-height: 50rem;
+}
+.mh55 {
+	max-height: 55rem;
+}
+.mh60 {
+	max-height: 60rem;
+}
+.mh65 {
+	max-height: 65rem;
+}
+.mh70 {
+	max-height: 70rem;
+}
+.mh75 {
+	max-height: 75rem;
+}
+.mh80 {
+	max-height: 80rem;
+}
+.mh85 {
+	max-height: 85rem;
+}
+.mh90 {
+	max-height: 90rem;
+}
+.mh95 {
+	max-height: 95rem;
+}
+.mh98 {
+	max-height: 98rem;
+}
+.mh100 {
+	max-height: 100rem;
+}
+
+.mhhvh
+
+/* IMAGEhr SIZING ***********************************************/
+.iwvw1 img {
+	width: 1vw;
+}
+.iwvw2 img {
+	width: 2vw;
+}
+.iwvw3 img {
+	width: 3vw;
+}
+.iwvw4 img {
+	width: 4vw;
+}
+.iwvw5 img {
+	width: 5vw;
+}
+.iwvw6 img {
+	width: 6vw;
+}
+.iwvw7 img {
+	width: 7vw;
+}
+.iwvw8 img {
+	width: 8vw;
+}
+.iwvw9 img {
+	width: 9vw;
+}
+.iwvw10 img {
+	width: 10vw;
+}
+.iwvw12 img {
+	width: 12vw;
+}
+.iwvw14 img {
+	width: 14vw;
+}
+.iwvw16 img {
+	width: 16vw;
+}
+.iwvw18 img {
+	width: 18vw;
+}
+.iwvw20 img {
+	width: 20vw;
+}
+.iwvw24 img {
+	width: 24vw;
+}
+.iwvw25 img {
+	width: 25vw;
+}
+.iwvw33 img {
+	width: 33.333vw;
+}
+.iwvw40 img {
+	width: 40vw;
+}
+.iwvw45 img {
+	width: 45vw;
+}
+.iwvw48 img {
+	width: 48vw;
+}
+.iwvw49 img {
+	width: 49vw;
+}
+.iwvw50 img {
+	width: 50vw;
+}
+.iwvw55 img {
+	width: 55vw;
+}
+.iwvw60 img {
+	width: 60vw;
+}
+.iwvw65 img {
+	width: 65vw;
+}
+.iwvw70 img {
+	width: 70vw;
+}
+.iwvw75 img {
+	width: 75vw;
+}
+.iwvw80 img {
+	width: 80vw;
+}
+.iwvw85 img {
+	width: 85vw;
+}
+.iwvw90 img {
+	width: 90vw;
+}
+.iwvw95 img {
+	width: 95vw;
+}
+.iwvw98 img {
+	width: 98vw;
+}
+.iwvw100 img {
+	width: 100vw;
+}
+
+.iw1 img {
+	width: 1%;
+}
+.iw2 img {
+	width: 2%;
+}
+.iw3 img {
+	width: 3%;
+}
+.iw4 img {
+	width: 4%;
+}
+.iw5 img {
+	width: 5%;
+}
+.iw6 img {
+	width: 6%;
+}
+.iw7 img {
+	width: 7%;
+}
+.iw8 img {
+	width: 8%;
+}
+.iw9 img {
+	width: 9%;
+}
+.iw10 img {
+	width: 10%;
+}
+.iw12 img {
+	width: 12%;
+}
+.iw14 img {
+	width: calc(100% / 7);
+}
+.iw16 img {
+	width: 16%;
+}
+.iw17 img {
+	width: calc(100% / 6);
+}
+.iw18 img {
+	width: 18%;
+}
+.iw20 img {
+	width: 20%;
+}
+.iw21 img {
+	width: 21%;
+}
+.iw22 img {
+	width: 22%;
+}
+.iw23 img {
+	width: 23%;
+}
+.iw23 img {
+	width: 23%;
+}
+.iw24 img {
+	width: 24%;
+}
+.iw25 img {
+	width: 25%;
+}
+.iw33 img {
+	width: 33.333%;
+}
+.iw40 img {
+	width: 40%;
+}
+.iw45 img {
+	width: 45%;
+}
+.iw48 img {
+	width: 48%;
+}
+.iw49 img {
+	width: 49%;
+}
+.iw50 img {
+	width: 50%;
+}
+.iw55 img {
+	width: 55%;
+}
+.iw60 img {
+	width: 60%;
+}
+.iw65 img {
+	width: 65%;
+}
+.iw70 img {
+	width: 70%;
+}
+.iw75 img {
+	width: 75%;
+}
+.iw80 img {
+	width: 80%;
+}
+.iw85 img {
+	width: 85%;
+}
+.iw90 img {
+	width: 90%;
+}
+.iw95 img {
+	width: 95%;
+}
+.iw98 img {
+	width: 98%;
+}
+.iw100 img {
+	width: 100%;
+}
+
+.iwr1 img {
+	width: 1rem;
+}
+.iwr2 img {
+	width: 2rem;
+}
+.iwr2-5 img {
+	width: 2.5rem;
+}
+.iwr3 img {
+	width: 3rem;
+}
+.iwr4 img {
+	width: 4rem;
+}
+.iwr5 img {
+	width: 5rem;
+}
+.iwr6 img {
+	width: 6rem;
+}
+.iwr7 img {
+	width: 7rem;
+}
+.iwr8 img {
+	width: 8rem;
+}
+.iwr9 img {
+	width: 9rem;
+}
+.iwr10 img {
+	width: 10rem;
+}
+.iwr12 img {
+	width: 12rem;
+}
+.iwr14 img {
+	width: 14rem;
+}
+.iwr16 img {
+	width: 16rem;
+}
+.iwr18 img {
+	width: 18rem;
+}
+.iwr20 img {
+	width: 20rem;
+}
+.iwr24 img {
+	width: 24rem;
+}
+.iwr25 img {
+	width: 25rem;
+}
+.iwr33 img {
+	width: 33.333rem;
+}
+.iwr40 img {
+	width: 40rem;
+}
+.iwr45 img {
+	width: 45rem;
+}
+.iwr48 img {
+	width: 48rem;
+}
+.iwr49 img {
+	width: 49rem;
+}
+.iwr50 img {
+	width: 50rem;
+}
+.iwr55 img {
+	width: 55rem;
+}
+.iwr60 img {
+	width: 60rem;
+}
+.iwr65 img {
+	width: 65rem;
+}
+.iwr70 img {
+	width: 70rem;
+}
+.iwr75 img {
+	width: 75rem;
+}
+.iwr80 img {
+	width: 80rem;
+}
+.iwr85 img {
+	width: 85rem;
+}
+.iwr90 img {
+	width: 90rem;
+}
+.iwr95 img {
+	width: 95rem;
+}
+.iwr98 img {
+	width: 98rem;
+}
+.iwr100 img {
+	width: 100rem;
+}
+.mw3-5 {
+	max-width: 3.5rem;
+}
+.imw1 img {
+	max-width: 1rem;
+}
+.imw2 img {
+	max-width: 2rem;
+}
+.imw2-5 img {
+	max-width: 2.5rem;
+}
+.imw3 img {
+	max-width: 3rem;
+}
+.imw3-5 img {
+	max-width: 3.5rem;
+}
+.imw4 img {
+	max-width: 4rem;
+}
+.imw4-5 img {
+	max-width: 4.5rem;
+}
+.imw5 img {
+	max-width: 5rem;
+}
+.imw6 img {
+	max-width: 6rem;
+}
+.imw7 img {
+	max-width: 7rem;
+}
+.imw8 img {
+	max-width: 8rem;
+}
+.imw9 img {
+	max-width: 9rem;
+}
+.imw10 img {
+	max-width: 10rem;
+}
+.imw11 img {
+	max-width: 11rem;
+}
+.imw12 img {
+	max-width: 12rem;
+}
+.imw14 img {
+	max-width: 14rem;
+}
+.imw16 img {
+	max-width: 16rem;
+}
+.iw16th img {
+	width: calc(100% / 6);
+}
+.imw18 img {
+	max-width: 18rem;
+}
+.imw20 img {
+	max-width: 20rem;
+}
+.imw22 img {
+	max-width: 22rem;
+}
+.imw24 img {
+	max-width: 24rem;
+}
+.imw25 img {
+	max-width: 25rem;
+}
+.imw33 img {
+	max-width: 33.333rem;
+}
+.imw35 img {
+	max-width: 35rem;
+}
+.imw40 img {
+	max-width: 40rem;
+}
+.imw45 img {
+	max-width: 45rem;
+}
+.imw48 img {
+	max-width: 48rem;
+}
+.imw49 img {
+	max-width: 49rem;
+}
+.imw50 img {
+	max-width: 50rem;
+}
+.imw55 img {
+	max-width: 55rem;
+}
+.imw60 img {
+	max-width: 60rem;
+}
+.imw65 img {
+	max-width: 65rem;
+}
+.imw70 img {
+	max-width: 70rem;
+}
+.imw75 img {
+	max-width: 75rem;
+}
+.imw80 img {
+	max-width: 80rem;
+}
+.imw85 img {
+	max-width: 85rem;
+}
+.imw90 img {
+	max-width: 90rem;
+}
+.imw95 img {
+	max-width: 95rem;
+}
+.imw98 img {
+	max-width: 98rem;
+}
+.imw100 img {
+	max-width: 100rem;
+}
+.imw110 img {
+	max-width: 110rem;
+}
+.imw120 img {
+	max-width: 120rem;
+}
+.imw130 img {
+	max-width: 130rem;
+}
+
+.imw140 img {
+	max-width: 140rem;
+}
+.imw150 img {
+	max-width: 150rem;
+}
+.imw160 img {
+	max-width: 160rem;
+}
+.imw170 img {
+	max-width: 170rem;
+}
+.imw180 img {
+	max-width: 180rem;
+}
+.imw190 img {
+	max-width: 190rem;
+}
+.imw200 img {
+	max-width: 200rem;
+}
+
+.ih1 img {
+	height: 1%;
+}
+.ih2 img {
+	height: 2%;
+}
+.ih3 img {
+	height: 3%;
+}
+.ih4 img {
+	height: 4%;
+}
+.ih5 img {
+	height: 5%;
+}
+.ih6 img {
+	height: 6%;
+}
+.ih7 img {
+	height: 7%;
+}
+.ih8 img {
+	height: 8%;
+}
+.ih9 img {
+	height: 9%;
+}
+.ih10 img {
+	height: 10%;
+}
+.ih12 img {
+	height: 12%;
+}
+.ih14 img {
+	height: 14%;
+}
+.ih16 img {
+	height: 16%;
+}
+.ih18 img {
+	height: 18%;
+}
+.ih20 img {
+	height: 20%;
+}
+.ih24 img {
+	height: 24%;
+}
+.ih25 img {
+	height: 25%;
+}
+.ih33 img {
+	height: 33.333%;
+}
+.ih40 img {
+	height: 40%;
+}
+.ih45 img {
+	height: 45%;
+}
+.ih48 img {
+	height: 48%;
+}
+.ih49 img {
+	height: 49%;
+}
+.ih50 img,
+.ih50 * {
+	height: 50%;
+}
+.ih55 img {
+	height: 55%;
+}
+.ih60 img {
+	height: 60%;
+}
+.ih65 img {
+	height: 65%;
+}
+.ih70 img {
+	height: 70%;
+}
+.ih75 img {
+	height: 75%;
+}
+.ih80 img {
+	height: 80%;
+}
+.ih85 img {
+	height: 85%;
+}
+.ih90 img {
+	height: 90%;
+}
+.ih95 img {
+	height: 95%;
+}
+.ih98 img {
+	height: 98%;
+}
+.ih100 img {
+	height: 100%;
+}
+
+.ihr1 img {
+	height: 1rem;
+}
+.ihr2 img {
+	height: 2rem;
+}
+.ihr2-5 img {
+	height: 2.5rem;
+}
+.ihr3 img {
+	height: 3rem;
+}
+.ihr4 img {
+	height: 4rem;
+}
+.ihr5 img {
+	height: 5rem;
+}
+.ihr6 img {
+	height: 6rem;
+}
+.ihr7 img {
+	height: 7rem;
+}
+.ihr8 img {
+	height: 8rem;
+}
+.ihr9 img {
+	height: 9rem;
+}
+.ihr10 img {
+	height: 10rem;
+}
+.ihr12 img {
+	height: 12rem;
+}
+.ihr14 img {
+	height: 14rem;
+}
+.ihr16 img {
+	height: 16rem;
+}
+.ihr18 img {
+	height: 18rem;
+}
+.ihr20 img {
+	height: 20rem;
+}
+.ihr24 img {
+	height: 24rem;
+}
+.ihr25 img {
+	height: 25rem;
+}
+.ihr33 img {
+	height: 33.333rem;
+}
+.ihr40 img {
+	height: 40rem;
+}
+.ihr45 img {
+	height: 45rem;
+}
+.ihr48 img {
+	height: 48rem;
+}
+.ihr49 img {
+	height: 49rem;
+}
+.ihr50 img {
+	height: 50rem;
+}
+.ihr55 img {
+	height: 55rem;
+}
+.ihr60 img {
+	height: 60rem;
+}
+.ihr65 img {
+	height: 65rem;
+}
+.ihr70 img {
+	height: 70rem;
+}
+.ihr75 img {
+	height: 75rem;
+}
+.ihr80 img {
+	height: 80rem;
+}
+.ihr85 img {
+	height: 85rem;
+}
+.ihr90 img {
+	height: 90rem;
+}
+.ihr95 img {
+	height: 95rem;
+}
+.ihr98 img {
+	height: 98rem;
+}
+.ihr100 img {
+	height: 100rem;
+}
+
+.imih1 img {
+	min-height: 1rem;
+}
+.imih2 img {
+	min-height: 2rem;
+}
+.imih3 img {
+	min-height: 3rem;
+}
+.imih4 img {
+	min-height: 4rem;
+}
+.imih5 img {
+	min-height: 5rem;
+}
+.imih6 img {
+	min-height: 6rem;
+}
+.imih7 img {
+	min-height: 7rem;
+}
+.imih8 img {
+	min-height: 8rem;
+}
+.imih9 img {
+	min-height: 9rem;
+}
+.imih10 img {
+	min-height: 10rem;
+}
+.imih12 img {
+	min-height: 12rem;
+}
+.imih14 img {
+	min-height: 14rem;
+}
+.imih16 img {
+	min-height: 16rem;
+}
+.imih18 img {
+	min-height: 18rem;
+}
+.imih20 img {
+	min-height: 20rem;
+}
+.imih24 img {
+	min-height: 24rem;
+}
+.imih25 img {
+	min-height: 25rem;
+}
+.imih33 img {
+	min-height: 33.333rem;
+}
+.imih40 img {
+	min-height: 40rem;
+}
+.imih45 img {
+	min-height: 45rem;
+}
+.imih48 img {
+	min-height: 48rem;
+}
+.imih49 img {
+	min-height: 49rem;
+}
+.imih50 img {
+	min-height: 50rem;
+}
+.imih55 img {
+	min-height: 55rem;
+}
+.imih60 img {
+	min-height: 60rem;
+}
+.imih65 img {
+	min-height: 65rem;
+}
+.imih70 img {
+	min-height: 70rem;
+}
+.imih75 img {
+	min-height: 75rem;
+}
+.imih80 img {
+	min-height: 80rem;
+}
+.imih85 img {
+	min-height: 85rem;
+}
+.imih90 img {
+	min-height: 90rem;
+}
+.imih95 img {
+	min-height: 95rem;
+}
+.imih98 img {
+	min-height: 98rem;
+}
+.imih100 img {
+	min-height: 100rem;
+}
+
+.imiw1 img {
+	min-width: 1rem;
+}
+.imiw2 img {
+	min-width: 2rem;
+}
+.imiw2-3 img {
+	min-width: 2.3rem;
+}
+.imiw3 img {
+	min-width: 3rem;
+}
+.imiw3-5 img {
+	min-width: 3.5rem;
+}
+.imiw4 img {
+	min-width: 4rem;
+}
+.imiw5 img {
+	min-width: 5rem;
+}
+.imiw6 img {
+	min-width: 6rem;
+}
+.imiw7 img {
+	min-width: 7rem;
+}
+.imiw8 img {
+	min-width: 8rem;
+}
+.imiw9 img {
+	min-width: 9rem;
+}
+.imiw10 img {
+	min-width: 10rem;
+}
+.imiw12 img {
+	min-width: 12rem;
+}
+.imiw14 img {
+	min-width: 14rem;
+}
+.imiw16 img {
+	min-width: 16rem;
+}
+.imiw18 img {
+	min-width: 18rem;
+}
+.imiw20 img {
+	min-width: 20rem;
+}
+.imiw24 img {
+	min-width: 24rem;
+}
+.imiw25 img {
+	min-width: 25rem;
+}
+.imiw33 img {
+	min-width: 33.333rem;
+}
+.imiw40 img {
+	min-width: 40rem;
+}
+.imiw45 img {
+	min-width: 45rem;
+}
+.imiw48 img {
+	min-width: 48rem;
+}
+.imiw49 img {
+	min-width: 49rem;
+}
+.imiw50 img {
+	min-width: 50rem;
+}
+.imiw55 img {
+	min-width: 55rem;
+}
+.imiw60 img {
+	min-width: 60rem;
+}
+.imiw65 img {
+	min-width: 65rem;
+}
+.imiw70 img {
+	min-width: 70rem;
+}
+.imiw75 img {
+	min-width: 75rem;
+}
+.imiw80 img {
+	min-width: 80rem;
+}
+.imiw85 img {
+	min-width: 85rem;
+}
+.imiw90 img {
+	min-width: 90rem;
+}
+.imiw95 img {
+	min-width: 95rem;
+}
+.imiw98 img {
+	min-width: 98rem;
+}
+.imiw100 img {
+	min-width: 100rem;
+}
+
+/* BUTTONS SIZING ***********************************************/
+
+.bw1 button {
+	width: 1%;
+}
+.bw2 button {
+	width: 2%;
+}
+.bw3 button {
+	width: 3%;
+}
+.bw4 button {
+	width: 4%;
+}
+.bw5 button {
+	width: 5%;
+}
+.bw6 button {
+	width: 6%;
+}
+.bw7 button {
+	width: 7%;
+}
+.bw8 button {
+	width: 8%;
+}
+.bw9 button {
+	width: 9%;
+}
+.bw10 button {
+	width: 10%;
+}
+.bw12 button {
+	width: 12%;
+}
+.bw14 button {
+	width: 14%;
+}
+.bw16 button {
+	width: 16.666666%;
+}
+.bw17 button {
+	width: 1%;
+}
+.bw18 button {
+	width: 18%;
+}
+.bw20 button {
+	width: 20%;
+}
+.bw24 button {
+	width: 24%;
+}
+.bw25 button {
+	width: 25%;
+}
+.bw33 button {
+	width: 33.333%;
+}
+.bw40 button {
+	width: 40%;
+}
+.bw45 button {
+	width: 45%;
+}
+.bw48 button {
+	width: 48%;
+}
+.bw49 button {
+	width: 49%;
+}
+.bw50 button {
+	width: 50%;
+}
+.bw55 button {
+	width: 55%;
+}
+.bw60 button {
+	width: 60%;
+}
+.bw65 button {
+	width: 65%;
+}
+.bw70 button {
+	width: 70%;
+}
+.bw75 button {
+	width: 75%;
+}
+.bw80 button {
+	width: 80%;
+}
+.bw85 button {
+	width: 85%;
+}
+.bw90 button {
+	width: 90%;
+}
+.bw95 button {
+	width: 95%;
+}
+.bw98 button {
+	width: 98%;
+}
+.bw100 button {
+	width: 100%;
+}
+.bmih20 button {
+	min-height: 10rem;
+}
+.bmw1 button {
+	max-width: 1rem;
+}
+.bmw2 button {
+	max-width: 2rem;
+}
+.bmw3 button {
+	max-width: 3rem;
+}
+.bmw4 button {
+	max-width: 4rem;
+}
+.bmw5 button {
+	max-width: 5rem;
+}
+.bmw6 button {
+	max-width: 6rem;
+}
+.bmw7 button {
+	max-width: 7rem;
+}
+.bmw8 button {
+	max-width: 8rem;
+}
+.bmw9 button {
+	max-width: 9rem;
+}
+.bmw10 button {
+	max-width: 10rem;
+}
+.bmw11 button {
+	max-width: 11rem;
+}
+.bmw12 button {
+	max-width: 12rem;
+}
+.bmw14 button {
+	max-width: 14rem;
+}
+.bmw16 button {
+	max-width: 16rem;
+}
+.bmw17 button {
+	max-width: 17rem;
+}
+.bmw18 button {
+	max-width: 18rem;
+}
+.bmw20 button {
+	max-width: 20rem;
+}
+.bmw22 button {
+	max-width: 22rem;
+}
+.bmw24 button {
+	max-width: 24rem;
+}
+.bmw25 button {
+	max-width: 25rem;
+}
+.bmw28 button {
+	max-width: 28rem;
+}
+.bmw30 button {
+	max-width: 30rem;
+}
+.bmw33 button {
+	max-width: 33.333rem;
+}
+.bmw34 button {
+	max-width: 34rem;
+}
+.bmw35 button {
+	max-width: 33.333rem;
+}
+.bmw36 button {
+	max-width: 36rem;
+}
+
+.bmw38 button {
+	max-width: 38rem;
+}
+
+.bmw40 button {
+	max-width: 40rem;
+}
+.bmw42 button {
+	max-width: 42rem;
+}
+.bmw45 button {
+	max-width: 45rem;
+}
+.bmw48 button {
+	max-width: 48rem;
+}
+.bmw49 button {
+	max-width: 49rem;
+}
+.bmw50 button {
+	max-width: 50rem;
+}
+.bmw55 button {
+	max-width: 55rem;
+}
+.bmw60 button {
+	max-width: 60rem;
+}
+.bmw65 button {
+	max-width: 65rem;
+}
+.bmw70 button {
+	max-width: 70rem;
+}
+.bmw75 button {
+	max-width: 75rem;
+}
+.bmw80 button {
+	max-width: 80rem;
+}
+.bmw85 button {
+	max-width: 85rem;
+}
+.bmw90 button {
+	max-width: 90rem;
+}
+.bmw95 button {
+	max-width: 95rem;
+}
+.bmw98 button {
+	max-width: 98rem;
+}
+.bmw100 button {
+	max-width: 100rem;
+}
+.bmw110 button {
+	max-width: 110rem;
+}
+.bmw120 button {
+	max-width: 120rem;
+}
+.bmw130 button {
+	max-width: 130rem;
+}
+.bmw140 button {
+	max-width: 140rem;
+}
+.bmw150 button {
+	max-width: 150rem;
+}
+.bmw160 button {
+	max-width: 160rem;
+}
+.bmw170 button {
+	max-width: 170rem;
+}
+.bmw180 button {
+	max-width: 180rem;
+}
+.bmw190 button {
+	max-width: 190rem;
+}
+.bmw200 button {
+	max-width: 200rem;
+}
+
+.bh1 button {
+	height: 1%;
+}
+.bh2 button {
+	height: 2%;
+}
+.bh3 button {
+	height: 3%;
+}
+.bh4 button {
+	height: 4%;
+}
+.bh5 button {
+	height: 5%;
+}
+.bh6 button {
+	height: 6%;
+}
+.bh7 button {
+	height: 7%;
+}
+.bh8 button {
+	height: 8%;
+}
+.bh9 button {
+	height: 9%;
+}
+.bh10 button {
+	height: 10%;
+}
+.bh12 button {
+	height: 12%;
+}
+.bh14 button {
+	height: 14%;
+}
+.bh16 button {
+	height: 16%;
+}
+.bh18 button {
+	height: 18%;
+}
+.bh20 button {
+	height: 20%;
+}
+.bh24 button {
+	height: 24%;
+}
+.bh25 button {
+	height: 25%;
+}
+.bh33 button {
+	height: 33.333%;
+}
+.bh40 button {
+	height: 40%;
+}
+.bh45 button {
+	height: 45%;
+}
+.bh48 button {
+	height: 48%;
+}
+.bh49 button {
+	height: 49%;
+}
+.bh50 button {
+	height: 50%;
+}
+.bh55 button {
+	height: 55%;
+}
+.bh60 button {
+	height: 60%;
+}
+.bh65 button {
+	height: 65%;
+}
+.bh70 button {
+	height: 70%;
+}
+.bh75 button {
+	height: 75%;
+}
+.bh80 button {
+	height: 80%;
+}
+.bh85 button {
+	height: 85%;
+}
+.bh90 button {
+	height: 90%;
+}
+.bh95 button {
+	height: 95%;
+}
+.bh98 button {
+	height: 98%;
+}
+.bh100 button {
+	height: 100%;
+}
+
+.bhr1 button {
+	height: 1rem;
+}
+.bhr2 button {
+	height: 2rem;
+}
+.bhr3 button {
+	height: 3rem;
+}
+.bhr3-5 button {
+	height: 3.5rem;
+}
+.bhr4 button {
+	height: 4rem;
+}
+.bhr5 button {
+	height: 5rem;
+}
+.bhr6 button {
+	height: 6rem;
+}
+.bhr7 button {
+	height: 7rem;
+}
+.bhr8 button {
+	height: 8rem;
+}
+.bhr9 button {
+	height: 9rem;
+}
+.bhr10 button {
+	height: 10rem;
+}
+.bhr12 button {
+	height: 12rem;
+}
+.bhr14 button {
+	height: 14rem;
+}
+.bhr16 button {
+	height: 16rem;
+}
+.bhr18 button {
+	height: 18rem;
+}
+.bhr20 button {
+	height: 20rem;
+}
+.bhr24 button {
+	height: 24rem;
+}
+.bhr25 button {
+	height: 25rem;
+}
+
+.fPadLeftXl {
+	padding-left: 2.73vw;
+}
+.fPadHorS {
+	padding-left: min(3vw, 30px);
+	padding-right: min(3vw, 30px);
+}
+.fPadHorXs {
+	padding-left: min(2vw, 20px);
+	padding-right: min(2vw, 20px);
+}
+.fPadHorXxs {
+	padding-left: min(1.5vw, 15px);
+	padding-right: min(1.5vw, 15px);
+}
+.fPadHorXxxs {
+	padding-left: 0.2vw;
+	padding-right: 0.2vw;
+}
+.fMarHorS {
+	margin-left: 1.8vw;
+	margin-right: 1.8vw;
+}
+
+/* FONTS SIZING ***********************************************/
+.lh0-5 {
+	line-height: 0.5 !important;
+}
+.lh0-7 {
+	line-height: 0.7 !important;
+}
+
+.lh0-8 {
+	line-height: 0.8 !important;
+}
+
+.lh0-9 {
+	line-height: 0.9 !important;
+}
+.lh1 {
+	line-height: 1 !important;
+}
+.lh1-1 {
+	line-height: 1.1;
+}
+.lh1-2 {
+	line-height: 1.2;
+}
+.lh1-3 {
+	line-height: 1.3 !important;
+}
+.lh1-5 {
+	line-height: 1.5;
+}
+.lh1-8 {
+	line-height: 1.5;
+}
+
+.fsLogo {
+	font-size: clamp(3rem, 4.5vw, 4rem);
+}
+
+.fsTinyBig {
+	font-size: clamp(1.4rem, 3vw, 2rem);
+}
+.fs-1,
+.fs-1 * {
+	font-size: clamp(0.9rem, 1vw, 1rem);
+	line-height: 1;
+}
+
+.fsA,
+.fsA button,
+.fsA * {
+	font-size: clamp(1.1rem, 1.5vw, 1.4rem) !important;
+}
+.fsB,
+.fsB button,
+.fsB * {
+	font-size: clamp(1.2rem, 1.3vw, 1.5rem) !important;
+	line-height: 1.2;
+}
+
+.fsCats {
+	font-size: clamp(1.6rem, 1.5vw, 2.1rem);
+	line-height: 1;
+}
+
+.fsC,
+.fsC button,
+.fsC * {
+	font-size: clamp(1.3rem, 1.2vw, 1.8rem) !important;
+	line-height: 1;
+}
+.fsD,
+.fsD button,
+.fsD * {
+	font-size: clamp(1.4rem, 1.7vw, 2rem) !important;
+	line-height: 1.1;
+}
+.fsE,
+.fsE button,
+.fsE * {
+	font-size: clamp(1.4rem, 1.3vw, 2.2rem) !important;
+	line-height: 1;
+}
+.fsF,
+.fsF * {
+	font-size: clamp(1.6rem, 1.5vw, 2.6rem);
+	line-height: 1;
+}
+.fsG {
+	font-size: clamp(2rem, 2vw, 3rem);
+	line-height: 0.8;
+}
+.fsH {
+	font-size: clamp(2.5rem, 2vw, 4rem);
+	line-height: 0.8;
+}
+.fsI {
+	font-size: clamp(4rem, 4vw, 5.5rem);
+	line-height: 0.8;
+}
+.fsJ {
+	font-size: clamp(3rem, 4vw, 7rem);
+	line-height: 0.8;
+}
+.fsK {
+	font-size: clamp(5rem, 3.8vw, 8rem);
+}
+
+/* FONT SIZES MOVED TO fontSizes.css ----------------------------------- */
+
+.down1 {
+	top: 0.1rem;
+}
+.down2 {
+	top: 0.3rem;
+}
+.down3 {
+	top: 0.8rem;
+}
+.down4 {
+	top: 1rem;
+}
+.down5 {
+	top: 2rem;
+}
+.down6 {
+	top: 3rem;
+}
+.down7 {
+	top: 4rem;
+}
+.down8 {
+	top: 6rem;
+}
+.down9 {
+	top: 8rem;
+}
+.down10 {
+	top: 10rem;
+}
+
+.bigger1 {
+	transform: scale(1.1);
+}
+.bigger2 {
+	transform: scale(1.2);
+}
+.bigger3 {
+	transform: scale(1.3);
+}
+.bigger4 {
+	transform: scale(1.4);
+}
+.bigger5 {
+	transform: scale(1.5);
+}
+.bigger6 {
+	transform: scale(1.6);
+}
+.bigger7 {
+	transform: scale(1.7);
+}
+.bigger8 {
+	transform: scale(1.8);
+}
+.bigger9 {
+	transform: scale(1.9);
+}
+.bigger10 {
+	transform: scale(2);
+}

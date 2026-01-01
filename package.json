@@ -1,0 +1,25 @@
+{
+	"type": "module",
+	"dependencies": {
+		"jodit-react": "^5.2.19",
+		"lru-cache": "^11.0.2"
+	},
+	"devDependencies": {
+		"concurrently": "^9.0.1"
+	},
+	"scripts": {
+		"lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
+		"lint:fix": "npm --prefix backend run lint:fix && npm --prefix frontend run lint:fix",
+		"predev": "npm install --silent && cd backend && npm install --silent || true",
+		"docker:up": "docker compose -p ministerra -f backend/docker-compose.yml --profile dev up -d redis-primary redis-replica1 redis-sentinel1 redis-sentinel2 redis-sentinel3 mysql mysql-replica mysql-replica-init prometheus grafana loki promtail-dev tempo otel-collector node-exporter cadvisor redis-exporter mysqld-exporter blackbox-exporter traefik || docker-compose -p ministerra -f backend/docker-compose.yml --profile dev up -d redis-primary redis-replica1 redis-sentinel1 redis-sentinel2 redis-sentinel3 mysql mysql-replica mysql-replica-init prometheus grafana loki promtail-dev tempo otel-collector node-exporter cadvisor redis-exporter mysqld-exporter blackbox-exporter traefik",
+		"docker:down": "npx --prefix backend tsx backend/scripts/docker-clean.ts backend/docker-compose.yml ministerra",
+		"docker:down:dev": "npm run docker:down",
+		"docker:down:min": "npm run docker:down",
+		"docker:down:all": "npx --prefix backend tsx backend/scripts/docker-clean.ts backend/docker-compose.yml ministerra --prune-volumes",
+		"dev:backend": "npm --prefix backend start",
+		"dev:frontend": "npm --prefix frontend run dev",
+		"dev": "npm run docker:down:dev && npm run docker:up && concurrently -n backend,frontend -c green,blue \"npm --prefix backend start\" \"npm --prefix frontend run dev\"",
+		"min": "npm --prefix backend run min",
+		"deploy:prod": "bash deploy.sh"
+	}
+}

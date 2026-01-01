@@ -1,0 +1,20 @@
+{
+	"title": "03 - Node.js Runtime",
+	"schemaVersion": 36,
+	"version": 1,
+	"refresh": "15s",
+	"panels": [
+		{ "type": "timeseries", "title": "Event Loop Lag", "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 }, "targets": [{ "expr": "nodejs_event_loop_lag_seconds" }] },
+		{
+			"type": "timeseries",
+			"title": "GC p95 (s)",
+			"gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+			"targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(nodejs_gc_duration_seconds_bucket[5m])))" }]
+		},
+		{ "type": "timeseries", "title": "Heap Used (bytes)", "gridPos": { "h": 6, "w": 12, "x": 0, "y": 6 }, "targets": [{ "expr": "process_resident_memory_bytes" }] },
+		{ "type": "timeseries", "title": "CPU Time (process)", "gridPos": { "h": 6, "w": 12, "x": 12, "y": 6 }, "targets": [{ "expr": "process_cpu_user_seconds_total" }] }
+	]
+}
+
+
+

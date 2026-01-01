@@ -1,0 +1,774 @@
+services:
+    # Development backend (bind mounts). In production, use the 'backend' service below.
+    backend-app:
+        profiles: ['dev']
+        image: node:24.12.0-bullseye
+        working_dir: /usr/src/app
+        volumes:
+            - ./:/usr/src/app
+            - ../shared:/usr/src/shared
+            - backend-node-modules:/usr/src/app/node_modules
+        environment:
+            - NODE_ENV=development
+            - TZ=UTC
+            - BE_PORT=${BE_PORT:-2208}
+            - SOCKET_PORT=${SOCKET_PORT:-2209}
+            - MONITORING_PORT=${MONITORING_PORT:-9464}
+            - MONITORING_TOKEN=${MONITORING_TOKEN:-devtoken}
+            - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-backend}
+            - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+            - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+            - REDIS_USE_SENTINEL=true
+            - REDIS_SENTINEL_NAME=mymaster
+            - REDIS_SENTINELS=redis-sentinel1:26379,redis-sentinel2:26379,redis-sentinel3:26379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_SENTINEL_PASSWORD=${REDIS_PASSWORD}
+            # MySQL connection for backend (Docker MySQL service)
+            - HOST=${DB_HOST:-mysql}
+            - DB_PORT=${DB_PORT:-3306}
+            - DB_USER=${DB_USER}
+            - DB_PASS=${DB_PASS}
+            - DB_NAME=${DB_NAME}
+            - DB_READ_HOST=${DB_READ_HOST:-mysql-replica}
+            - DB_READ_PORT=${DB_READ_PORT:-3306}
+            - DB_READ_SPLIT=${DB_READ_SPLIT:-1}
+        command:
+            - sh
+            - -c
+            - >-
+                if [ ! -d node_modules/@aws-sdk/client-sesv2 ]; then
+                  echo "Installing missing dependencies..."
+                  npm install --no-audit --no-fund
+                elif [ -d node_modules ] && [ "$(ls -A node_modules 2>/dev/null)" ]; then
+                  echo "Using cached node_modules"
+                else
+                  npm ci --no-audit --no-fund
+                fi;
+                [ -x node_modules/.bin/tsx ] || npm install --no-audit --no-fund;
+                node_modules/.bin/tsx app.ts
+        ports:
+            - '${BE_PORT:-2208}:${BE_PORT:-2208}'
+            - '${SOCKET_PORT:-2209}:${SOCKET_PORT:-2209}'
+        healthcheck:
+            test: ['CMD-SHELL', 'curl -fsS http://localhost:${BE_PORT:-2208}/metrics || exit 1']
+            interval: 30s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        labels:
+            - 'traefik.enable=false'
+        depends_on:
+            redis-primary:
+                condition: service_healthy
+            redis-replica1:
+                condition: service_healthy
+            redis-sentinel1:
+                condition: service_healthy
+            redis-sentinel2:
+                condition: service_healthy
+            redis-sentinel3:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
+            mysql-replica:
+                condition: service_healthy
+
+    # Minimal backend for fastest startup (no Redis Sentinel, no monitoring)
+    backend-min:
+        profiles: ['min']
+        container_name: Mini
+        image: node:24.12.0-bullseye
+        working_dir: /usr/src/app
+        volumes:
+            - ./:/usr/src/app
+            - ../shared:/usr/src/shared
+            - backend-node-modules:/usr/src/app/node_modules
+        environment:
+            - NODE_ENV=development
+            - TZ=UTC
+            - BE_PORT=${BE_PORT:-2208}
+            - SOCKET_PORT=${SOCKET_PORT:-2209}
+            - MONITORING_PORT=${MONITORING_PORT:-9464}
+            - MONITORING_TOKEN=${MONITORING_TOKEN:-devtoken}
+            - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-backend}
+            - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+            - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+            # Direct Redis (no Sentinel)
+            - REDIS_USE_SENTINEL=false
+            - REDIS_HOST=redis-primary
+            - REDIS_PORT=6379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            # MySQL connection (internal service)
+            - HOST=${DB_HOST:-mysql}
+            - DB_PORT=${DB_PORT:-3306}
+            - DB_USER=${DB_USER}
+            - DB_PASS=${DB_PASS}
+            - DB_NAME=${DB_NAME}
+            - DB_READ_HOST=${DB_HOST:-mysql}
+            - DB_READ_PORT=${DB_PORT:-3306}
+            - DB_READ_SPLIT=0
+            # Enable single-process minimal mode
+            - MIN_MODE=1
+        command:
+            - sh
+            - -c
+            - >-
+                if [ ! -d node_modules/@aws-sdk/client-sesv2 ]; then
+                  echo "Installing missing dependencies..."
+                  npm install --no-audit --no-fund
+                elif [ -d node_modules ] && [ "$(ls -A node_modules 2>/dev/null)" ]; then
+                  echo "Using cached node_modules"
+                else
+                  npm ci --no-audit --no-fund
+                fi;
+                [ -x node_modules/.bin/tsx ] || npm install --no-audit --no-fund;
+                node_modules/.bin/tsx --watch app.ts
+        ports:
+            - '${BE_PORT:-2208}:${BE_PORT:-2208}'
+            - '${SOCKET_PORT:-2209}:${SOCKET_PORT:-2209}'
+        healthcheck:
+            test: ['CMD-SHELL', 'curl -fsS http://localhost:${BE_PORT:-2208}/metrics || exit 1']
+            interval: 30s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        labels:
+            - 'traefik.enable=false'
+        depends_on:
+            redis-primary:
+                condition: service_started
+            mysql:
+                condition: service_started
+
+    # Production backend (built image, no bind mounts). Exposed via Traefik.
+    backend:
+        profiles: ['prod']
+        build:
+            context: ..
+            dockerfile: backend/Dockerfile
+        image: ministerra-backend:latest
+        working_dir: /usr/src/app
+        environment:
+            - NODE_ENV=production
+            - TZ=UTC
+            - BE_PORT=${BE_PORT:-2208}
+            - SOCKET_PORT=${SOCKET_PORT:-2209}
+            - MONITORING_PORT=${MONITORING_PORT:-9464}
+            - MONITORING_TOKEN=${MONITORING_TOKEN}
+            - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-backend}
+            - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+            - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+            - REDIS_USE_SENTINEL=true
+            - REDIS_SENTINEL_NAME=mymaster
+            - REDIS_SENTINELS=redis-sentinel1:26379,redis-sentinel2:26379,redis-sentinel3:26379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_SENTINEL_PASSWORD=${REDIS_PASSWORD}
+            # MySQL connection for backend (Docker MySQL service)
+            - HOST=${DB_HOST:-mysql}
+            - DB_PORT=${DB_PORT:-3306}
+            - DB_USER=${DB_USER}
+            - DB_PASS=${DB_PASS}
+            - DB_NAME=${DB_NAME}
+            - DB_READ_HOST=${DB_READ_HOST:-mysql-replica}
+            - DB_READ_PORT=${DB_READ_PORT:-3306}
+            - DB_READ_SPLIT=${DB_READ_SPLIT:-1}
+        volumes:
+            - ./logging/error:/usr/src/app/logging/error
+            - ./logging/alert:/usr/src/app/logging/alert
+            - ./logging/slow:/usr/src/app/logging/slow
+            - ./logging/debug:/usr/src/app/logging/debug
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - >-
+                    if [ -z "$${MONITORING_TOKEN}" ]; then
+                      curl -fsS http://localhost:${BE_PORT:-2208}/metrics || exit 1;
+                    else
+                      curl -fsS -H "Authorization: Bearer $${MONITORING_TOKEN}" http://localhost:${BE_PORT:-2208}/metrics || exit 1;
+                    fi
+            interval: 30s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        ports:
+            - '${SOCKET_PORT:-2209}:${SOCKET_PORT:-2209}'
+        # this can be simplified by grouping all frontendAPIs under one path prefix (e.g. /api)
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.backend.rule=Host(`${APP_HOST}`) && (PathPrefix(`/entrance`) || PathPrefix(`/foundation`) || PathPrefix(`/event`) || PathPrefix(`/gallery`) || PathPrefix(`/user`) || PathPrefix(`/content`) || PathPrefix(`/discussion`) || PathPrefix(`/report`) || PathPrefix(`/editor`) || PathPrefix(`/setup`) || PathPrefix(`/interests`) || PathPrefix(`/locations`) || PathPrefix(`/rating`) || PathPrefix(`/search`) || PathPrefix(`/chat`) || PathPrefix(`/alerts`) || PathPrefix(`/invites`) || PathPrefix(`/devices`) || PathPrefix(`/public`) || PathPrefix(`/metrics`) || PathPrefix(`/admin`))'
+            - 'traefik.http.routers.backend.entrypoints=websecure'
+            - 'traefik.http.routers.backend.priority=100'
+            - 'traefik.http.routers.backend.tls.certresolver=myresolver'
+            - 'traefik.http.routers.backend.service=backend'
+            - 'traefik.http.services.backend.loadbalancer.server.port=${BE_PORT:-2208}'
+            # Sticky Socket.IO via path routing to SOCKET_PORT
+            - 'traefik.http.routers.socket.rule=Host(`${APP_HOST}`) && PathPrefix(`/socket.io`)'
+            - 'traefik.http.routers.socket.entrypoints=websecure'
+            - 'traefik.http.routers.socket.tls.certresolver=myresolver'
+            - 'traefik.http.routers.socket.priority=100'
+            - 'traefik.http.routers.socket.middlewares=socket-rate-limit'
+            - 'traefik.http.routers.socket.service=socket'
+            - 'traefik.http.services.socket.loadbalancer.server.port=${SOCKET_PORT:-2209}'
+            - 'traefik.http.middlewares.socket-rate-limit.ratelimit.average=${TRAEFIK_SOCKET_RL_AVG:-10}'
+            - 'traefik.http.middlewares.socket-rate-limit.ratelimit.burst=${TRAEFIK_SOCKET_RL_BURST:-20}'
+            - 'traefik.http.middlewares.socket-rate-limit.ratelimit.period=1s'
+            - 'traefik.http.middlewares.socket-rate-limit.ratelimit.sourcecriterion.ipstrategy.depth=1'
+        depends_on:
+            redis-primary:
+                condition: service_healthy
+            redis-replica1:
+                condition: service_healthy
+            redis-sentinel1:
+                condition: service_healthy
+            redis-sentinel2:
+                condition: service_healthy
+            redis-sentinel3:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
+            mysql-replica:
+                condition: service_healthy
+
+    frontend:
+        profiles: ['prod']
+        build:
+            context: ../frontend
+            dockerfile: Dockerfile
+        image: ministerra-frontend:latest
+        restart: unless-stopped
+        environment:
+            - NODE_ENV=production
+            - VITE_BACK_END=${VITE_BACK_END:-https://${APP_HOST}}
+            - VITE_FRONT_END=${VITE_FRONT_END:-https://${APP_HOST}}
+            - VITE_SOCKET_STICKY=${VITE_SOCKET_STICKY:-https://${APP_HOST}}
+            - VITE_SOCKET_ALLOW_POLLING=${VITE_SOCKET_ALLOW_POLLING:-false}
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.frontend.rule=Host(`${APP_HOST}`)'
+            - 'traefik.http.routers.frontend.entrypoints=websecure'
+            - 'traefik.http.routers.frontend.tls.certresolver=myresolver'
+            - 'traefik.http.routers.frontend.priority=1'
+            - 'traefik.http.services.frontend.loadbalancer.server.port=80'
+
+    frontend-dev:
+        profiles: ['dev', 'min']
+        image: node:24.12.0-bullseye
+        working_dir: /app
+        volumes:
+            - ../frontend:/app
+            - ../shared:/shared
+            - frontend-node-modules:/app/node_modules
+        command:
+            - sh
+            - -c
+            - >-
+                if [ -d node_modules ] && [ "$(ls -A node_modules 2>/dev/null)" ]; then echo "Using cached node_modules"; else npm ci --no-audit --no-fund; fi && npm run dev
+        environment:
+            - NODE_ENV=development
+            - VITE_BACK_END=${VITE_BACK_END:-http://localhost:2208}
+            - VITE_API_URL=${VITE_API_URL:-http://localhost:2208}
+        ports:
+            - '${FRONTEND_PORT:-5173}:5173'
+        restart: unless-stopped
+        labels:
+            - 'traefik.enable=false'
+
+    #     zookeeper:
+    #         image: confluentinc/cp-zookeeper:latest
+    #         environment:
+    #             ZOOKEEPER_CLIENT_PORT: 2181
+    #             ZOOKEEPER_TICK_TIME: 2000
+    #         ports:
+    #             - '2181:2181'
+    #         networks:
+    #             - custom_network
+    #         volumes:
+    #             - zookeeper-data:/var/lib/zookeeper
+
+    #     kafka:
+    #         image: confluentinc/cp-kafka:latest
+    #         depends_on:
+    #             - zookeeper
+    #         environment:
+    #             KAFKA_BROKER_ID: 1
+    #             KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    #             KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+    #             KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    #             KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    #             KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    #         ports:
+    #             - '9092:9092'
+    #         networks:
+    #             - custom_network
+    #         volumes:
+    #             - kafka-data:/var/lib/kafka/data
+
+    redis-primary:
+        image: redis:7.4.7
+        ports:
+            - '${REDIS_PRIMARY_PORT:-6379}:6379'
+        volumes:
+            - redis-primary-data:/data
+            - ./systems/redis:/usr/local/etc/redis:ro
+        command:
+            - sh
+            - -c
+            - >-
+                cp /usr/local/etc/redis/master.conf /data/master.conf &&
+                exec redis-server /data/master.conf --requirepass "$${REDIS_PASSWORD}"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -a "$${REDIS_PASSWORD}" ping | grep PONG'] # redis uses requirepass, healthcheck must auth
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        restart: unless-stopped
+
+    redis-replica1:
+        image: redis:7.4.7
+        depends_on:
+            - redis-primary
+        volumes:
+            - redis-replica1-data:/data
+            - ./systems/redis:/usr/local/etc/redis:ro
+        command:
+            - sh
+            - -c
+            - >-
+                cp /usr/local/etc/redis/slave.conf /data/slave.conf &&
+                exec redis-server /data/slave.conf --requirepass "$${REDIS_PASSWORD}" --masterauth "$${REDIS_PASSWORD}"
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -a "$${REDIS_PASSWORD}" ping | grep PONG'] #  replica also requires auth
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        restart: unless-stopped
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+    redis-sentinel1:
+        image: redis:7.4.7
+        depends_on:
+            - redis-primary
+            - redis-replica1
+        ports:
+            - '${REDIS_SENTINEL1_PORT:-26379}:26379'
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+        command:
+            - sh
+            - -c
+            - >-
+                cp /usr/local/etc/redis/sentinel1.conf /data/sentinel.conf &&
+                sed "s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g" /data/sentinel.conf > /data/sentinel.rendered.conf &&
+                exec redis-sentinel /data/sentinel.rendered.conf
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -p 26379 -a "$${REDIS_PASSWORD}" ping | grep PONG'] #  sentinel may be protected, keep check compatible
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        restart: unless-stopped
+
+    redis-sentinel2:
+        image: redis:7.4.7
+        depends_on:
+            - redis-primary
+            - redis-replica1
+        ports:
+            - '${REDIS_SENTINEL2_PORT:-26380}:26379'
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+        command:
+            - sh
+            - -c
+            - >-
+                cp /usr/local/etc/redis/sentinel2.conf /data/sentinel.conf &&
+                sed "s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g" /data/sentinel.conf > /data/sentinel.rendered.conf &&
+                exec redis-sentinel /data/sentinel.rendered.conf
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -p 26379 -a "$${REDIS_PASSWORD}" ping | grep PONG'] # sentinel may be protected, keep check compatible
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        restart: unless-stopped
+
+    redis-sentinel3:
+        image: redis:7.4.7
+        depends_on:
+            - redis-primary
+            - redis-replica1
+        ports:
+            - '${REDIS_SENTINEL3_PORT:-26381}:26379'
+        volumes:
+            - ./systems/redis:/usr/local/etc/redis:ro
+        command:
+            - sh
+            - -c
+            - >-
+                cp /usr/local/etc/redis/sentinel3.conf /data/sentinel.conf &&
+                sed "s/\\$\\{REDIS_PASSWORD\\}/$${REDIS_PASSWORD}/g" /data/sentinel.conf > /data/sentinel.rendered.conf &&
+                exec redis-sentinel /data/sentinel.rendered.conf
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        healthcheck:
+            test: ['CMD-SHELL', 'redis-cli -p 26379 -a "$${REDIS_PASSWORD}" ping | grep PONG'] #  sentinel may be protected, keep check compatible
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        restart: unless-stopped
+
+    traefik:
+        image: traefik:v3.0
+        command:
+            - '--providers.docker=true'
+            - '--providers.docker.exposedbydefault=false'
+            - '--entrypoints.web.address=:80'
+            - '--entrypoints.websecure.address=:443'
+            - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+            - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
+            - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
+            - '--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}'
+            - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+            - '--metrics.prometheus=true'
+            - '--metrics.prometheus.addEntryPointsLabels=true'
+            - '--metrics.prometheus.addrouterslabels=true'
+            - '--api.dashboard=true'
+        ports:
+            - '${TRAEFIK_HTTP_PORT:-80}:80'
+            - '${TRAEFIK_HTTPS_PORT:-443}:443'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - traefik-letsencrypt:/letsencrypt
+        restart: unless-stopped
+
+    redisinsight:
+        image: redis/redisinsight:2.70.1
+        depends_on:
+            - redis-primary
+        ports:
+            - '${REDISINSIGHT_PORT:-5540}:5540'
+
+    prometheus:
+        image: prom/prometheus:v2.55.1
+        restart: unless-stopped
+        volumes:
+            - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./monitoring/prometheus/secrets:/etc/prometheus/secrets:ro
+            - prometheus-data:/prometheus
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=15d
+        ports:
+            - '${PROMETHEUS_PORT:-9090}:9090'
+
+    alertmanager:
+        image: prom/alertmanager:v0.29.0
+        restart: unless-stopped
+        volumes:
+            - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+            - alertmanager-data:/alertmanager
+        command:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+        ports:
+            - '${ALERTMANAGER_PORT:-9093}:9093'
+        depends_on:
+            - prometheus
+
+    grafana:
+        image: grafana/grafana:10.4.0
+        restart: unless-stopped
+        environment:
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+            - GF_AUTH_ANONYMOUS_ENABLED=false
+        volumes:
+            - grafana-data:/var/lib/grafana
+            - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+        ports:
+            - '${GRAFANA_PORT:-3000}:3000'
+        depends_on:
+            - prometheus
+            - loki
+            - tempo
+
+    loki:
+        image: grafana/loki:2.9.0
+        restart: unless-stopped
+        command: -config.file=/etc/loki/config.yml
+        volumes:
+            - ./monitoring/loki/loki-config.yml:/etc/loki/config.yml:ro
+            - loki-data:/loki
+        ports:
+            - '${LOKI_PORT:-3100}:3100'
+
+    # Production promtail: scrape from shared volumes with backend
+    promtail:
+        profiles: ['prod']
+        image: grafana/promtail:2.9.0
+        restart: unless-stopped
+        command: -config.file=/etc/promtail/config.yml
+        volumes:
+            - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+            - ./logging/alert:/usr/src/app/logging/alert:ro
+            - ./logging/error:/usr/src/app/logging/error:ro
+            - ./logging/slow:/usr/src/app/logging/slow:ro
+        depends_on:
+            - loki
+            - redis-primary
+
+    # Development promtail: scrape from host bind mounts
+    promtail-dev:
+        profiles: ['dev']
+        image: grafana/promtail:2.9.0
+        restart: unless-stopped
+        command: -config.file=/etc/promtail/config.yml
+        volumes:
+            - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+            - ./logs/info:/var/log/app/info:ro
+            - ./logs/error:/var/log/app/error:ro
+            - ./logs/access:/var/log/app/access:ro
+        depends_on:
+            - loki
+            - redis-primary
+
+    tempo:
+        image: grafana/tempo:2.4.1
+        restart: unless-stopped
+        command: ['-config.file=/etc/tempo/config.yml']
+        volumes:
+            - ./monitoring/tempo/tempo-config.yml:/etc/tempo/config.yml:ro
+            - tempo-data:/var/tempo
+        ports:
+            - '${TEMPO_PORT:-3200}:3200'
+
+    otel-collector:
+        image: otel/opentelemetry-collector-contrib:0.98.0
+        restart: unless-stopped
+        command: ['--config=/etc/otelcol/config.yaml']
+        volumes:
+            - ./monitoring/otel-collector/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+        ports:
+            - '${OTEL_GRPC_PORT:-4317}:4317' # OTLP gRPC
+            - '${OTEL_HTTP_PORT:-4318}:4318' # OTLP HTTP
+            - '${OTEL_PROM_PORT:-8889}:8889' # Prometheus exporter (collector metrics)
+        depends_on:
+            - tempo
+            - prometheus
+
+    node-exporter:
+        image: prom/node-exporter:v1.9.1
+        restart: unless-stopped
+        ports:
+            - '${NODE_EXPORTER_PORT:-9100}:9100'
+
+    cadvisor:
+        image: gcr.io/cadvisor/cadvisor:v0.49.1
+        restart: unless-stopped
+        ports:
+            - '${CADVISOR_PORT:-8080}:8080'
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:ro
+            - /sys:/sys:ro
+            - /var/lib/docker/:/var/lib/docker:ro
+        privileged: true
+
+    redis-exporter:
+        image: oliver006/redis_exporter:v1.54.0
+        restart: unless-stopped
+        environment:
+            - REDIS_ADDR=redis-primary:6379
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        ports:
+            - '${REDIS_EXPORTER_PORT:-9121}:9121'
+        depends_on:
+            - redis-primary
+
+    mysql:
+        image: mysql:8.0
+        command:
+            - --server-id=${MYSQL_PRIMARY_SERVER_ID:-1}
+            - --log-bin=mysql-bin
+            - --binlog-format=ROW
+            - --gtid-mode=ON
+            - --enforce-gtid-consistency=ON
+            - --sync-binlog=1
+            - --binlog-checksum=CRC32
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+            - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:-%}
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASS}
+        ports:
+            - '${MYSQL_HOST_PORT:-3307}:3306'
+        volumes:
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD || exit 1']
+            interval: 10s
+            timeout: 10s
+            retries: 30
+            start_period: 60s
+        restart: unless-stopped
+
+    mysql-replica:
+        profiles: ['dev', 'prod']
+        image: mysql:8.0
+        command:
+            - --server-id=${MYSQL_REPLICA_SERVER_ID:-2}
+            - --relay-log=relay-bin
+            - --read-only=1
+            - --log-bin=mysql-bin
+            - --binlog-format=ROW
+            - --gtid-mode=ON
+            - --enforce-gtid-consistency=ON
+            - --binlog-checksum=CRC32
+            - --log-slave-updates=ON
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+        depends_on:
+            mysql:
+                condition: service_healthy
+        volumes:
+            - mysql-replica-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD || exit 1']
+            interval: 10s
+            timeout: 10s
+            retries: 30
+            start_period: 60s
+        restart: unless-stopped
+
+    mysql-replica-init:
+        profiles: ['dev', 'prod']
+        image: mysql:8.0
+        restart: 'no'
+        depends_on:
+            mysql:
+                condition: service_healthy
+            mysql-replica:
+                condition: service_healthy
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+            - MYSQL_REPLICATION_USER=${MYSQL_REPLICATION_USER:-replicator}
+            - MYSQL_REPLICATION_PASSWORD=${MYSQL_REPLICATION_PASSWORD:-replicatorpass}
+            - MYSQL_PRIMARY_HOST=${DB_HOST:-mysql}
+            - MYSQL_PRIMARY_PORT=${DB_PORT:-3306}
+            - MYSQL_REPLICA_HOST=${DB_READ_HOST:-mysql-replica}
+            - MYSQL_REPLICA_PORT=${DB_READ_PORT:-3306}
+        entrypoint: /bin/bash
+        command:
+            - -c
+            - |
+                set -euo pipefail
+
+                wait_for_mysql() {
+                  local host="$1"
+                  local port="$2"
+                  for i in $(seq 1 30); do
+                    if mysqladmin ping -h "$$host" -P "$$port" -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent; then
+                      return 0
+                    fi
+                    sleep 2
+                  done
+                  echo "MySQL at $$host:$$port not ready in time" >&2
+                  exit 1
+                }
+
+                wait_for_mysql "$$MYSQL_PRIMARY_HOST" "$$MYSQL_PRIMARY_PORT"
+                wait_for_mysql "$$MYSQL_REPLICA_HOST" "$$MYSQL_REPLICA_PORT"
+
+                mysql -h "$$MYSQL_PRIMARY_HOST" -P "$$MYSQL_PRIMARY_PORT" -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "
+                  CREATE USER IF NOT EXISTS '$${MYSQL_REPLICATION_USER}'@'%' IDENTIFIED BY '$${MYSQL_REPLICATION_PASSWORD}';
+                  GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '$${MYSQL_REPLICATION_USER}'@'%';
+                  FLUSH PRIVILEGES;
+                "
+
+                mysql -h "$$MYSQL_REPLICA_HOST" -P "$$MYSQL_REPLICA_PORT" -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "STOP REPLICA;" || true
+                mysql -h "$$MYSQL_REPLICA_HOST" -P "$$MYSQL_REPLICA_PORT" -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "RESET REPLICA ALL;" || true
+
+                mysql -h "$$MYSQL_REPLICA_HOST" -P "$$MYSQL_REPLICA_PORT" -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "
+                  CHANGE REPLICATION SOURCE TO
+                    SOURCE_HOST='$${MYSQL_PRIMARY_HOST}',
+                    SOURCE_PORT=$$MYSQL_PRIMARY_PORT,
+                    SOURCE_USER='$${MYSQL_REPLICATION_USER}',
+                    SOURCE_PASSWORD='$${MYSQL_REPLICATION_PASSWORD}',
+                    SOURCE_AUTO_POSITION=1,
+                    GET_SOURCE_PUBLIC_KEY=1;
+                  START REPLICA;
+                "
+
+                mysql -h "$$MYSQL_REPLICA_HOST" -P "$$MYSQL_REPLICA_PORT" -uroot -p"$$MYSQL_ROOT_PASSWORD" -e "
+                  SET GLOBAL read_only = 1;
+                  SET GLOBAL super_read_only = 1;
+                "
+
+    # Host-exposed MySQL for minimal host-run development
+    mysql-host:
+        profiles: ['host']
+        image: mysql:8.0
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+            - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST:-%}
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASS}
+        ports:
+            - '${MYSQL_HOST_PORT:-3306}:3306'
+        volumes:
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD || exit 1']
+            interval: 10s
+            timeout: 10s
+            retries: 30
+            start_period: 60s
+        restart: unless-stopped
+
+    mysqld-exporter:
+        image: prom/mysqld-exporter:v0.17.2
+        restart: unless-stopped
+        command:
+            - --config.my-cnf=/etc/mysqld_exporter/.my.cnf
+            - --mysqld.address=mysql:3306
+        volumes:
+            - ./monitoring/mysql/.my.cnf:/etc/mysqld_exporter/.my.cnf:ro
+        ports:
+            - '${MYSQLD_EXPORTER_PORT:-9104}:9104'
+
+    blackbox-exporter:
+        image: prom/blackbox-exporter:v0.27.0
+        restart: unless-stopped
+        command:
+            - --config.file=/etc/blackbox_exporter/config.yml
+        volumes:
+            - ./monitoring/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+        ports:
+            - '${BLACKBOX_PORT:-9115}:9115'
+
+volumes:
+    redis-primary-data:
+    backend-node-modules:
+    mysql-data:
+        name: ${MYSQL_DATA_VOLUME_NAME:-backend_mysql-data}
+        external: ${MYSQL_DATA_EXTERNAL:-false}
+    mysql-replica-data:
+    prometheus-data:
+    grafana-data:
+    loki-data:
+    tempo-data:
+    alertmanager-data:
+    traefik-letsencrypt:
+    redis-replica1-data:
+    redis-sentinel1-data:
+    redis-sentinel2-data:
+    redis-sentinel3-data:
+    frontend-node-modules:
+    # kafka-data:
+    # zookeeper-data:

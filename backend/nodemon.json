@@ -1,0 +1,24 @@
+{
+	"ignore": [
+		"node_modules/**",
+		"*.log",
+		"*.log.*",
+		"accessLogs/**",
+		"infoLogs/**",
+		"errorLogs/**",
+		"writeFailures/**",
+		"logs/**",
+		"public/**",
+		"monitoring/**",
+		"docs/**",
+		"Mat*/**",
+		"Matějn/**",
+		"debug_app.log",
+		"debug_log.txt"
+	],
+	"watch": ["app.ts", "router.ts", "variables.ts", "otel.ts", "modules/**/*.ts", "systems/**/*.ts", "tasks/**/*.ts", "utilities/**/*.ts"],
+	"ext": "ts",
+	"delay": "200ms",
+	"signal": "SIGTERM",
+	"legacyWatch": true
+}

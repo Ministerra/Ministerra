@@ -1,0 +1,14 @@
+{
+	"title": "02 - Socket.IO",
+	"schemaVersion": 36,
+	"version": 1,
+	"refresh": "15s",
+	"panels": [
+		{ "type": "timeseries", "title": "Connections", "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 }, "targets": [{ "expr": "sum(socketio_connections)" }] },
+		{ "type": "timeseries", "title": "Messages/sec by event", "gridPos": { "h": 10, "w": 24, "x": 0, "y": 6 }, "targets": [{ "expr": "sum by (event) (rate(socketio_messages_total[5m]))" }] },
+		{ "type": "timeseries", "title": "Errors/sec", "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 }, "targets": [{ "expr": "sum(rate(socketio_errors_total[5m]))" }] }
+	]
+}
+
+
+

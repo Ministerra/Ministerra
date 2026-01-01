@@ -1,0 +1,73 @@
+{
+	"id": null,
+	"uid": "endpoints",
+	"title": "05 - Endpoint Performance",
+	"schemaVersion": 36,
+	"version": 1,
+	"refresh": "15s",
+	"timezone": "browser",
+	"time": { "from": "now-6h", "to": "now" },
+	"panels": [
+		{
+			"type": "stat",
+			"title": "Total RPM (5m)",
+			"gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+			"targets": [{ "expr": "sum(rate(http_requests_total[5m])) * 60" }],
+			"fieldConfig": { "defaults": { "unit": "req/min", "decimals": 1 } }
+		},
+		{ "type": "stat", "title": "Slow HTTP /s (>=400ms)", "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 }, "targets": [{ "expr": "sum(rate(slow_http_requests_total[5m]))" }] },
+		{
+			"type": "stat",
+			"title": "Global p95 (s)",
+			"gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+			"targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))" }],
+			"fieldConfig": { "defaults": { "unit": "s", "decimals": 3 } }
+		},
+		{
+			"type": "stat",
+			"title": "Global Error % (5m)",
+			"gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+			"targets": [{ "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))" }],
+			"fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2 } }
+		},
+
+		{
+			"type": "table",
+			"title": "Top routes by RPM (5m)",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+			"targets": [{ "expr": "topk(15, sum by (route) (rate(http_requests_total[5m])) * 60)" }]
+		},
+		{
+			"type": "table",
+			"title": "Top routes by Error % (5m)",
+			"gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+			"targets": [{ "expr": "topk(15, (sum by(route)(rate(http_requests_total{status_code=~\\\"5..\\\"}[5m])) / sum by(route)(rate(http_requests_total[5m]))))" }]
+		},
+
+		{
+			"type": "timeseries",
+			"title": "p95 latency by route (s)",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+			"targets": [{ "expr": "histogram_quantile(0.95, sum by (route,le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "{{route}}" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "Slow HTTP per route (/s)",
+			"gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+			"targets": [{ "expr": "sum by(route) (rate(slow_http_requests_total[5m]))", "legendFormat": "{{route}}" }]
+		},
+
+		{
+			"type": "table",
+			"title": "Routes failing SLO (p95 > 0.4s)",
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 20 },
+			"targets": [{ "expr": "topk(20, histogram_quantile(0.95, sum by (route,le) (rate(http_request_duration_seconds_bucket[5m])))) > 0.4" }]
+		},
+		{
+			"type": "table",
+			"title": "Apdex (0.4s) by route (5m)",
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 20 },
+			"targets": [{ "expr": "(sum by(route)(rate(http_request_duration_seconds_bucket{le=\"0.4\"}[5m])) / sum by(route)(rate(http_request_duration_seconds_count[5m])))" }]
+		}
+	]
+}

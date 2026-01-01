@@ -1,0 +1,27 @@
+groups:
+    - name: slo-burn
+      rules:
+          # Error budget 0.5% over 30 days -> fast/slow burn examples
+          - record: job:http_error_ratio_5m
+            expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
+
+          - alert: SLOErrorBudgetBurnFast
+            expr: job:http_error_ratio_5m > 0.072 # ~14.4x budget consumption for 0.5% SLO
+            for: 2m
+            labels:
+                severity: critical
+            annotations:
+                summary: 'SLO fast burn (5m)'
+                description: 'Error ratio > 7.2% over 5m.'
+
+          - alert: SLOErrorBudgetBurnSlow
+            expr: avg_over_time(job:http_error_ratio_5m[1h]) > 0.03
+            for: 1h
+            labels:
+                severity: warning
+            annotations:
+                summary: 'SLO slow burn (1h)'
+                description: 'Error ratio > 3% over 1h.'
+
+
+

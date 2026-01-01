@@ -1,0 +1,349 @@
+/* FONT SIZE SCALE ----------------------------------- 100 classes with aggressive mobile-to-desktop scaling */
+/* Mobile min stays compressed, desktop max grows aggressively. Ratio increases with class number */
+/* fs6-fs10: barely readable to small. fs11-fs30: small to medium. fs31-fs60: medium to large. fs61-fs100: large to massive */
+
+/* MICRO TEXT ----------------------------------- barely readable, for fine print */
+.fs6 {
+	font-size: clamp(0.55rem, 1vw, 0.65rem);
+}
+.fs2 {
+	font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+}
+.fs3 {
+	font-size: clamp(0.6rem, 1.4vw, 0.85rem);
+}
+.fs4 {
+	font-size: clamp(0.6rem, 1.6vw, 0.95rem);
+}
+.fs5 {
+	font-size: clamp(0.65rem, 1.8vw, 1.05rem);
+}
+
+/* TINY TEXT ----------------------------------- small captions, labels */
+.fs6 {
+	font-size: clamp(0.65rem, 2vw, 1.15rem);
+}
+.fs7 {
+	font-size: clamp(0.7rem, 2.2vw, 1.25rem);
+}
+.fs8 {
+	font-size: clamp(0.7rem, 2.4vw, 1.35rem);
+}
+.fs9 {
+	font-size: clamp(0.75rem, 2.6vw, 1.45rem);
+}
+.fs10 {
+	font-size: clamp(0.75rem, 2.8vw, 1.55rem);
+}
+
+/* SMALL TEXT ----------------------------------- readable body text on mobile, comfortable on desktop */
+.fs11 {
+	font-size: clamp(0.8rem, 3vw, 1.65rem);
+}
+.fs12 {
+	font-size: clamp(0.8rem, 3.2vw, 1.75rem);
+}
+.fs13 {
+	font-size: clamp(0.85rem, 3.4vw, 1.85rem);
+}
+.fs14 {
+	font-size: clamp(0.85rem, 3.6vw, 1.95rem);
+}
+.fs15 {
+	font-size: clamp(0.9rem, 3.8vw, 2.05rem);
+}
+
+/* REGULAR TEXT ----------------------------------- standard body text */
+.fs16 {
+	font-size: clamp(0.9rem, 4vw, 2.15rem);
+}
+.fs17 {
+	font-size: clamp(0.95rem, 4.2vw, 2.3rem);
+}
+.fs18 {
+	font-size: clamp(0.95rem, 4.4vw, 2.45rem);
+}
+.fs19 {
+	font-size: clamp(1rem, 4.6vw, 2.6rem);
+}
+.fs20 {
+	font-size: clamp(1rem, 4.8vw, 2.75rem);
+}
+
+/* MEDIUM TEXT ----------------------------------- emphasized body, small headings */
+.fs21 {
+	font-size: clamp(1.05rem, 5vw, 2.9rem);
+}
+.fs22 {
+	font-size: clamp(1.05rem, 5.2vw, 3.05rem);
+}
+.fs23 {
+	font-size: clamp(1.1rem, 5.4vw, 3.2rem);
+}
+.fs24 {
+	font-size: clamp(1.1rem, 5.6vw, 3.35rem);
+}
+.fs25 {
+	font-size: clamp(1.15rem, 5.8vw, 3.5rem);
+}
+
+/* SUBHEADING ----------------------------------- section titles, card headers */
+.fs26 {
+	font-size: clamp(1.15rem, 6vw, 3.7rem);
+}
+.fs27 {
+	font-size: clamp(1.2rem, 6.2vw, 3.9rem);
+}
+.fs28 {
+	font-size: clamp(1.2rem, 6.4vw, 4.1rem);
+}
+.fs29 {
+	font-size: clamp(1.25rem, 6.6vw, 4.3rem);
+}
+.fs30 {
+	font-size: clamp(1.25rem, 6.8vw, 4.5rem);
+}
+
+/* HEADING SMALL ----------------------------------- h4/h5 equivalent */
+.fs31 {
+	font-size: clamp(1.3rem, 7vw, 4.7rem);
+}
+.fs32 {
+	font-size: clamp(1.3rem, 7.2vw, 4.9rem);
+}
+.fs33 {
+	font-size: clamp(1.35rem, 7.4vw, 5.1rem);
+}
+.fs34 {
+	font-size: clamp(1.35rem, 7.6vw, 5.3rem);
+}
+.fs35 {
+	font-size: clamp(1.4rem, 7.8vw, 5.5rem);
+}
+
+/* HEADING MEDIUM ----------------------------------- h3 equivalent */
+.fs36 {
+	font-size: clamp(1.4rem, 8vw, 5.7rem);
+}
+.fs37 {
+	font-size: clamp(1.45rem, 8.2vw, 5.9rem);
+}
+.fs38 {
+	font-size: clamp(1.45rem, 8.4vw, 6.1rem);
+}
+.fs39 {
+	font-size: clamp(1.5rem, 8.6vw, 6.3rem);
+}
+.fs40 {
+	font-size: clamp(1.5rem, 8.8vw, 6.5rem);
+}
+
+/* HEADING LARGE ----------------------------------- h2 equivalent */
+.fs41 {
+	font-size: clamp(1.55rem, 9vw, 6.8rem);
+}
+.fs42 {
+	font-size: clamp(1.55rem, 9.2vw, 7.1rem);
+}
+.fs43 {
+	font-size: clamp(1.6rem, 9.4vw, 7.4rem);
+}
+.fs44 {
+	font-size: clamp(1.6rem, 9.6vw, 7.7rem);
+}
+.fs45 {
+	font-size: clamp(1.65rem, 9.8vw, 8rem);
+}
+
+/* TITLE ----------------------------------- h1 equivalent, page titles */
+.fs46 {
+	font-size: clamp(1.65rem, 10vw, 8.3rem);
+}
+.fs47 {
+	font-size: clamp(1.7rem, 10.2vw, 8.6rem);
+}
+.fs48 {
+	font-size: clamp(1.7rem, 10.4vw, 8.9rem);
+}
+.fs49 {
+	font-size: clamp(1.75rem, 10.6vw, 9.2rem);
+}
+.fs50 {
+	font-size: clamp(1.75rem, 10.8vw, 9.5rem);
+}
+
+/* DISPLAY SMALL ----------------------------------- hero text, banners */
+.fs51 {
+	font-size: clamp(1.8rem, 11vw, 9.8rem);
+}
+.fs52 {
+	font-size: clamp(1.8rem, 11.2vw, 10.1rem);
+}
+.fs53 {
+	font-size: clamp(1.85rem, 11.4vw, 10.4rem);
+}
+.fs54 {
+	font-size: clamp(1.85rem, 11.6vw, 10.7rem);
+}
+.fs55 {
+	font-size: clamp(1.9rem, 11.8vw, 11rem);
+}
+
+/* DISPLAY MEDIUM ----------------------------------- major headlines */
+.fs56 {
+	font-size: clamp(1.9rem, 12vw, 11.4rem);
+}
+.fs57 {
+	font-size: clamp(1.95rem, 12.2vw, 11.8rem);
+}
+.fs58 {
+	font-size: clamp(1.95rem, 12.4vw, 12.2rem);
+}
+.fs59 {
+	font-size: clamp(2rem, 12.6vw, 12.6rem);
+}
+.fs60 {
+	font-size: clamp(2rem, 12.8vw, 13rem);
+}
+
+/* DISPLAY LARGE ----------------------------------- splash screens, logos */
+.fs61 {
+	font-size: clamp(2.05rem, 13vw, 13.5rem);
+}
+.fs62 {
+	font-size: clamp(2.05rem, 13.2vw, 14rem);
+}
+.fs63 {
+	font-size: clamp(2.1rem, 13.4vw, 14.5rem);
+}
+.fs64 {
+	font-size: clamp(2.1rem, 13.6vw, 15rem);
+}
+.fs65 {
+	font-size: clamp(2.15rem, 13.8vw, 15.5rem);
+}
+
+/* JUMBO ----------------------------------- decorative, oversized text */
+.fs66 {
+	font-size: clamp(2.15rem, 14vw, 16rem);
+}
+.fs67 {
+	font-size: clamp(2.2rem, 14.2vw, 16.5rem);
+}
+.fs68 {
+	font-size: clamp(2.2rem, 14.4vw, 17rem);
+}
+.fs69 {
+	font-size: clamp(2.25rem, 14.6vw, 17.5rem);
+}
+.fs70 {
+	font-size: clamp(2.25rem, 14.8vw, 18rem);
+}
+
+/* MEGA ----------------------------------- artistic, statement pieces */
+.fs71 {
+	font-size: clamp(2.3rem, 15vw, 18.5rem);
+}
+.fs72 {
+	font-size: clamp(2.3rem, 15.2vw, 19rem);
+}
+.fs73 {
+	font-size: clamp(2.35rem, 15.4vw, 19.5rem);
+}
+.fs74 {
+	font-size: clamp(2.35rem, 15.6vw, 20rem);
+}
+.fs75 {
+	font-size: clamp(2.4rem, 15.8vw, 20.5rem);
+}
+
+/* ULTRA ----------------------------------- extreme sizes */
+.fs76 {
+	font-size: clamp(2.4rem, 16vw, 21rem);
+}
+.fs77 {
+	font-size: clamp(2.45rem, 16.2vw, 21.5rem);
+}
+.fs78 {
+	font-size: clamp(2.45rem, 16.4vw, 22rem);
+}
+.fs79 {
+	font-size: clamp(2.5rem, 16.6vw, 22.5rem);
+}
+.fs80 {
+	font-size: clamp(2.5rem, 16.8vw, 23rem);
+}
+
+/* COLOSSAL ----------------------------------- full-screen statements */
+.fs81 {
+	font-size: clamp(2.55rem, 17vw, 23.5rem);
+}
+.fs82 {
+	font-size: clamp(2.55rem, 17.2vw, 24rem);
+}
+.fs83 {
+	font-size: clamp(2.6rem, 17.4vw, 24.5rem);
+}
+.fs84 {
+	font-size: clamp(2.6rem, 17.6vw, 25rem);
+}
+.fs85 {
+	font-size: clamp(2.65rem, 17.8vw, 25.5rem);
+}
+
+/* TITAN ----------------------------------- maximum impact */
+.fs86 {
+	font-size: clamp(2.65rem, 18vw, 26rem);
+}
+.fs87 {
+	font-size: clamp(2.7rem, 18.2vw, 26.5rem);
+}
+.fs88 {
+	font-size: clamp(2.7rem, 18.4vw, 27rem);
+}
+.fs89 {
+	font-size: clamp(2.75rem, 18.6vw, 27.5rem);
+}
+.fs90 {
+	font-size: clamp(2.75rem, 18.8vw, 28rem);
+}
+
+/* ABSOLUTE MAX ----------------------------------- extreme decorative use */
+.fs91 {
+	font-size: clamp(2.8rem, 19vw, 28.5rem);
+}
+.fs92 {
+	font-size: clamp(2.8rem, 19.2vw, 29rem);
+}
+.fs93 {
+	font-size: clamp(2.85rem, 19.4vw, 29.5rem);
+}
+.fs94 {
+	font-size: clamp(2.85rem, 19.6vw, 30rem);
+}
+.fs95 {
+	font-size: clamp(2.9rem, 19.8vw, 30.5rem);
+}
+.fs96 {
+	font-size: clamp(2.9rem, 20vw, 31rem);
+}
+.fs97 {
+	font-size: clamp(2.95rem, 20.2vw, 31.5rem);
+}
+.fs98 {
+	font-size: clamp(2.95rem, 20.4vw, 32rem);
+}
+.fs99 {
+	font-size: clamp(3rem, 20.6vw, 32.5rem);
+}
+.fs100 {
+	font-size: clamp(3rem, 20.8vw, 33rem);
+}
+
+/* LEGACY ----------------------------------- fs4 with !important for overrides */
+.fs4,
+.fs4 button,
+.fs4 * {
+	font-size: clamp(0.5rem, 0.8vw, 0.55rem) !important;
+	line-height: 1.2;
+}

@@ -1,0 +1,355 @@
+{
+	"id": null,
+	"uid": "overview",
+	"title": "00 - System Overview v3",
+	"schemaVersion": 36,
+	"version": 4,
+	"refresh": "15s",
+	"timezone": "browser",
+	"time": { "from": "now-6h", "to": "now" },
+	"panels": [
+		{ "type": "stat", "title": "Backend UP", "gridPos": { "h": 4, "w": 3, "x": 0, "y": 0 }, "targets": [{ "expr": "avg(up{job=\"backend-app\"})" }] },
+		{
+			"type": "stat",
+			"title": "API Error % (5m)",
+			"gridPos": { "h": 4, "w": 3, "x": 3, "y": 0 },
+			"targets": [{ "expr": "(sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))) or vector(0)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percentunit",
+					"decimals": 2,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 0.01 },
+							{ "color": "orange", "value": 0.05 },
+							{ "color": "red", "value": 0.1 }
+						]
+					}
+				}
+			},
+			"description": "Good <1%, Warning 1-5%, High 5-10%, Critical >10% (5m)",
+			"options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "values": false } }
+		},
+		{
+			"type": "stat",
+			"title": "API p95 (s)",
+			"gridPos": { "h": 4, "w": 3, "x": 6, "y": 0 },
+			"targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) or vector(0)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "s",
+					"decimals": 3,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 0.25 },
+							{ "color": "orange", "value": 0.5 },
+							{ "color": "red", "value": 1 }
+						]
+					}
+				}
+			},
+			"description": "Good <250ms, Warn 250-500ms, High 0.5-1s, Critical >1s",
+			"options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "values": false } }
+		},
+		{
+			"type": "stat",
+			"title": "Avg Latency (5m)",
+			"gridPos": { "h": 4, "w": 3, "x": 9, "y": 0 },
+			"targets": [{ "expr": "(sum(rate(http_request_duration_seconds_sum[5m])) / sum(rate(http_request_duration_seconds_count[5m]))) or vector(0)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "s",
+					"decimals": 3,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 0.15 },
+							{ "color": "orange", "value": 0.3 },
+							{ "color": "red", "value": 0.6 }
+						]
+					}
+				}
+			},
+			"description": "Good <150ms, Warn 150-300ms, High 300-600ms, Critical >600ms",
+			"options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "values": false } }
+		},
+		{
+			"type": "stat",
+			"title": "RPM (5m)",
+			"gridPos": { "h": 4, "w": 3, "x": 12, "y": 0 },
+			"targets": [{ "expr": "sum(rate(http_requests_total[5m])) * 60 or vector(0)" }],
+			"fieldConfig": { "defaults": { "unit": "req/min", "decimals": 1 } }
+		},
+		{
+			"type": "stat",
+			"title": "CPU % (node)",
+			"gridPos": { "h": 4, "w": 3, "x": 15, "y": 0 },
+			"targets": [{ "expr": "(100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)) or vector(0)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"decimals": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 60 },
+							{ "color": "orange", "value": 80 },
+							{ "color": "red", "value": 90 }
+						]
+					}
+				}
+			},
+			"description": "Good <60%, Warn 60-80%, High 80-90%, Critical >90%",
+			"options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "values": false } }
+		},
+		{
+			"type": "stat",
+			"title": "RAM % used",
+			"gridPos": { "h": 4, "w": 3, "x": 18, "y": 0 },
+			"targets": [{ "expr": "((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes) * 100 or vector(0)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"decimals": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 70 },
+							{ "color": "orange", "value": 85 },
+							{ "color": "red", "value": 95 }
+						]
+					}
+				}
+			},
+			"description": "Good <70%, Warn 70-85%, High 85-95%, Critical >95%",
+			"options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "values": false } }
+		},
+
+		{
+			"type": "timeseries",
+			"title": "Traffic & Errors",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+			"targets": [
+				{ "expr": "sum(rate(http_requests_total[5m])) * 60", "legendFormat": "rpm" },
+				{ "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))", "legendFormat": "errors/s" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Latency percentiles (s)",
+			"gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+			"targets": [
+				{ "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+				{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+				{ "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+			]
+		},
+
+		{
+			"type": "timeseries",
+			"title": "Node.js Saturation",
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 12 },
+			"targets": [
+				{ "expr": "max(nodejs_event_loop_lag_seconds)", "legendFormat": "event loop lag (max across workers)" },
+				{ "expr": "sum(process_resident_memory_bytes)", "legendFormat": "rss total bytes" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "CPU & GC",
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 12 },
+			"targets": [
+				{ "expr": "rate(process_cpu_user_seconds_total[5m]) * 100", "legendFormat": "cpu user % (per core)" },
+				{ "expr": "histogram_quantile(0.95, sum by (le) (rate(nodejs_gc_duration_seconds_bucket[5m])))", "legendFormat": "gc p95" }
+			]
+		},
+
+		{
+			"type": "timeseries",
+			"title": "CPU % (node)",
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 19 },
+			"targets": [
+				{ "expr": "(1 - avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * 100", "legendFormat": "cpu%" },
+				{ "expr": "avg(irate(node_cpu_seconds_total{mode=\"iowait\"}[5m])) * 100", "legendFormat": "iowait%" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Memory % (node)",
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 19 },
+			"targets": [{ "expr": "((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes) * 100", "legendFormat": "mem%" }]
+		},
+
+		{ "type": "stat", "title": "Socket.IO Conns", "gridPos": { "h": 4, "w": 4, "x": 0, "y": 26 }, "targets": [{ "expr": "sum(socketio_connections) or vector(0)" }] },
+		{ "type": "timeseries", "title": "Socket.IO msg/s", "gridPos": { "h": 7, "w": 8, "x": 4, "y": 26 }, "targets": [{ "expr": "sum by (event) (rate(socketio_messages_total[5m]))" }] },
+		{ "type": "stat", "title": "Redis UP", "gridPos": { "h": 4, "w": 4, "x": 12, "y": 26 }, "targets": [{ "expr": "avg(up{job=\"redis\"})" }] },
+		{
+			"type": "stat",
+			"title": "Redis Clients",
+			"gridPos": { "h": 4, "w": 4, "x": 16, "y": 26 },
+			"targets": [{ "expr": "avg(redis_connected_clients)" }],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "none",
+					"decimals": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 200 },
+							{ "color": "orange", "value": 400 },
+							{ "color": "red", "value": 800 }
+						]
+					}
+				}
+			},
+			"description": "Idle often 50-150 due to pools; alert only if growing >400 sustained."
+		},
+		{ "type": "stat", "title": "MySQL UP", "gridPos": { "h": 4, "w": 4, "x": 20, "y": 26 }, "targets": [{ "expr": "avg(up{job=\"mysql\"})" }] },
+
+		{
+			"type": "timeseries",
+			"title": "Container CPU top (5m)",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+			"targets": [
+				{
+					"expr": "topk(8, sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{container!~\"^/docker/\", image!=\"\"}[5m]))) * 100",
+					"legendFormat": "{{container_label_com_docker_compose_service}}"
+				}
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Container Memory (MB)",
+			"gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+			"targets": [
+				{
+					"expr": "topk(8, sum by (container_label_com_docker_compose_service) (container_memory_working_set_bytes{container!~\"^/docker/\", image!=\"\"})) / 1024 / 1024",
+					"legendFormat": "{{container_label_com_docker_compose_service}}"
+				}
+			]
+		},
+
+		{
+			"type": "timeseries",
+			"title": "Backlog & Overload",
+			"gridPos": { "h": 6, "w": 24, "x": 0, "y": 38 },
+			"targets": [
+				{ "expr": "sum(cluster_worker_backlog)", "legendFormat": "backlog" },
+				{ "expr": "avg(cluster_task_overloaded)", "legendFormat": "overloaded (0/1)" }
+			]
+		},
+		{ "type": "stat", "title": "Targets DOWN", "gridPos": { "h": 4, "w": 4, "x": 0, "y": 44 }, "targets": [{ "expr": "sum(up == 0) or vector(0)" }] },
+		{ "type": "stat", "title": "Active Alerts", "gridPos": { "h": 4, "w": 4, "x": 4, "y": 44 }, "targets": [{ "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)" }] },
+		{ "type": "stat", "title": "Ext. Probes Failing", "gridPos": { "h": 4, "w": 4, "x": 8, "y": 44 }, "targets": [{ "expr": "sum(1 - probe_success{job=\"blackbox\"}) or vector(0)" }] },
+		{
+			"type": "timeseries",
+			"title": "Ext. p95 latency (s)",
+			"gridPos": { "h": 6, "w": 12, "x": 12, "y": 44 },
+			"targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(probe_http_duration_seconds_bucket{job=\"blackbox\"}[5m])))", "legendFormat": "p95" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "Network Rx/Tx (bytes/s)",
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 50 },
+			"targets": [
+				{ "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|veth.*\"}[5m]))", "legendFormat": "rx" },
+				{ "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*\"}[5m]))", "legendFormat": "tx" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "System Load",
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 50 },
+			"targets": [
+				{ "expr": "node_load1", "legendFormat": "load1" },
+				{ "expr": "node_load5", "legendFormat": "load5" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Disk Usage % (top mounts)",
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 57 },
+			"targets": [
+				{
+					"expr": "topk(5, (1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\"})) * 100)",
+					"legendFormat": "{{mountpoint}}"
+				}
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Disk IO busy % (top)",
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 57 },
+			"targets": [{ "expr": "topk(5, rate(node_disk_io_time_seconds_total[5m]) * 100)", "legendFormat": "{{device}}" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "Redis ops/s",
+			"gridPos": { "h": 6, "w": 8, "x": 0, "y": 64 },
+			"targets": [{ "expr": "sum(rate(redis_commands_processed_total[5m]))", "legendFormat": "ops/s" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "Redis hit rate %",
+			"gridPos": { "h": 6, "w": 8, "x": 8, "y": 64 },
+			"targets": [
+				{ "expr": "(sum(rate(redis_keyspace_hits_total[5m])) / (sum(rate(redis_keyspace_hits_total[5m])) + sum(rate(redis_keyspace_misses_total[5m])))) * 100", "legendFormat": "hit%" }
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Redis memory (MB)",
+			"gridPos": { "h": 6, "w": 8, "x": 16, "y": 64 },
+			"targets": [{ "expr": "redis_memory_used_bytes / 1024 / 1024", "legendFormat": "used" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "MySQL QPS",
+			"gridPos": { "h": 6, "w": 8, "x": 0, "y": 70 },
+			"targets": [{ "expr": "(rate(mysql_global_status_queries[5m]) or rate(mysql_global_status_questions[5m]))", "legendFormat": "qps" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "MySQL Threads Connected",
+			"gridPos": { "h": 6, "w": 8, "x": 8, "y": 70 },
+			"targets": [{ "expr": "(mysql_global_status_threads_connected or mysql_status_threads_connected or mysql_global_variables_threads_connected)", "legendFormat": "threads" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "MySQL Slow queries/s",
+			"gridPos": { "h": 6, "w": 8, "x": 16, "y": 70 },
+			"targets": [{ "expr": "(rate(mysql_global_status_slow_queries[5m]) or rate(mysql_global_status_slow_queries_total[5m]))", "legendFormat": "slow/s" }]
+		},
+		{
+			"type": "timeseries",
+			"title": "InnoDB buffer pool used %",
+			"gridPos": { "h": 6, "w": 12, "x": 0, "y": 76 },
+			"targets": [
+				{
+					"expr": "(1 - ((mysql_global_status_innodb_buffer_pool_pages_free or mysql_info_schema_innodb_buffer_pool_pages_free) / (mysql_global_status_innodb_buffer_pool_pages_total or mysql_info_schema_innodb_buffer_pool_pages_total))) * 100",
+					"legendFormat": "used%"
+				}
+			]
+		},
+		{
+			"type": "timeseries",
+			"title": "Backend errors by route (5xx rps)",
+			"gridPos": { "h": 6, "w": 12, "x": 12, "y": 76 },
+			"targets": [{ "expr": "topk(10, sum by (route) (rate(http_requests_total{status_code=~\"5..\"}[15m])))", "legendFormat": "{{route}}" }]
+		},
+		{
+			"type": "table",
+			"title": "Top routes by p95 (15m)",
+			"gridPos": { "h": 8, "w": 24, "x": 0, "y": 82 },
+			"targets": [{ "expr": "topk(10, histogram_quantile(0.95, sum by (route,le) (rate(http_request_duration_seconds_bucket[15m]))))" }]
+		}
+	]
+}

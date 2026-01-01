@@ -1,0 +1,901 @@
+.overAuto {
+	overflow: auto;
+}
+.overHidden {
+	overflow: hidden;
+}
+/* MOBILE SCROLL LOCK ---------------------------*/
+html.overHidden {
+	touch-action: none;
+	-webkit-overflow-scrolling: auto;
+}
+html.overHidden body {
+	touch-action: none;
+	position: relative;
+}
+.overScroll {
+	overflow: scroll;
+}
+.textAli {
+	text-align: center;
+}
+.textLeft {
+	text-align: left;
+}
+.textRight {
+	text-align: right;
+}
+
+.posStatic {
+	position: static;
+}
+.posRel {
+	position: relative;
+}
+.posAbs {
+	position: absolute;
+}
+.posFix {
+	position: fixed;
+	will-change: transform;
+	transform: translateZ(0);
+}
+.posSticky {
+	position: sticky;
+}
+.floatLeft,
+.floatLeft img {
+	float: left;
+}
+.floatRight,
+.floatRight img {
+	float: right;
+}
+.textJust {
+	text-align: justify;
+}
+
+.fitContent {
+	width: fit-content;
+}
+
+.bottom {
+	bottom: 0;
+}
+.topRight {
+	right: 0;
+	top: 0;
+}
+.topLeft {
+	left: 0;
+	top: 0;
+}
+.cornerBotRight {
+	bottom: -0.3rem;
+	right: -0.3rem;
+}
+.cornerBotRightS {
+	bottom: -1rem;
+	right: -1rem;
+}
+.cornerTopRight {
+	top: -1rem;
+	right: -1.2rem;
+}
+
+.cornerTopLeft {
+	top: -1.2rem;
+	left: -1.5rem;
+}
+.topCen {
+	left: 50%;
+	top: 0;
+	transform: translate(-50%);
+}
+
+.botCen {
+	left: 50%;
+	bottom: 0;
+	transform: translate(-50%);
+}
+.center {
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+.cenRight {
+	right: 0;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+.cenLeft {
+	left: 0;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+.botRight {
+	right: 0;
+	bottom: 0;
+}
+.botLeft {
+	left: 0;
+	bottom: 0;
+}
+.moveRightXs {
+	right: -1rem;
+}
+.moveRightS {
+	right: -1.5rem;
+}
+.moveRightM {
+	right: -2rem;
+}
+.leftTiny {
+	left: -0.3rem;
+}
+.leftXs {
+	left: -0.5rem;
+}
+.leftS {
+	left: -1.5rem;
+}
+
+.moveUpFromBot {
+	bottom: 4rem;
+	animation: moveUpFromBot 0.5s ease-in-out;
+}
+.moveUpBFilter {
+	bottom: 20rem;
+}
+.upTinyBit {
+	top: -0.3rem;
+}
+.upTiny {
+	top: -0.6rem;
+}
+.upLittle {
+	top: -1.2rem;
+}
+.moveUp {
+	top: -2.2rem;
+}
+.moveUpMore {
+	top: -3.8rem;
+}
+.upEvenMore {
+	top: -6rem;
+}
+.upExtra {
+	top: -7rem;
+}
+.rightS {
+	right: 1rem;
+}
+
+.moveDown {
+	bottom: -3rem;
+}
+.downMore {
+	bottom: -3.5rem;
+}
+.moveDownMore {
+	bottom: -4rem;
+}
+.downEvenMore {
+	bottom: -7rem;
+}
+.downExtra {
+	bottom: -9rem;
+}
+.downLittle {
+	bottom: -1.5rem;
+}
+.downTiny {
+	bottom: -1rem;
+}
+.downTinyBit {
+	bottom: -0.6rem;
+}
+.down1 {
+	top: 0.3rem;
+}
+.leftLittle {
+	left: -1.5rem;
+}
+.downLittleMore {
+	bottom: -2.3rem;
+}
+.downTiny {
+	bottom: -1rem;
+}
+
+.spaceBet {
+	justify-content: space-between;
+}
+.spaceEve {
+	justify-content: space-evenly;
+}
+.spaceCen {
+	justify-content: center;
+}
+.spaceAro {
+	justify-content: space-around;
+}
+.selfStretch {
+	align-self: stretch;
+}
+.selfCen {
+	align-self: center;
+}
+.selfStart {
+	align-self: flex-start;
+}
+.selfEnd {
+	align-self: flex-end;
+}
+
+.aliCen {
+	align-items: center;
+}
+.verAli {
+	vertical-align: middle;
+}
+.aliLeft {
+	align-items: flex-start;
+}
+.aliRight {
+	align-items: flex-end;
+}
+
+.marAll {
+	margin: 1.5rem 1rem 1rem 1.5rem;
+}
+
+.marAllXs {
+	margin: 1rem 0.5rem 0.5rem 1rem;
+}
+
+.marAllXxs {
+	margin: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+
+.marAllXxxs {
+	margin: 0.2rem 0.2rem 0.2rem 0.2rem;
+}
+
+.marHorXs {
+	margin-left: 1rem;
+	margin-right: 1rem;
+}
+.marHorS {
+	margin-left: 2rem;
+	margin-right: 2rem;
+}
+.marHorM {
+	margin-left: 4rem;
+	margin-right: 4rem;
+}
+.marHorL {
+	margin-left: 6rem;
+	margin-right: 6rem;
+}
+.marHorXl {
+	margin-left: 8rem;
+	margin-right: 8rem;
+}
+
+.marVerXs {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+.wContent {
+	width: fit-content;
+}
+.wAuto {
+	width: auto;
+}
+
+.marVerS {
+	margin-top: 2rem;
+	margin-bottom: 2rem;
+}
+.marVerM {
+	margin-top: 4rem;
+	margin-bottom: 4rem;
+}
+.marVerL {
+	margin-top: 6rem;
+	margin-bottom: 6rem;
+}
+.marVerXl {
+	margin-top: 8rem;
+	margin-bottom: 8rem;
+}
+.marVerXxl {
+	margin-top: 10rem;
+	margin-bottom: 10rem;
+}
+.marVerXxxl {
+	margin-top: 12rem;
+	margin-bottom: 12rem;
+}
+.marVerXxxxl {
+	margin-top: 13rem;
+	margin-bottom: 13rem;
+}
+
+.autoWidth {
+	width: auto !important;
+}
+.marAuto {
+	margin-right: auto;
+	margin-left: auto;
+}
+.marVerAuto {
+	margin-top: auto;
+	margin-bottom: auto;
+}
+.marAutoAll * {
+	margin: auto;
+}
+.marTopAuto {
+	margin-top: auto;
+}
+.marTopXxs {
+	margin-top: 0.5rem;
+}
+.marTopXs {
+	margin-top: 1rem;
+}
+.marTopS {
+	margin-top: 2rem;
+}
+.marTopM {
+	margin-top: 4rem;
+}
+.marTopL {
+	margin-top: 5rem;
+}
+.marTopXl {
+	margin-top: 6rem;
+}
+.marTopXxl {
+	margin-top: 8rem;
+}
+.marTopXxxl {
+	margin-top: 11rem;
+}
+.marRigXxs {
+	margin-right: 0.25rem;
+}
+.marRigXs {
+	margin-right: 0.5rem;
+}
+.marRigS {
+	margin-right: 1rem;
+}
+.marRigM {
+	margin-right: 2rem;
+}
+.marRigL {
+	margin-right: 4rem;
+}
+.marRigXl {
+	margin-right: 6rem;
+}
+.marLefXxs {
+	margin-left: 0.25rem;
+}
+.marLefXs {
+	margin-left: 0.6rem;
+}
+.marLefS {
+	margin-left: 1.2rem;
+}
+.marLefM {
+	margin-left: 1.4vw;
+}
+.marLefL {
+	margin-left: 4rem;
+}
+.marLefXl {
+	margin-left: 3vw;
+}
+.marLefReplies {
+	margin-left: 6vw;
+}
+.marLefAuto {
+	margin-left: auto;
+}
+
+.marBotCat {
+	margin-bottom: 3rem;
+}
+
+.marBotXxxs {
+	margin-bottom: 0.4rem;
+}
+.marBotXxxxs {
+	margin-bottom: 0.2rem;
+}
+
+.marBotXxs {
+	margin-bottom: 0.8rem;
+}
+
+.marBotXs {
+	margin-bottom: 1.5rem;
+}
+.marBotS {
+	margin-bottom: 2.5rem;
+}
+.marBotM {
+	margin-bottom: 4rem;
+}
+.marBotL {
+	margin-bottom: 5.3rem;
+}
+.marBotXl {
+	margin-bottom: 7rem;
+}
+.marBotXxl {
+	margin-bottom: 9rem;
+}
+.marBotXxxl {
+	margin-bottom: 11rem;
+}
+.marBotXxxxl {
+	margin-bottom: 13rem;
+}
+
+.marOff {
+	margin: 0 !important;
+}
+
+.marVerOff {
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+.bPadHorXxs button {
+	padding: auto 0.5rem;
+}
+.bPadHorS button {
+	padding: auto rem 1rem;
+}
+.bPadHorM button {
+	padding: auto 2rem;
+}
+.bPadBotM button {
+	padding-bottom: 3rem;
+}
+.bPadTopL button {
+	padding-top: 5rem;
+}
+.bPadTopM button {
+	padding-top: 3rem;
+}
+.bPadTopS button {
+	padding-top: 1.5rem;
+}
+.bPadTopXs button {
+	padding-top: 1rem;
+}
+.bPadHorL button {
+	padding: auto 6rem;
+}
+.bPadBotXxs button {
+	padding-bottom: 0.5rem;
+}
+.bPadBotS button {
+	padding-bottom: 1.5rem;
+}
+.bPadBotM button {
+	padding-bottom: 3rem;
+}
+
+.bPadVerXxs button {
+	padding: 0.6rem 0;
+}
+
+.bPadVerXs button {
+	padding: 0.8rem 0;
+}
+.bPadVerS button {
+	padding: 1rem 0;
+}
+.bPadVerM button {
+	padding: 1.5rem 0;
+}
+.bPadVerL button {
+	padding: 2.5rem 0;
+}
+.bPadVerXl button {
+	padding-top: 3rem;
+	padding-bottom: 3rem;
+}
+.bPadVerXxl button {
+	padding-top: 4rem;
+	padding-bottom: 4rem;
+}
+
+.bNarrow button {
+	padding: 0.5rem 1rem;
+}
+
+.bPadXxs button {
+	padding: 0.5rem 0.5rem;
+}
+.bPadXs button {
+	padding: 1rem 1rem;
+}
+
+.bPadS button {
+	padding: 1.5rem 1.5rem;
+}
+.bPadM button {
+	padding: 2rem 2rem;
+}
+.bPadL button {
+	padding: 3rem 3rem;
+}
+.bPadXl button {
+	padding: 4rem 4rem;
+}
+.bPadXxl button {
+	padding: 5rem 5rem;
+}
+.padAllXxs {
+	padding: 0.5rem 0.5rem;
+}
+.padAllXxxs {
+	padding: 0.2rem 0.2rem;
+}
+
+.padAllXs {
+	padding: 1rem 1rem;
+}
+.padAllS {
+	padding: 1.5rem 1.5rem;
+}
+.padAllM {
+	padding: 3rem 3rem;
+}
+.padAllL {
+	padding: 5rem 5rem;
+}
+.padAllXl {
+	padding: 8rem 8rem;
+}
+.padTopXxs {
+	padding-top: 0.5rem;
+}
+.padTopXxxs {
+	padding-top: 0.2rem;
+}
+.padTopXs {
+	padding-top: 1rem;
+}
+.padTopS {
+	padding-top: 2rem;
+}
+.padTopM {
+	padding-top: 3rem;
+}
+.padTopL {
+	padding-top: 4rem;
+}
+.padTopXl {
+	padding-top: 6rem;
+}
+
+.padTopXxl {
+	padding-top: 9rem;
+}
+.padTopXxxl {
+	padding-top: 12rem;
+}
+
+.padBotXxs {
+	padding-bottom: 0.5rem;
+}
+.padBotXs {
+	padding-bottom: 1rem;
+}
+.padBotS {
+	padding-bottom: 2rem;
+}
+.padBotM {
+	padding-bottom: 3rem;
+}
+.padBotL {
+	padding-bottom: 4rem;
+}
+.padBotXl {
+	padding-bottom: 5rem;
+}
+.padBotXxl {
+	padding-bottom: 8rem;
+}
+.padBotXxxl {
+	padding-bottom: 17rem;
+}
+.padVerXxxs {
+	padding-top: 0.4rem;
+	padding-bottom: 0.4rem;
+}
+.padVerXxs {
+	padding-top: 0.8rem;
+	padding-bottom: 0.8rem;
+}
+
+.padVerXs {
+	padding-top: 1.2rem;
+	padding-bottom: 1.2rem;
+}
+.padVerS {
+	padding-top: 2rem;
+	padding-bottom: 2rem;
+}
+.padVerM {
+	padding-top: 4rem;
+	padding-bottom: 4rem;
+}
+.padVerL {
+	padding-top: 6rem;
+	padding-bottom: 6rem;
+}
+.padVerXl {
+	padding-top: 8rem;
+	padding-bottom: 8rem;
+}
+
+.padHorXxs {
+	padding-right: 0.5rem;
+	padding-left: 0.5rem;
+}
+.padHorXs {
+	padding-right: 1rem;
+	padding-left: 1rem;
+}
+.padHorS {
+	padding-right: 2rem;
+	padding-left: 2rem;
+}
+.padHorM {
+	padding-right: 4rem;
+	padding-left: 4rem;
+}
+.padHorL {
+	padding-right: 6rem;
+	padding-left: 6rem;
+}
+.padHorXl {
+	padding-right: 8rem;
+	padding-left: 8rem;
+}
+.padOff {
+	padding: 0 !important;
+}
+.padLeftXxs {
+	padding-left: 0.5rem;
+}
+.padLeftXs {
+	padding-left: 1rem;
+}
+.padLeftS {
+	padding-left: 2rem;
+}
+.padLeftM {
+	padding-left: 4rem;
+}
+.padLeftMessage {
+	padding-left: 3.5rem;
+}
+.padRightXs {
+	padding-right: 1rem;
+}
+.padRightXxs {
+	padding-right: 0.5rem;
+}
+.padRightS {
+	padding-right: 2rem;
+}
+.padRightM {
+	padding-right: 4rem;
+}
+.padLeftL {
+	padding-left: 6rem;
+}
+.padLeftXl {
+	padding-left: 8rem;
+}
+
+.col4 {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr));
+	justify-content: center;
+	gap: 0.3rem;
+}
+
+/* If there are only two items, this will help in centering them */
+.col4::after {
+	content: '';
+	grid-column: span 2; /* Span 2 columns */
+	visibility: hidden; /* Hide the pseudo-element */
+}
+
+.flexRow {
+	display: flex;
+	align-items: center;
+}
+.flexInline {
+	display: inline-flex;
+	align-items: center;
+}
+.flexCen {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.flexCol {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.flexColRev {
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+.flexColAll > * {
+	display: flex;
+	flex-direction: column;
+}
+.flexCenAll > * {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.flexRowAll > * {
+	display: flex;
+	align-items: center;
+}
+.w100All > * {
+	width: 100%;
+}
+
+.wAuto {
+	width: auto;
+}
+.wrap {
+	flex-wrap: wrap;
+}
+.wrapRev {
+	flex-wrap: wrap-reverse;
+}
+.noWrap {
+	flex-wrap: nowrap;
+}
+.tNoWrap {
+	white-space: nowrap;
+}
+.grow {
+	flex-grow: 1;
+}
+.grow2 {
+	flex-grow: 2;
+}
+.grow3 {
+	flex-grow: 3;
+}
+.grow4 {
+	flex-grow: 4;
+}
+.grow5 {
+	flex-grow: 5;
+}
+.growAll * {
+	flex-grow: 1;
+}
+
+.shrinkOff {
+	flex-shrink: 0;
+}
+.shrink {
+	flex-shrink: 1;
+}
+
+.noGap {
+	gap: 0;
+}
+.gapXxxs {
+	gap: 0.2rem;
+}
+.gapXxs {
+	gap: 0.8rem;
+}
+.gapXs {
+	gap: 1.2rem;
+}
+.gapS {
+	gap: 2rem;
+}
+.gapM {
+	gap: 3rem;
+}
+.gapL {
+	gap: 4rem;
+}
+.gapXl {
+	gap: 6rem;
+}
+.gapMiddleXs {
+	gap: 1vw;
+}
+.gapMiddleS {
+	gap: 2vw;
+}
+.gapMiddleM {
+	gap: 3vw;
+}
+.gapMiddleL {
+	gap: 5vw;
+}
+
+.gapMiddleBig {
+	gap: 4vw;
+}
+.gapMiddleXl {
+	gap: 5vw;
+}
+
+.block {
+	display: block;
+}
+.inlineBlock {
+	display: inline-block;
+}
+.inline {
+	display: inline;
+}
+.inlineFlex {
+	display: inline-flex;
+}
+
+.aliCen {
+	align-items: center;
+}
+.aliEnd {
+	align-items: flex-end;
+}
+.aliStretch {
+	align-items: stretch;
+}
+.aliBaseline {
+	align-items: baseline;
+}
+.aliStart {
+	align-items: flex-start;
+}
+.justEnd {
+	justify-content: flex-end;
+}
+.justCen {
+	justify-content: center;
+}
+.justStart {
+	justify-content: flex-start;
+}
+
+.allOff {
+	background: none !important;
+	box-shadow: none !important;
+	border: none !important;
+	background-color: none !important;
+}
+
+.hvw30 {
+	height: 30vw;
+}

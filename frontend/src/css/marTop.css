@@ -1,0 +1,32 @@
+/* MARGIN TOP SCALE ----------------------------------- */
+/* Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.marTop1 { margin-top: 0.1rem; }
+.marTop2 { margin-top: 0.2rem; }
+.marTop3 { margin-top: 0.4rem; }
+.marTop4 { margin-top: 0.6rem; }
+.marTop5 { margin-top: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.marTop6 { margin-top: 1.0rem; }
+.marTop7 { margin-top: 1.5rem; }
+.marTop8 { margin-top: 2.0rem; }
+.marTop9 { margin-top: 3.0rem; }
+.marTop10 { margin-top: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.marTop11 { margin-top: 5.0rem; }
+.marTop12 { margin-top: 6.0rem; }
+.marTop13 { margin-top: 8.0rem; }
+.marTop14 { margin-top: 10.0rem; }
+.marTop15 { margin-top: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.marTop16 { margin-top: 18.0rem; }
+.marTop17 { margin-top: 24.0rem; }
+.marTop18 { margin-top: 30.0rem; }
+.marTop19 { margin-top: 38.0rem; }
+.marTop20 { margin-top: 50.0rem; }
+
+

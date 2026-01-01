@@ -1,0 +1,56 @@
+groups:
+    - name: basic-health
+      rules:
+          - alert: PrometheusTargetMissing
+            expr: up == 0
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: Target down (instance {{ $labels.instance }})
+                description: '{{ $labels.job }} on {{ $labels.instance }} has been down for 5 minutes.'
+
+          - alert: HighErrorRate
+            expr: sum by (route) (rate(http_requests_total{status_code=~"5.."}[5m])) / sum by (route) (rate(http_requests_total[5m])) > 0.05
+            for: 10m
+            labels:
+                severity: critical
+            annotations:
+                summary: 'High error rate (route {{ $labels.route }})'
+                description: 'More than 5% of requests are 5xx over 10 minutes.'
+
+          - alert: HighLatencyP95
+            expr: histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m]))) > 0.4
+            for: 10m
+            labels:
+                severity: warning
+            annotations:
+                summary: 'High p95 latency (route {{ $labels.route }})'
+                description: 'p95 latency above 400ms for 10 minutes.'
+
+          - alert: SlowHttpRequestRate
+            expr: sum(rate(slow_http_requests_total[5m])) > 1
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: 'Slow HTTP request rate elevated'
+                description: 'More than 1 slow request/sec on average over 5m.'
+
+          - alert: EventLoopLagHigh
+            expr: avg_over_time(nodejs_event_loop_lag_seconds[5m]) > 0.2
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: 'Event loop lag high'
+                description: 'Average event loop lag above 200ms for 5m.'
+
+          - alert: RedisEvictions
+            expr: increase(redis_evicted_keys_total[5m]) > 0
+            for: 10m
+            labels:
+                severity: critical
+            annotations:
+                summary: 'Redis is evicting keys'
+                description: 'Detected key evictions in the last 10 minutes.'

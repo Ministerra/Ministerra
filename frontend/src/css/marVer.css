@@ -1,0 +1,32 @@
+/* MARGIN VERTICAL SCALE ----------------------------------- */
+/* Top + Bottom margin. Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.marVer1 { margin-top: 0.1rem; margin-bottom: 0.1rem; }
+.marVer2 { margin-top: 0.2rem; margin-bottom: 0.2rem; }
+.marVer3 { margin-top: 0.4rem; margin-bottom: 0.4rem; }
+.marVer4 { margin-top: 0.6rem; margin-bottom: 0.6rem; }
+.marVer5 { margin-top: 0.8rem; margin-bottom: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.marVer6 { margin-top: 1.0rem; margin-bottom: 1.0rem; }
+.marVer7 { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+.marVer8 { margin-top: 2.0rem; margin-bottom: 2.0rem; }
+.marVer9 { margin-top: 3.0rem; margin-bottom: 3.0rem; }
+.marVer10 { margin-top: 4.0rem; margin-bottom: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.marVer11 { margin-top: 5.0rem; margin-bottom: 5.0rem; }
+.marVer12 { margin-top: 6.0rem; margin-bottom: 6.0rem; }
+.marVer13 { margin-top: 8.0rem; margin-bottom: 8.0rem; }
+.marVer14 { margin-top: 10.0rem; margin-bottom: 10.0rem; }
+.marVer15 { margin-top: 14.0rem; margin-bottom: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.marVer16 { margin-top: 18.0rem; margin-bottom: 18.0rem; }
+.marVer17 { margin-top: 24.0rem; margin-bottom: 24.0rem; }
+.marVer18 { margin-top: 30.0rem; margin-bottom: 30.0rem; }
+.marVer19 { margin-top: 38.0rem; margin-bottom: 38.0rem; }
+.marVer20 { margin-top: 50.0rem; margin-bottom: 50.0rem; }
+
+

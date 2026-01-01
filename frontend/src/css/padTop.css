@@ -1,0 +1,32 @@
+/* PADDING TOP SCALE ----------------------------------- */
+/* Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.padTop1 { padding-top: 0.1rem; }
+.padTop2 { padding-top: 0.2rem; }
+.padTop3 { padding-top: 0.4rem; }
+.padTop4 { padding-top: 0.6rem; }
+.padTop5 { padding-top: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.padTop6 { padding-top: 1.0rem; }
+.padTop7 { padding-top: 1.5rem; }
+.padTop8 { padding-top: 2.0rem; }
+.padTop9 { padding-top: 3.0rem; }
+.padTop10 { padding-top: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.padTop11 { padding-top: 5.0rem; }
+.padTop12 { padding-top: 6.0rem; }
+.padTop13 { padding-top: 8.0rem; }
+.padTop14 { padding-top: 10.0rem; }
+.padTop15 { padding-top: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.padTop16 { padding-top: 18.0rem; }
+.padTop17 { padding-top: 24.0rem; }
+.padTop18 { padding-top: 30.0rem; }
+.padTop19 { padding-top: 38.0rem; }
+.padTop20 { padding-top: 50.0rem; }
+
+

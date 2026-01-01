@@ -1,0 +1,27 @@
+# basic ignores
+.git
+node_modules
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# big runtime dirs
+accessLogs/
+errorLogs/
+infoLogs/
+logs/
+logging/
+writeFailures/
+
+# monitoring and misc
+monitoring/
+app_otel.out
+
+# special files that can break Windows tar
+nul
+NUL
+
+# not needed inside image
+README-*
+docs/
+redisConfigFiles/

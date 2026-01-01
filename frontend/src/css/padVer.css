@@ -1,0 +1,32 @@
+/* PADDING VERTICAL SCALE ----------------------------------- */
+/* Top + Bottom padding. Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.padVer1 { padding-top: 0.1rem; padding-bottom: 0.1rem; }
+.padVer2 { padding-top: 0.2rem; padding-bottom: 0.2rem; }
+.padVer3 { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+.padVer4 { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+.padVer5 { padding-top: 0.8rem; padding-bottom: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.padVer6 { padding-top: 1.0rem; padding-bottom: 1.0rem; }
+.padVer7 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.padVer8 { padding-top: 2.0rem; padding-bottom: 2.0rem; }
+.padVer9 { padding-top: 3.0rem; padding-bottom: 3.0rem; }
+.padVer10 { padding-top: 4.0rem; padding-bottom: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.padVer11 { padding-top: 5.0rem; padding-bottom: 5.0rem; }
+.padVer12 { padding-top: 6.0rem; padding-bottom: 6.0rem; }
+.padVer13 { padding-top: 8.0rem; padding-bottom: 8.0rem; }
+.padVer14 { padding-top: 10.0rem; padding-bottom: 10.0rem; }
+.padVer15 { padding-top: 14.0rem; padding-bottom: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.padVer16 { padding-top: 18.0rem; padding-bottom: 18.0rem; }
+.padVer17 { padding-top: 24.0rem; padding-bottom: 24.0rem; }
+.padVer18 { padding-top: 30.0rem; padding-bottom: 30.0rem; }
+.padVer19 { padding-top: 38.0rem; padding-bottom: 38.0rem; }
+.padVer20 { padding-top: 50.0rem; padding-bottom: 50.0rem; }
+
+

@@ -1,0 +1,32 @@
+/* PADDING HORIZONTAL SCALE ----------------------------------- */
+/* Left + Right padding. Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.padHor1 { padding-left: 0.1rem; padding-right: 0.1rem; }
+.padHor2 { padding-left: 0.2rem; padding-right: 0.2rem; }
+.padHor3 { padding-left: 0.4rem; padding-right: 0.4rem; }
+.padHor4 { padding-left: 0.6rem; padding-right: 0.6rem; }
+.padHor5 { padding-left: 0.8rem; padding-right: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.padHor6 { padding-left: 1.0rem; padding-right: 1.0rem; }
+.padHor7 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.padHor8 { padding-left: 2.0rem; padding-right: 2.0rem; }
+.padHor9 { padding-left: 3.0rem; padding-right: 3.0rem; }
+.padHor10 { padding-left: 4.0rem; padding-right: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.padHor11 { padding-left: 5.0rem; padding-right: 5.0rem; }
+.padHor12 { padding-left: 6.0rem; padding-right: 6.0rem; }
+.padHor13 { padding-left: 8.0rem; padding-right: 8.0rem; }
+.padHor14 { padding-left: 10.0rem; padding-right: 10.0rem; }
+.padHor15 { padding-left: 14.0rem; padding-right: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.padHor16 { padding-left: 18.0rem; padding-right: 18.0rem; }
+.padHor17 { padding-left: 24.0rem; padding-right: 24.0rem; }
+.padHor18 { padding-left: 30.0rem; padding-right: 30.0rem; }
+.padHor19 { padding-left: 38.0rem; padding-right: 38.0rem; }
+.padHor20 { padding-left: 50.0rem; padding-right: 50.0rem; }
+
+

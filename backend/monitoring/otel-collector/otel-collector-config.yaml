@@ -1,0 +1,51 @@
+receivers:
+    otlp:
+        protocols:
+            grpc:
+            http:
+
+exporters:
+    otlp:
+        endpoint: tempo:4317
+        tls:
+            insecure: true
+    prometheus:
+        endpoint: 0.0.0.0:8889
+    loki:
+        endpoint: http://loki:3100/loki/api/v1/push
+        default_labels_enabled:
+            exporter: true
+            job: true
+
+processors:
+    batch:
+    memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+        spike_limit_mib: 128
+    resourcedetection:
+        detectors: [host, env, gcp, ecs, ec2]
+        timeout: 2s
+        override: false
+
+extensions:
+    health_check:
+
+service:
+    extensions: [health_check]
+    pipelines:
+        traces:
+            receivers: [otlp]
+            processors: [memory_limiter, batch]
+            exporters: [otlp]
+        metrics:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [prometheus]
+        logs:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [loki]
+
+
+

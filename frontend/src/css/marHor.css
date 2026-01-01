@@ -1,0 +1,32 @@
+/* MARGIN HORIZONTAL SCALE ----------------------------------- */
+/* Left + Right margin. Range: 0.1rem to 50rem */
+
+/* MICRO ----------------------------------- */
+.marHor1 { margin-left: 0.1rem; margin-right: 0.1rem; }
+.marHor2 { margin-left: 0.2rem; margin-right: 0.2rem; }
+.marHor3 { margin-left: 0.4rem; margin-right: 0.4rem; }
+.marHor4 { margin-left: 0.6rem; margin-right: 0.6rem; }
+.marHor5 { margin-left: 0.8rem; margin-right: 0.8rem; }
+
+/* SMALL ----------------------------------- */
+.marHor6 { margin-left: 1.0rem; margin-right: 1.0rem; }
+.marHor7 { margin-left: 1.5rem; margin-right: 1.5rem; }
+.marHor8 { margin-left: 2.0rem; margin-right: 2.0rem; }
+.marHor9 { margin-left: 3.0rem; margin-right: 3.0rem; }
+.marHor10 { margin-left: 4.0rem; margin-right: 4.0rem; }
+
+/* MEDIUM ----------------------------------- */
+.marHor11 { margin-left: 5.0rem; margin-right: 5.0rem; }
+.marHor12 { margin-left: 6.0rem; margin-right: 6.0rem; }
+.marHor13 { margin-left: 8.0rem; margin-right: 8.0rem; }
+.marHor14 { margin-left: 10.0rem; margin-right: 10.0rem; }
+.marHor15 { margin-left: 14.0rem; margin-right: 14.0rem; }
+
+/* LARGE ----------------------------------- */
+.marHor16 { margin-left: 18.0rem; margin-right: 18.0rem; }
+.marHor17 { margin-left: 24.0rem; margin-right: 24.0rem; }
+.marHor18 { margin-left: 30.0rem; margin-right: 30.0rem; }
+.marHor19 { margin-left: 38.0rem; margin-right: 38.0rem; }
+.marHor20 { margin-left: 50.0rem; margin-right: 50.0rem; }
+
+

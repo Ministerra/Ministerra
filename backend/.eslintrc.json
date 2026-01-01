@@ -1,0 +1,26 @@
+{
+	"env": {
+		"node": true,
+		"es2022": true
+	},
+	"extends": "eslint:recommended",
+	"parserOptions": {
+		"ecmaVersion": "latest",
+		"sourceType": "module"
+	},
+	"globals": {
+		"process": "readonly",
+		"Buffer": "readonly",
+		"cBorEnc": "writable",
+		"cBorDec": "writable"
+	},
+	"rules": {
+		"indent": ["error", "tab"],
+		"linebreak-style": ["error", "unix"],
+		"quotes": ["error", "single", { "avoidEscape": true }],
+		"semi": ["error", "always"],
+		"no-unused-vars": ["warn"],
+		"no-console": "off",
+		"no-mixed-spaces-and-tabs": ["error", "smart-tabs"]
+	}
+}

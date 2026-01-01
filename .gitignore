@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+shared/node_modules/
+
+# Build outputs
+backend/dist/
+frontend/dist/
+backend/build/
+frontend/build/
+
+# Logs
+backend/logging/
+backend/logs/
+*.log
+*.log.*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+backend/tmp_test_file.txt
+backend/app_otel.out
+
+# Database backups
+backend/databaseBackups/
+*.sql
+
+# Write failures (runtime data)
+backend/writeFailures/
+backend/failedSqlWrites/
+
+# Assets (if large)
+assets/
+
+# Backend and frontend are now part of the monorepo
+# Their .git folders will be removed, so we track everything here
+
