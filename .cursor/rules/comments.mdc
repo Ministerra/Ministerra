@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+
+Use structural comments in ALL CAPS followed by a horizontal dash line scaffold to visually segment code. Place these above every function and major logical block.
+
+If the function or block is longer, put 1-2 more lines of regular comments right below the structural comment with dashes.
+
+Example format:
+// DATA NORMALIZATION ------------------------------------------------------
+
+Comments are mandatory and frequent. Prefer single-line comments placed immediately above the operation they describe. Comments explain why and what, never restate syntax.
+
+Code blocks subsections shall be also commented if they represent isolated self-contained logic.
+
+Always put the dash-line after the structural comment to give the file horizontal scafolding
+
+In JSX, every elemented should be commented with the structural comment which includes the dashed line

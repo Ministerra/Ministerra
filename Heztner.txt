@@ -1,0 +1,26 @@
+CONNECT ------------------
+ssh -i ./hetzner deploy@88.198.38.151
+
+UPDATE -------------------
+cd apps/(backend/frontend)
+git pull
+
+REBUILD ------------------
+docker compose --profile prod up -d --build
+docker compose --profile prod up -d 
+
+
+VERIFY  ------------------
+docker compose ps
+docker compose logs -f backend
+
+FLUSH --------------------
+docker compose -p backend exec redis-primary redis-cli -a "$REDIS_PASSWORD" FLUSHALL
+
+
+MYSQL
+start the service
+docker compose -p ministerra -f backend/docker-compose.yml up -d mysql
+
+populate docker with backup file dump.sql
+cat dump.sql | docker compose -p ministerra -f docker-compose.yml exec -T mysql mysql -uroot -p"Ministerroot22.." ministerra

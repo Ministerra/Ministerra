@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+---
+
+Code Style Directive
+
+Minimize structural noise. Use the fewest possible braces and parentheses while preserving correctness and readability. Prefer inline blocks and single-expression constructs over multiline forms.
+
+Minimize line breaks. Combine logically related statements on one line when comprehension is not degraded. Use comma syntax deliberately to express tight sequencing, never to obscure logic.
+
+Favor dense, streamlined code. Reduce vertical sprawl while keeping logical grouping intact. Density is a goal; opacity is not.
+
+Avoid stylistic excess. Do not overuse comma syntax, chaining, or inline conditionals when they reduce traceability.
+
+Every line must justify its existence. No ornamental formatting, no redundant structure, no implied behavior.
+
+Never use single letter variable names.
