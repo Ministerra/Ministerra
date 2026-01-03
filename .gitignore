@@ -52,6 +52,7 @@ backend/app_otel.out
 # Database backups
 backend/databaseBackups/
 *.sql
+!backend/dbSchema.sql
 
 # Write failures (runtime data)
 backend/writeFailures/
