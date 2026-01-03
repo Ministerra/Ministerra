@@ -228,9 +228,12 @@ function Alerts(props) {
 				window.location.href = `/event/${data.event || target}#discussion`;
 			},
 			eve_rating: () => {
-				const title = data?.event?.title || '';
+				const title = data?.title || '';
 				const slug = encodeURIComponent(title).replace(/\./g, '-').replace(/%20/g, '_');
 				window.location.href = `/event/${target}!${slug}#discussion`;
+			},
+			user_rating: () => {
+				window.location.href = `/user/${brain.user.id}`;
 			},
 			comment: () => {
 				window.location.href = `/event/${data.event || target}#discussion`;

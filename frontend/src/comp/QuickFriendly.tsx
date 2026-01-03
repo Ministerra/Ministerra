@@ -119,7 +119,7 @@ function QuickFriendly(props) {
 			{/* QUICK EDITOR WRAPPER -------------------------------------------- */}
 			{quick !== false && (
 				<editor-wrapper class={'block  marTopXxl marBotXl w100'}>
-					<Editor quickType={Number(quick)} showMan={showMan} brain={brain} />
+					<Editor quickType={quick} showMan={showMan} brain={brain} />
 					<button
 						onClick={() => showMan('quick', false)}
 						className='bgTransXs tRed shaBlue    marBotXxs bGlassSubtle  posRel borderBot     tRed zinMax downLittle  posRel padAllXs boldM fs10   boRadXxs w50 marAuto mw30 marTopXxl '>

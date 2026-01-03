@@ -65,8 +65,8 @@ async function cachePastEvent(eventID, connection) {
 		detaVers: eventData.detaVers,
 	};
 	const [meta, basicsData, detailsData, pipeline] = [createEveMeta(metaInput), {}, {}, redis.pipeline()];
-	EVENT_BASICS_KEYS.forEach(col => (basicsData[col] = eventData[col]));
-	EVENT_DETAILS_KEYS.forEach(col => (detailsData[col] = eventData[col]));
+	EVENT_BASICS_KEYS.forEach(col => (basicsData[col] = col === 'ends' && eventData[col] ? Number(new Date(eventData[col])) : eventData[col]));
+	EVENT_DETAILS_KEYS.forEach(col => (detailsData[col] = col === 'meetWhen' && eventData[col] ? Number(new Date(eventData[col])) : eventData[col]));
 
 	// CACHE UPDATE -----------------------------------------------------------
 	// Steps: store encoded meta/basi/deta in one hash, track cachedAt in zset, then delete future hashes so clients don’t mix “future” and “past” shapes.

@@ -88,11 +88,14 @@ export function Search(props) {
 				return (obj.first ? `${obj.first} ${obj.last}` : obj.title || obj.name || '').toLowerCase();
 			};
 
+			// LOCAL CONTENT AGGREGATION ---
+			// Steps: merge cached search results with in-memory content; filter out items already loaded with full state.
+			const pastEveSrc = cat === 'pastEvents' ? brain.user.pastEve || {} : brain[target];
 			const localContent = [
 				...Object.values(brain.user.search[cat] || {})
 					.flat()
-					.filter((obj: any) => !brain[target][obj.id] || !['basi', 'basiDeta', 'mini'].includes(brain[target][obj.id].state)),
-				...(cat === 'chats' ? (chats || []) : Object.values(cat === 'pastEvents' ? brain.user.pastEve || {} : brain[target])).filter(
+					.filter((obj: any) => !pastEveSrc[obj.id] || !['basi', 'basiDeta', 'mini'].includes(pastEveSrc[obj.id].state)),
+				...(cat === 'chats' ? (chats || []) : Object.values(pastEveSrc)).filter(
 					(obj: any) => cat === 'chats' || (!obj.blocked && ['basi', 'basiDeta', 'mini'].includes(obj.state))
 				),
 			].filter((obj: any) => obj.id && checkIfIncludes(getStrToCompare(obj)));

@@ -65,9 +65,9 @@ function Home(props) {
 		[avail, { cats, types = [], time, sort }, { quick, filter, map, tools, times, sorts, sherlock, history }] = [snapAvail.current, snap || {}, show],
 		// EFFECTIVE TYPE SELECTION ------------------------------------------------------
 		// Raw `snap.types` can contain types that are not available for current cats/time/cities. Treat those as unselected.
-		effectiveSelectedTypes = useMemo(() => types.filter(type => avail.types.includes(type)), [types, avail.types]),
+		effectiveSelectedTypes = useMemo(() => types.filter(type => avail.types?.includes(type)), [types, avail.types]),
 		hasEffectiveTypeSelection = avail.types?.length > 0 && effectiveSelectedTypes.length > 0,
-		noMeetSel = !avail.types?.filter(type => type.startsWith('a')).some(type => types.includes(type)),
+		noMeetSel = avail.types?.length > 0 && !avail.types.filter(type => type.startsWith('a')).some(type => types.includes(type)),
 		[sherData, setSherData] = useState({ ...sherlockObj }),
 		sherAvail = useMemo(() => {
 			if (!show.sherlock) return;
@@ -123,8 +123,6 @@ function Home(props) {
 		},
 		[brain.user.history, brain.user.curCities, snap]
 	);
-
-	console.log(brain, 'BRAAAAAAAAIN');
 
 	const setAvailOrGetAvaTypes = useCallback(
 		(inpSnap, returnTypes, returnSnap) => {

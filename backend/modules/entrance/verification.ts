@@ -2,7 +2,6 @@
 // Email verification for new users and account credentials changes.
 // =============================================================================
 
-import { nanoid } from 'nanoid';
 import { jwtQuickies } from '../jwtokens';
 import sendEmail from '../mailing';
 import { getLogger } from '../../systems/handlers/logging/index';
@@ -17,13 +16,14 @@ const setRedis = r => (redis = r);
 
 // VERIFY NEW USER EMAIL ---------------------------
 // VERIFY MAIL --------------------------------------------------------------
-// Steps: mark user as unintroduced, mint an opaque verifyCode, store it in redis with TTL, then redirect client into introduction flow using the code (not raw JWT).
+// Steps: mark user as unintroduced, mint a short-lived auth token, then redirect to frontend setup flow with the token embedded in URL.
 async function verifyMail({ userID }, con) {
 	await con.execute(/*sql*/ `UPDATE users SET status = "unintroduced" WHERE id = ?`, [userID]);
-	const verifyCode = nanoid(32),
-		expiry = Date.now() + EXPIRATIONS.verifyMailLink; // GENERATE SHORT-LIVED VERIFICATION CODE ---
-	await redis.setex(`verifyCode:${verifyCode}`, 1800, `${userID}:unintroduced:${expiry}`);
-	return { redirect: `${process.env.FRONT_END}/entrance?mode=introduction&code=${verifyCode}` };
+	// MINT AUTH TOKEN FOR FRONTEND ---
+	// Frontend stores this in sessionStorage and proceeds to /setup for profile configuration.
+	const authToken = jwtQuickies({ mode: 'create', payload: { userID, is: 'unintroduced' }, expiresIn: '30m' });
+	const expiry = Date.now() + 30 * 60 * 1000;
+	return { redirect: `${process.env.FRONT_END}/entrance?mode=introduction&auth=${authToken}:${expiry}` };
 }
 
 // VERIFY NEW EMAIL (AFTER EMAIL CHANGE) ---------------------------

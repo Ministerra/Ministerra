@@ -56,7 +56,7 @@ function Editor(props: any) {
 							starts: new Date(event.starts),
 							ends: event.ends ? new Date(event.ends) : null,
 							meetWhen: event.meetWhen ? new Date(event.meetWhen) : null,
-							locaMode: !event.adress ? 'city' : event.location.startsWith('+') ? 'radius' : 'exact',
+							locaMode: !event.location && !event.place ? 'city' : event.location?.startsWith('+') ? 'radius' : 'exact',
 							location: event.location?.startsWith('+') ? event.location.slice(1) : event.location,
 					  }
 					: { inter: 'sur', priv: 'pub', type: quickType, locaMode: 'exact' }),

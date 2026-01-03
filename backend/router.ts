@@ -32,9 +32,9 @@ const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next))
 
 // ENTRANCE ---------------------------------------------------------------------
 // Auth entry-point:
-// - GET: auth verification via URL param
+// - GET: auth verification via query param (email links use ?auth=token format)
 // - POST: login/register/forgot flows via body mode
-router.get('/entrance/:auth', asyncRoute(Entrance));
+router.get('/entrance', asyncRoute(Entrance));
 router.post('/entrance', asyncRoute(Entrance));
 
 // CORE MODULES -----------------------------------------------------------------

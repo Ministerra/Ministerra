@@ -46,7 +46,7 @@ export interface EventBasics {
 
 export interface EventDetails {
 	meetHow?: string;
-	meetWhen?: string;
+	meetWhen?: number;
 	organizer?: string;
 	contacts?: string;
 	links?: string;

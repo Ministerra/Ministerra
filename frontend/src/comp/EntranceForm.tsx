@@ -207,7 +207,11 @@ function EntranceForm(props: any) {
 				setAxiosInProg(true);
 				setResendJustSuccess(false);
 				try {
-					await axios.post('/entrance', delUndef({ mode: 'resendMail', mailType: isLogin ? 'verifyMail' : isForgotPass && 'resetPass', email, pass }));
+					// RESEND MAIL TYPE RESOLUTION ---
+					// verifyMail: for login (unverified email) or register flows
+					// resetPass: for forgot password flow
+					const resolvedMailType = isLogin || isRegister ? 'verifyMail' : isForgotPass ? 'resetPass' : undefined;
+					await axios.post('/entrance', delUndef({ mode: 'resendMail', mailType: resolvedMailType, email, pass }));
 					setResendRetryCount(prev => prev + 1);
 					setInform(prev => ({ ...prev, mailSent: false, verifyMail: false, mailResent: true }));
 					setResendJustSuccess(true);
@@ -298,12 +302,16 @@ function EntranceForm(props: any) {
 					}
 				}
 
-				// CORE AUTHENTICATION FLOW ---
-				const print = getDeviceFingerprint();
-				console.log('[LOGIN DEBUG] Sending login request', { mode: what, emailLength: email?.length, passLength: pass?.length, printLength: print?.length });
-				const response = (await axios.post('/entrance', delUndef({ mode: what, email, pass, print })))?.data || {};
-				console.log('[LOGIN DEBUG] Login response received', { status: response?.status, hasAuth: !!response?.auth });
-				const { status, authToken, cities, auth, authEpoch, authExpiry, previousAuth, previousEpoch, deviceID, deviceSalt, deviceKey } = response;
+			// CORE AUTHENTICATION FLOW ---
+			const print = getDeviceFingerprint();
+			console.log('[LOGIN DEBUG] Sending login request', { mode: what, emailLength: email?.length, passLength: pass?.length, printLength: print?.length });
+			const rawResponse = (await axios.post('/entrance', delUndef({ mode: what, email, pass, print })))?.data;
+			console.log('[LOGIN DEBUG] Login response received', { rawResponse, type: typeof rawResponse });
+
+			// RESPONSE NORMALIZATION ---
+			// Backend can return string payloads (mailSent, verifyMail) or object payloads (login success)
+			const response = typeof rawResponse === 'string' ? rawResponse : rawResponse || {};
+			const { status, authToken, cities, auth, authEpoch, authExpiry, previousAuth, previousEpoch, deviceID, deviceSalt, deviceKey } = typeof response === 'object' ? response : {};
 
 				// REDIRECT TO ONBOARDING IF NEW USER ---
 				if (status === 'unintroduced') return (brain.user.isUnintroduced = true), sessionStorage.setItem('authToken', authToken), navigate('/setup');
@@ -331,10 +339,15 @@ function EntranceForm(props: any) {
 					(miscel.initLoadData.cities = brain.user.cities), await forage({ mode: 'set', what: 'miscel', val: miscel });
 					const targetUrl = returnTo || '/';
 					return (brain.isAfterLoginInit = true), window.history.pushState({}, '', targetUrl), navigate(targetUrl);
-				} else {
-					if (response === 'verifyMail') setResendRetryCount(0);
-					setInform(prev => ({ ...prev, [response]: true }));
-				}
+			} else if (typeof response === 'string' && response.length > 0) {
+				// STRING RESPONSE HANDLING ---
+				// Backend sends status codes like 'mailSent', 'verifyMail' as plain strings
+				if (response === 'verifyMail') setResendRetryCount(0);
+				setInform(prev => ({ ...prev, [response]: true }));
+			} else {
+				// UNEXPECTED RESPONSE FORMAT ---
+				console.warn('[LOGIN DEBUG] Unexpected response format:', response);
+			}
 			} else dataValidity.forEach((isValid, index) => !isValid && setInform(prev => ({ ...prev, [informs[index]]: true })));
 		} catch (err) {
 			console.error('[LOGIN DEBUG] Error caught in man', err);

@@ -53,14 +53,11 @@ export async function eventLoader(brain, params) {
 			else if (pastUsers) eve.pastUsers = setPropsToContent('users', pastUsers, brain);
 
 			// NORMALIZATION ------------------------------------------------------
-			// Steps: parse base36 date fields when backend returns compact strings; keep already-decimal values intact.
+			// Steps: ensure ends/meetWhen are numeric timestamps; backend stores these as numbers but redis may return strings.
 			const parsedEventData = {
 				...(eventData || {}),
-				// PARSE BASE36 ONLY IF VALUE IS STRING AND NOT ALREADY DECIMAL ---------
-				...(eventData?.ends && { ends: typeof eventData.ends === 'string' && !/^\d{10,}$/.test(eventData.ends) ? parseInt(eventData.ends, 36) : Number(eventData.ends) }),
-				...(eventData?.meetWhen && {
-					meetWhen: typeof eventData.meetWhen === 'string' && !/^\d{10,}$/.test(eventData.meetWhen) ? parseInt(eventData.meetWhen, 36) : Number(eventData.meetWhen),
-				}),
+				...(eventData?.ends && { ends: Number(eventData.ends) }),
+				...(eventData?.meetWhen && { meetWhen: Number(eventData.meetWhen) }),
 			};
 
 			Object.assign(eve, parsedEventData, {

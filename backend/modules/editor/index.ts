@@ -141,7 +141,7 @@ async function Editor(req, res) {
 		// RESOLVE CITY & COORDS -----------------------------------------------
 		// Steps: ensure city exists (or create), normalize coords into MySQL Point, and apply friendly-event constraints (imgVers=0).
 		if (city && !cityID) (cityData = (await getOrSaveCityData(con, [city]))[0]), cols.push(`cityID`), values.push(cityData.cityID), (vars.cityID = cityData.cityID);
-		if (type.startsWith('a')) cols.push(`imgVers`), values.push(0);
+		if (type?.startsWith('a')) cols.push(`imgVers`), values.push(0);
 		if (lng && lat) cols.push(`coords`), values.push(...[lng, lat]);
 
 		// CREATE NEW EVENT ----------------------------------------------------
@@ -183,8 +183,11 @@ async function Editor(req, res) {
 
 			const isFriend = ev.type.startsWith('a');
 			// Prevent changing critical fields (type, city) for friendly events or across type boundaries
+			// Guard vars.type checks since type may be undefined when user isn't changing it
 			if (
-				(isFriend ? (vars.cityID && vars.cityID != ev.cityID) || (vars.type !== undefined && vars.type != ev.type) || !vars.type.startsWith('a') : vars.type.startsWith('a')) ||
+				(isFriend
+					? (vars.cityID && vars.cityID != ev.cityID) || (vars.type !== undefined && (vars.type != ev.type || !vars.type.startsWith('a')))
+					: vars.type !== undefined && vars.type.startsWith('a')) ||
 				(vars.priv && ev.priv !== vars.priv)
 			)
 				throw new Error('badRequest');

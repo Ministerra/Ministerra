@@ -63,7 +63,7 @@ async function processNewEvents({ data, state: { eveBasics, eveDetails, eveCityI
 			eventIDString,
 			delFalsy({ ...basics, basiVers: Number(basiVers), ...(place || location ? { ...(place ? { place } : { location }), hashID } : {}), ends: Number(new Date(basics.ends)) })
 		);
-		eveDetails.set(eventIDString, delFalsy({ meetHow, meetWhen, organizer, contacts, location, links, detail, fee, takeWith, detaVers: Number(detaVers), ...(place ? { location } : {}) }));
+		eveDetails.set(eventIDString, delFalsy({ meetHow, meetWhen: meetWhen ? Number(new Date(meetWhen)) : undefined, organizer, contacts, location, links, detail, fee, takeWith, detaVers: Number(detaVers), ...(place ? { location } : {}) }));
 		eveCityIDs.set(eventIDString, Number(cityID));
 
 		// BEST-OF CANDIDATES ---

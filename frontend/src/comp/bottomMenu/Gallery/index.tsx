@@ -197,7 +197,8 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 						invitesIn: i => (i.invites?.in?.length || 0) > 0,
 						invitesOut: i => (i.invites?.out?.length || 0) > 0,
 						pastOwn: i => i.own,
-						pastSurMay: i => i.inter,
+						pastSurMay: i => ['sur', 'may'].includes(i.inter),
+						pastInt: i => i.inter === 'int',
 						blocks: i => i.blocked,
 						links: i => i.linked === true || i.trusts,
 						trusts: i => i.trusts,
@@ -378,7 +379,7 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 						{show === 'menu' ? (
 							<menu-bs class='w100 flexCen wrap marAuto padVerXs posRel aliStretch shaTop bgTransXs'>
 								{(!isInvitations
-									? ['futuOwn', 'futuSurMay', 'futuInt', 'links', 'trusts', 'requests', 'invitesIn', 'invitesOut', 'pastOwn', 'pastSurMay', 'blocks']
+									? ['futuOwn', 'futuSurMay', 'futuInt', 'links', 'trusts', 'requests', 'invitesIn', 'invitesOut', 'pastOwn', 'pastSurMay', 'pastInt', 'blocks']
 									: isInvitations === 'userToEvents'
 									? ['futuOwn', 'futuSurMay']
 									: ['links', 'trusts']
