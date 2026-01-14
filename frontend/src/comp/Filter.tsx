@@ -53,14 +53,12 @@ function Filter(props) {
 	}, []);
 
 	return (
-		<types-filter
-			ref={scrollTarget}
-			class={`${nowAt !== 'editor' ? 'padBotXl' : 'marBotM'}    textAli ${nowAt === 'editor' ? 'marTopS' : `  ${map === true ? 'padBotS' : ''}`} posRel flexCol marAuto block aliCen w100 `}>
+		<types-filter ref={scrollTarget} class={`${nowAt !== 'editor' ? 'padBotXl' : ''}    textAli ${map === true ? 'padBotS' : ''} posRel flexCol marAuto block aliCen w100 `}>
 			<blue-divider
 				style={{ filter: 'saturate(1) hue-rotate(-10deg) brightness(0.8) opacity(0.3)' }}
 				class={` hr0-2  posAbs topCen block bInsetBlueTopXl  zinMenu  downLittle   w50   zinMaXl opacityS  marAuto   `}
 			/>
-			<blue-divider style={{ filter: 'saturate(1) hue-rotate(0deg)' }} class={` hr10 bInsetBlueTopXs2  block zin1 maskLowXs     w80   zinMax   marAuto   `} />
+			<blue-divider style={{ filter: 'saturate(1) hue-rotate(0deg)' }} class={` ${nowAt === 'editor' ? 'hr2' : 'hr10'} bInsetBlueTopXs2  block zin1 maskLowXs     w80   zinMax   marAuto   `} />
 
 			{/* SELECT / DESELECT ALL --------------------------------------------------------------------- */}
 			{nowAt !== 'editor' && (

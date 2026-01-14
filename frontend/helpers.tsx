@@ -47,61 +47,60 @@ export function createSubsetObj(obj, props) {
 }
 
 // GET TIME-FRAMES ---------------------------------------------------------------------------
-export function getTimeFrames(timeFrameName: any = null) {
-	const getDayTimestamp = (base, hours = 0, days = 0) => {
-		const d = new Date(base);
-		d.setDate(d.getDate() + days);
-		d.setHours(hours, hours ? 23 : 0, hours ? 59 : 0, hours ? 999 : 0);
-		return d.getTime();
+export function getTimeFrames(name: string | null = null) {
+	const dayTs = (base, h = 0, d = 0) => {
+		const dt = new Date(base);
+		dt.setDate(dt.getDate() + d);
+		dt.setHours(h, h ? 23 : 0, h ? 59 : 0, h ? 999 : 0);
+		return dt.getTime();
 	};
 
-	// GET RANGE LIMITING TIME STAMPS -----------------------------------------------------------------
-	const getRangeTimestamps = (base, type) => {
-		const day = base.getDay();
-		const start = getDayTimestamp(base, 0, type === 'weekend' ? (day === 6 ? 0 : 6 - day) : day === 0 ? -6 : 1 - day);
-		return { start, end: getDayTimestamp(start, 23, type === 'weekend' ? 1 : 6) };
+	const rangeTs = (base, type) => {
+		const d = base.getDay();
+		const start = dayTs(base, 0, type === 'weekend' ? (d === 6 ? 0 : 6 - d) : d === 0 ? -6 : 1 - d);
+		return { start, end: dayTs(start, 23, type === 'weekend' ? 1 : 6) };
 	};
 
-	// CALCULATE TIME FRAMES ------------------------------------------------------------------
-	const calculateTimeFrames = now => {
-		const today = getDayTimestamp(now);
-		const tomorrow = getDayTimestamp(now, 0, 1);
-		const weekend = getRangeTimestamps(new Date(today), 'weekend');
-		const week = getRangeTimestamps(new Date(today), 'week');
-		const nextWeek = getRangeTimestamps(new Date(getDayTimestamp(today, 0, 7)), 'week');
-		const monthEnd = getDayTimestamp(today, 23, 30);
+	const now = Date.now(),
+		today = dayTs(now),
+		tomorrow = dayTs(now, 0, 1),
+		weekend = rangeTs(new Date(today), 'weekend'),
+		week = rangeTs(new Date(today), 'week'),
+		nextWeek = rangeTs(new Date(dayTs(today, 0, 7)), 'week'),
+		mEnd = dayTs(today, 23, 30),
+		nMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 2, 0);
 
-		const nowDate = new Date(now);
-		const endOfNextMonth = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 1);
-		endOfNextMonth.setDate(endOfNextMonth.getDate() - 1);
-		const twoMonthsEnd = getDayTimestamp(endOfNextMonth);
-		return {
-			anytime: { name: 'anytime', start: 0, end: Infinity },
-			recent: { name: 'recent', start: 0, end: now },
-			today: { name: 'today', start: today, end: getDayTimestamp(now, 23) },
-			tomorrow: { name: 'tomorrow', start: tomorrow, end: getDayTimestamp(tomorrow, 23) },
-			weekend: { name: 'weekend', start: weekend.start, end: weekend.end },
-			week: { name: 'week', start: week.start, end: week.end },
-			nextWeek: { name: 'nextWeek', start: nextWeek.start, end: nextWeek.end },
-			month: { name: 'month', start: today, end: monthEnd },
-			twoMonths: { name: 'twoMonths', start: today, end: twoMonthsEnd },
-		};
+	const frames = {
+		anytime: { name: 'anytime', start: 0, end: Infinity },
+		recent: { name: 'recent', start: 0, end: now },
+		today: { name: 'today', start: today, end: dayTs(now, 23) },
+		tomorrow: { name: 'tomorrow', start: tomorrow, end: dayTs(tomorrow, 23) },
+		weekend: { name: 'weekend', start: weekend.start, end: weekend.end },
+		week: { name: 'week', start: week.start, end: week.end },
+		nextWeek: { name: 'nextWeek', start: nextWeek.start, end: nextWeek.end },
+		month: { name: 'month', start: today, end: mEnd },
+		twoMonths: { name: 'twoMonths', start: today, end: dayTs(nMonth) },
 	};
-	const timeFrames = calculateTimeFrames(Date.now());
-	if (timeFrameName) return timeFrames[timeFrameName] || {};
-	return timeFrames;
+
+	return name ? frames[name] || {} : frames;
 }
 
 // GET EVENT RANK ---------------------------------------------------------------------------
 export const getEventRank = event => 3 * event.surely + event.maybe + 0.2 * event.score;
-export async function logoutCleanUp(brain, emptyBrain, logOut = false) {
+export async function logoutAndCleanUp(brain, emptyBrain, logOut = false) {
 	try {
-		// Disconnect socket and clear all intervals
+		// DISCONNECT AND CLEAR SESSION ---
 		disconnectSocketIO();
-
-		const keysToDelete = ['token'];
 		sessionStorage.removeItem('authToken');
-		await Promise.all(keysToDelete.map(key => forage({ mode: 'del', what: key })));
+		sessionStorage.removeItem('introEmail');
+		sessionStorage.removeItem('registrationData');
+		clearPDK();
+
+		// PRUNE STORAGE AND WORKERS ---
+		// PDK and DEK are cleared from workers and IndexedDB; user-bound data pruned.
+		await Promise.all([forage({ mode: 'del', what: 'token' }), forage({ mode: 'del', what: 'user' }), clearPDKFromWorker(), clearDEKFromWorker()]);
+
+		// RESET BRAIN ---
 		Object.keys(brain).forEach(key => delete brain[key]);
 		Object.assign(brain, emptyBrain);
 		if (logOut) window.location.href = '/entrance';
@@ -246,8 +245,7 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 
 		// CONVERT SETS TO ARRAYS ----------------------------------------------------------------------
 		if (bestOfIDsSet) brain.bestOfIDs = [...bestOfIDsSet];
-		if (isNewContent)
-			!bestOfIDsSet && (brain.citiesTypesInTimes[thisCity] = Object.fromEntries(Object.entries(typesInTimes).map(([frame, types]: any[]) => [frame, Array.from(types as any)])));
+		if (isNewContent) !bestOfIDsSet && (brain.citiesTypesInTimes[thisCity] = Object.fromEntries(Object.entries(typesInTimes).map(([frame, types]: any[]) => [frame, Array.from(types as any)])));
 	} catch (error) {
 		console.error('PROCESS METAS ERROR', error);
 		throw error;
@@ -347,21 +345,17 @@ export async function deriveKeyFromPassword(password, salt) {
 	return btoa(derived.slice(0, 32));
 }
 
-// PDK is now stored encrypted in IndexedDB by the worker, not sessionStorage
-// These functions are kept for login flow - worker handles persistence
+// PDK SESSION STORAGE -----------------------------------------------------------
+// Steps: keep PDK only in sessionStorage so it dies with the tab/session; forage worker can still encrypt it before persisting.
 export function storePDK(pdk) {
-	// Temporary storage for passing to worker during login
-	// Worker will encrypt and persist in IndexedDB
 	sessionStorage.setItem('_pdk', pdk);
 }
 
 export function getPDK() {
-	// Only used during login flow before worker takes over
 	return sessionStorage.getItem('_pdk');
 }
 
 export function clearPDK() {
-	// Clear sessionStorage (login temp) - worker handles IndexedDB via clearPDK mode
 	sessionStorage.removeItem('_pdk');
 }
 
@@ -453,145 +447,74 @@ const WORKER_TIMEOUT = 30000; // 30s timeout for worker operations
 
 function executeWorker(worker, { mode, what, id, val }) {
 	return new Promise((resolve, reject) => {
-		const isPersistent = allPersistentModes.has(what) || workerAliases[what] || what === 'auth';
-		const reqId = ++reqCounter;
+		const isPersistent = allPersistentModes.has(what) || workerAliases[what] || what === 'auth',
+			reqId = ++reqCounter;
 
-		const timer = setTimeout(() => {
-			cleanup();
-			reject(new Error(`Worker execution timed out for ${mode}:${what}`));
-		}, WORKER_TIMEOUT);
-
+		const timer = setTimeout(() => (cleanup(), reject(new Error(`Worker timeout: ${mode}:${what}`))), WORKER_TIMEOUT);
 		const handleMessage = ({ data }) => {
-			if (data.reqId !== reqId) return; // Not our response, ignore
-			cleanup();
-			if (data.error) reject(new Error(data.error));
-			else resolve(data.data);
+			if (data.reqId === reqId) cleanup(), data.error ? reject(new Error(data.error)) : resolve(data.data);
 		};
-
-		const handleError = error => {
-			cleanup();
-			reject(error);
-		};
+		const handleError = error => (cleanup(), reject(error));
 
 		const cleanup = () => {
-			clearTimeout(timer);
-			worker.removeEventListener('message', handleMessage);
-			worker.removeEventListener('error', handleError);
+			clearTimeout(timer), worker.removeEventListener('message', handleMessage), worker.removeEventListener('error', handleError);
 			if (!isPersistent) worker.terminate();
 		};
 
-		worker.addEventListener('message', handleMessage);
-		worker.addEventListener('error', handleError);
-		worker.postMessage({ mode, what, id, val, reqId });
+		worker.addEventListener('message', handleMessage), worker.addEventListener('error', handleError), worker.postMessage({ mode, what, id, val, reqId });
 	});
 }
 
 // LOCAL FORAGE ROUTER ---------------------------------------------------------------------------
 export async function forage({ mode, what, id, val }: { mode: string; what?: string; id?: string | string[]; val?: any }): Promise<any> {
 	try {
-		const params = { mode, what, id, val };
-		const createWorker = () => new Worker(new URL('./workers/forageSetWorker.js', import.meta.url), { type: 'module' });
+		const params = { mode, what, id, val },
+			createWorker = () => new Worker(new URL('./workers/forageSetWorker.js', import.meta.url), { type: 'module' });
 
 		const initWorker = async worker => {
 			return new Promise((resolve, reject) => {
-				const handleInit = ({ data }) => {
-					if (data.inited) {
-						cleanup();
-						resolve(worker);
-					} else if (data.error) {
-						cleanup();
-						reject(new Error(data.error));
-					}
-				};
-				const handleError = err => {
-					cleanup();
-					reject(err);
-				};
-				const cleanup = () => {
-					worker.removeEventListener('message', handleInit);
-					worker.removeEventListener('error', handleError);
-				};
-
-				worker.addEventListener('message', handleInit);
-				worker.addEventListener('error', handleError);
-				worker.postMessage({ mode: 'init' });
+				const handleInit = ({ data }) => (data.inited ? (cleanup(), resolve(worker)) : data.error && (cleanup(), reject(new Error(data.error))));
+				const handleError = err => (cleanup(), reject(err));
+				const cleanup = () => (worker.removeEventListener('message', handleInit), worker.removeEventListener('error', handleError));
+				worker.addEventListener('message', handleInit), worker.addEventListener('error', handleError), worker.postMessage({ mode: 'init' });
 			});
 		};
 
 		if (mode === 'del' && what === 'everything') {
-			try {
-				const tmp = createWorker();
-				await initWorker(tmp);
-				await executeWorker(tmp, params);
-				// tmp.terminate() is handled by executeWorker for non-persistent
-
-				for (const key of Object.keys(encryptionWorkers)) {
-					try {
-						encryptionWorkers[key].terminate();
-					} catch {}
-					encryptionWorkers[key] = new Worker(new URL('./workers/forageSetWorker.js', import.meta.url), { type: 'module' });
-				}
-				forageInited = false;
-				return true;
-			} catch (error) {
-				console.error('FORAGE hard reset error', error);
-				throw error;
-			}
+			const tmp = createWorker();
+			await initWorker(tmp), await executeWorker(tmp, params);
+			Object.keys(encryptionWorkers).forEach(key => (encryptionWorkers[key].terminate(), (encryptionWorkers[key] = createWorker())));
+			return (forageInited = false), true;
 		}
 
-		// CLEAR PDK FROM ALL WORKERS ---------------------------------------------------
-		if (mode === 'clearPDK' || mode === 'clearDEK') {
-			if (!forageInited) return; // Workers not initialized, nothing to clear
-			await Promise.all(Object.values(encryptionWorkers).map(worker => executeWorker(worker, params)));
-			return;
-		}
+		if (mode === 'clearPDK' || mode === 'clearDEK') return forageInited && (await Promise.all(Object.values(encryptionWorkers).map(worker => executeWorker(worker, params))));
 
-		// SEND KEY TO ALL PERSISTENT WORKERS ---------------------------------------------------
 		if (what === 'auth') {
 			if (!forageInited) await Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => (forageInited = true));
-
-			// Auth format: { auth, print, pdk?, deviceKey?, epoch, prevAuth? } - broadcast to ALL persistent workers
-			// PREVENT RE-ENCRYPTION RACE: Only the first worker handles re-encryption (prevAuth)
-			const workers = Object.values(encryptionWorkers);
-			const primaryWorker = workers[0];
-
-			await Promise.all(
-				workers.map(worker => {
-					const workerParams = { ...params };
-					// Remove prevAuth for non-primary workers to skip re-encryption logic
-					if (worker !== primaryWorker && params.val?.prevAuth) {
-						workerParams.val = { ...params.val };
-						delete workerParams.val.prevAuth;
-					}
-					return executeWorker(worker, workerParams);
+			const workers = Object.values(encryptionWorkers),
+				primary = workers[0];
+			return await Promise.all(
+				workers.map(w => {
+					const p = { ...params };
+					if (w !== primary && p.val?.prevAuth) (p.val = { ...params.val }), delete p.val.prevAuth;
+					return executeWorker(w, p);
 				})
 			);
-		} else if (allPersistentModes.has(what) || workerAliases[what]) {
-			// USE PERSISTENT WORKER for both PDK-encrypted AND DEK-encrypted items ---------------------------
-			const workerKey = workerAliases[what] || what; // Resolve aliases (eve→events, use→users)
-			if (!forageInited) await Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => (forageInited = true));
-
-			// Retry logic for persistent workers
-			try {
-				return await executeWorker(encryptionWorkers[workerKey], params);
-			} catch (error) {
-				console.warn(`Restarting worker for ${what} due to error:`, error);
-				encryptionWorkers[workerKey].terminate();
-				encryptionWorkers[workerKey] = createWorker();
-				await initWorker(encryptionWorkers[workerKey]);
-				return await executeWorker(encryptionWorkers[workerKey], params);
-			}
-		} else {
-			// TEMPORARY WORKER for non-encrypted items (token, btoa, etc.) ---------------------------
-			const worker = createWorker();
-			await initWorker(worker);
-			// executeWorker handles termination for non-persistent workers
-			return await executeWorker(worker, { ...params }).catch(error => {
-				console.error('WORKER EXECUTION ERROR', error);
-				worker.terminate(); // Ensure termination on error if executeWorker didn't catch it in time
-				throw error;
-			});
 		}
+
+		if (allPersistentModes.has(what) || workerAliases[what]) {
+			const key = workerAliases[what] || what;
+			if (!forageInited) await Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => (forageInited = true));
+			try {
+				return await executeWorker(encryptionWorkers[key], params);
+			} catch (e) {
+				console.warn(`Restarting worker ${key}:`, e.message), encryptionWorkers[key].terminate(), (encryptionWorkers[key] = createWorker());
+				return await initWorker(encryptionWorkers[key]), executeWorker(encryptionWorkers[key], params);
+			}
+		}
+
+		const ephemeral = createWorker();
+		return await initWorker(ephemeral), executeWorker(ephemeral, params);
 	} catch (error) {
 		console.error('FORAGE ERROR', error);
 		throw error;
@@ -777,9 +700,9 @@ export function getFilteredContent({ what, brain, snap = {}, event = {}, show = 
 
 // GET AWARDS ---------------------------------------------------------------------------
 export const getAwards = sum => {
-	const originalNums = [];
-	for (const power of [32, 16, 8, 4, 2, 1]) if (sum >= power) originalNums.push(power), (sum -= power);
-	return originalNums.sort();
+	const res = [];
+	for (const p of [32, 16, 8, 4, 2, 1]) if (sum >= p) res.push(p), (sum -= p);
+	return res.sort();
 };
 
 let eventBadges = {};
@@ -863,7 +786,7 @@ export function setPropsToContent(mode, items, brain, isNewCont = false) {
 			if (mode === 'users') {
 				[linkedId, trusts] = ((linksMap?.get(id) as any[]) || []) as any[];
 				if (isNewCont) {
-					for (const [eveID, inter] of ((item.eveInters || []) as any[])) {
+					for (const [eveID, inter] of (item.eveInters || []) as any[]) {
 						if (inter === 'sur') {
 							eventBadges[eveID] ??= { indis: {}, basics: {}, groups: {} };
 							for (const arr of badgeArrs) for (const i of item[arr]) eventBadges[eveID][arr][i] = (eventBadges[eveID][arr][i] || 0) + 1;
@@ -936,7 +859,7 @@ Parameters:
 7. endsInMs: if getLabet is TRUE it will change the label to 'Dnes proběhlo' if the event has already ended today. 
 */
 export function humanizeDateTime(inp) {
-	const { dateInMs, prevDateInMs, getLabel, hideFarTime, getGranularPast, thumbRow, endsInMs } = inp;
+	const { dateInMs, prevDateInMs, getLabel, hideFarTime, getGranularPast, thumbRow, endsInMs, timeOnly } = inp;
 	if (!dateInMs) return;
 
 	try {
@@ -948,6 +871,8 @@ export function humanizeDateTime(inp) {
 		const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 		const currentDateOnly = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
 		const daysDiff = Math.floor((dateOnly.getTime() - currentDateOnly.getTime()) / (1000 * 3600 * 24));
+		if (timeOnly) return time;
+
 		const isToday = daysDiff === 0;
 		const secsDiff = Math.floor((date.getTime() - currentDate.getTime()) / 1000);
 		const minsDiff = Math.floor(secsDiff / 60);
@@ -1013,7 +938,7 @@ export function humanizeDateTime(inp) {
 - The function is used to create a natural sounding sentences containing names.
 */
 export function inflectName(name) {
-	const endings = {
+	const ends = {
 		a: 'ou',
 		e: 'em',
 		i: 'ím',
@@ -1044,12 +969,8 @@ export function inflectName(name) {
 		v: 'vem',
 		z: 'zem',
 	};
-	const lastChar = name.slice(-1);
-	const lastTwoChars = name.slice(-2);
-
-	if (endings[lastTwoChars]) return name.slice(0, -2) + endings[lastTwoChars];
-	else if (endings[lastChar]) return name.slice(0, -1) + endings[lastChar];
-	else return name + 'em';
+	const [l1, l2] = [name.slice(-1), name.slice(-2)];
+	return ends[l2] ? name.slice(0, -2) + ends[l2] : ends[l1] ? name.slice(0, -1) + ends[l1] : name + 'em';
 }
 
 // ARE EQUAL ---------------------------------------------------------------------------
@@ -1058,18 +979,14 @@ export function inflectName(name) {
 - The function is used to prevent unnecessary re-renders in React components.
 */
 export function areEqual(a, b) {
-	if (a == null || b == null) return a === b; // HANDLES NULL AND UNDEFINED COMPARISON --------
-	if (typeof a !== typeof b) return false;
-	if (Array.isArray(a) && Array.isArray(b)) {
-		if (a.length !== b.length) return false;
-		return a.every((item, i) => areEqual(item, b[i]));
+	if (a === b) return true;
+	if (a == null || b == null || typeof a !== typeof b) return false;
+	if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => areEqual(v, b[i]));
+	if (typeof a === 'object') {
+		const [ka, kb] = [Object.keys(a), Object.keys(b)];
+		return ka.length === kb.length && ka.every(k => areEqual(a[k], b[k]));
 	}
-	if (typeof a === 'object' && typeof b === 'object') {
-		const [keysA, keysB] = [Object.keys(a), Object.keys(b)];
-		if (keysA.length !== keysB.length) return false;
-		return keysA.every(key => keysB.includes(key) && areEqual(a[key], b[key]));
-	}
-	return a === b;
+	return false;
 }
 
 // DEBOUNCER ---------------------------------------------------------------------------

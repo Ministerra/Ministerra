@@ -38,7 +38,7 @@ const bigButtonSrc = {
 // TODO  probably use the header texts when isRegistation to display necessary info, and hide the title texts currently in all components. display the title texts only when isIntroduction is false (and thus header is not visible)
 
 const ProfileSetup = props => {
-	const { isIntroduction, visibleSections, data, superMan, curSection, inform } = props;
+	const { isIntroduction, visibleSections, data, superMan, curSection, inform, introCredentials } = props;
 
 	const scrollTarget = useRef(null);
 
@@ -74,7 +74,9 @@ const ProfileSetup = props => {
 						<spacing-wrapper class='flexCol fPadHorXxs padBotS  spaceAro h100   posRel'>
 							{/* SECTION COMPONENT ---------------------------------------- */}
 							<SectionComponent {...props} />
-							{isIntroduction && isLastVisible && (
+							{/* SUBMIT BUTTON AND ERRORS ---
+							   Hidden for Welcome section - Welcome has its own password confirmation flow. */}
+							{isIntroduction && isLastVisible && name !== 'Welcome' && (
 								<submit-and-errors class=''>
 									{/* ERROR MESSAGES ---------------------------------------- */}
 									{inform.length > 0 && (

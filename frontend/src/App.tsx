@@ -47,7 +47,7 @@ import './css/VisualClasses.css';
 import { forage, getDeviceFingerprint } from '../helpers';
 import { emptyBrain } from '../sources';
 import { decode } from 'cbor-x';
-import { logoutCleanUp } from '../helpers';
+import { logoutAndCleanUp } from '../helpers';
 import { foundationLoader } from './loaders/foundationLoader';
 import { getToken } from './utils/getToken';
 import { normalizeIncomingDateFieldsToMs, normalizeOutgoingDateFieldsToMs } from './utils/dateNormalization';
@@ -141,14 +141,19 @@ function App() {
 		if (!window.__axiosInterceptorsInstalled) {
 			const reqId = axios.interceptors.request.use(
 				async request => {
-					const useAuthToken = Boolean(request.data?.useAuthToken),
-						{ token, expired, print } = await getToken(useAuthToken);
+					const useAuthToken = Boolean(request.data?.useAuthToken);
+					const { token, expired, print } = await getToken(useAuthToken);
 
 					// DATE NORMALIZATION (REQUEST) ----------------------------------------
 					// Convert known datetime fields to ms so backend gets a single invariant type.
 					if (request?.data && typeof request.data === 'object') request.data = normalizeOutgoingDateFieldsToMs(request.data);
-					if (useAuthToken) delete request.data.useAuthToken, (request.data.auth = token);
-					else if (token && !window.__wipeInProgress) request.headers['Authorization'] = `Bearer ${token}`;
+					if (useAuthToken) {
+						request.__isIntroAuth = true;
+						delete request.data.useAuthToken;
+						request.data.auth = token;
+					} else if (token && !window.__wipeInProgress) {
+						request.headers['Authorization'] = `Bearer ${token}`;
+					}
 					if (window.__wipeInProgress)
 						try {
 							if (request.headers && request.headers['Authorization']) delete request.headers['Authorization'];
@@ -172,6 +177,8 @@ function App() {
 							}
 						}, 2000);
 					(request.__requestStart = Date.now()), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'start', source: 'axios' } }));
+
+					console.log('🟢 REQUEST TO:', request.url, request.data);
 					return request;
 				},
 				error => Promise.reject(error)
@@ -198,14 +205,11 @@ function App() {
 					if (response.headers?.authorization) {
 						const parts = String(response.headers.authorization).split(':'),
 							token = parts[0].split(' ')[1],
-							expiry = parts[1],
-							newReprint = parts[2];
+							expiry = parts[1];
 						if (!window.__wipeInProgress)
 							(async () => {
 								try {
-									const existing = await forage({ mode: 'get', what: 'token' }),
-										reprintToStore = newReprint || (existing ? existing.split(':')[2] : undefined);
-									await forage({ mode: 'set', what: 'token', val: `${token}:${expiry}:${reprintToStore || ''}` });
+									await forage({ mode: 'set', what: 'token', val: `${token}:${expiry}` });
 								} catch (e) {
 									console.warn('Token store failed:', e);
 								}
@@ -215,7 +219,7 @@ function App() {
 					// DATE NORMALIZATION ------------------------------------------------
 					// Convert known date/datetime fields into ms timestamps.
 					response.data = normalizeIncomingDateFieldsToMs(response.data);
-					console.log('RESPONSE FROM', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms', response.data);
+					console.log('🟢RESPONSE FROM', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms', response.data);
 					if (import.meta.env.DEV) console.log('RESPONSE', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms');
 					return Promise.resolve(response);
 				},
@@ -223,22 +227,20 @@ function App() {
 					clearThrottle(error.config), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'end', source: 'axios' } }));
 					if (typeof window !== 'undefined' && window.__wipeInProgress) return Promise.reject(error);
 					if (error.response?.data) error.response.data = decodeResponseData(error.response.data, error.response?.headers?.['content-type'] || 'application/json');
-					if (error.config?.url === '/foundation' && error.response?.data?.code === 'unauthorized') return await logoutCleanUp(brain, emptyBrain, true);
+
 					const errorData = error.response?.data,
-						errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
-					if (errorCode === 'logout' && !error.config?.__skipLogoutCleanup) return await logoutCleanUp(brain, emptyBrain, true);
-					// INTRODUCTION AUTH EXPIRY REDIRECT ---
-					// When intro token expires (useAuthToken requests), clear session and redirect to entrance with autoLogout message.
-					const isAuthError = ['unauthorized', 'tokenExpired'].includes(errorCode);
-					let usedAuthToken = false;
-					try {
-						usedAuthToken = error.config?.data && typeof error.config.data === 'string' && JSON.parse(error.config.data)?.useAuthToken;
-					} catch {}
-					if (isAuthError && usedAuthToken) {
-						sessionStorage.removeItem('authToken');
-						window.location.href = '/entrance?mess=autoLogout';
+						errorCode = typeof errorData === 'string' ? errorData : errorData?.code,
+						isAuthError = ['unauthorized', 'tokenExpired'].includes(errorCode),
+						isIntroAuthError = isAuthError && error.config?.__isIntroAuth;
+
+					// GLOBAL LOGOUT AND CLEANUP ---
+					// Handles explicit logout, expired intro tokens, and failed foundation auth.
+					if ((errorCode === 'logout' || isIntroAuthError || (isAuthError && error.config?.url?.endsWith('/foundation'))) && !error.config?.__skiplogoutAndCleanUp) {
+						await logoutAndCleanUp(brain, emptyBrain);
+						window.location.href = isIntroAuthError ? '/entrance?mess=autoLogout' : isAuthError ? `/entrance?mess=${errorCode}` : '/entrance';
 						return Promise.reject(error);
 					}
+
 					if (!(error?.code === 'ERR_CANCELED' || error?.message === 'canceled') && !error?.config?.__skipGlobalErrorBanner)
 						notifyGlobalError(error, typeof errorData === 'object' ? errorData?.message : undefined);
 					return Promise.reject(error);

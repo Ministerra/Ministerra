@@ -54,8 +54,8 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 	// Main socket effect
 	useEffect(() => {
 		// CONNECT/DISCONNECT GATE ---------------------------------------------
-		// Steps: disconnect when user is missing (logged out), otherwise ensure transport is connected and attach listeners exactly once per socket instance.
-		if (!brain?.user?.id) {
+		// Steps: disconnect when user is missing (logged out) or unintroduced, otherwise ensure transport is connected and attach listeners exactly once per socket instance.
+		if (!brain?.user?.id || brain?.user?.isUnintroduced) {
 			transport.disconnect();
 			return;
 		}
@@ -69,7 +69,6 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 				const socket = await transport.ensureReady();
 				if (disposedRef.current || !socket) return;
 
-				// FIX #14: STORE REFS FOR CHAT HANDLERS TO AVOID STALE CLOSURES ---------------------------
 				if (thisIs === 'chats' && chatListeners.socket !== socket) {
 					// CHAT LISTENERS REBIND ---------------------------------------
 					// Steps: remove old listeners (if socket changed), build fresh handlers over stable refs, then reattach so we never double-handle events.

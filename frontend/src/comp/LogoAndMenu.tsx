@@ -123,7 +123,7 @@ function LogoAndMenu(props) {
 		if (timeout.current) clearTimeout(timeout.current);
 		setLogoSubtext(subText), Object.assign(timeout, { current: setTimeout(() => setLogoSubtext(null), 2000) });
 		const { menuView: prevMenuView, galleryCat, stripMenuId } = parseMenuViewState();
-		if (!brain.user.id) return;
+		if (brain.user.isUnintroduced) return;
 
 		if (menuView && prevMenuView && prevMenuView !== menuView) {
 			if (galleryCat) brain.showGalleryCat = galleryCat;
@@ -203,7 +203,7 @@ function LogoAndMenu(props) {
 			{nowAt === 'home' && !menuView && <BsDynamic {...{ nowAt, scrollDir, menuView, text: 'Založit událost', brain, setInitialize }} />}
 
 			{/* NAVIGATION BUTTONS --------------------------- */}
-			{brain.user.id &&
+			{!brain.user.isUnintroduced &&
 				(() => {
 					const hasAnyNotif = notifDots.chats > 0 || notifDots.alerts > 0 || notifDots.archive > 0;
 					const shouldHideButtons = menuView && !hasAnyNotif;

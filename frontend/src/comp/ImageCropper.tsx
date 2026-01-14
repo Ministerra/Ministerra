@@ -404,7 +404,7 @@ const ImageCropper = props => {
 	}, [zoom, rotation, aspect]);
 
 	return (
-		<image-cropper class={'w100  boRadS overHidden marAuto padTopM block posRel'}>
+		<image-cropper class={`w100 ${isIntroduction ? 'mw160 marAuto' : ''}  boRadS overHidden marAuto  block posRel`}>
 			{!imageSrc ? (
 				<load-image name='image' className='w100 block posRel'>
 					{/* TITLE TEXTS ------------------------------------------------- */}

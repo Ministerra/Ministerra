@@ -43,7 +43,12 @@ declare module 'react-router-dom' {
 declare module 'axios' {
 	// Steps: allow internal config flags without fighting Axios types.
 	export interface AxiosRequestConfig<D = any> {
-		__skipLogoutCleanup?: any;
+		__skiplogoutAndCleanUp?: any;
+		__isIntroAuth?: boolean;
+	}
+
+	export interface InternalAxiosRequestConfig<D = any> {
+		__isIntroAuth?: boolean;
 	}
 }
 
@@ -51,5 +56,3 @@ declare module 'axios' {
 // Steps: ensure the declarations above are treated as *module augmentations* (not ambient module stubs),
 // so they merge into the real package typings instead of replacing them (which breaks exports like `useContext` / `RouterProvider`).
 export {};
-
-

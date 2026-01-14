@@ -9,6 +9,18 @@ import useFadeIn from '../hooks/useFadeIn';
 import { notifyGlobalError } from '../hooks/useErrorsMan';
 import { checkFavouriteExpertTopicsQuality } from '../../../shared/utilities.ts';
 
+// JWT PAYLOAD DECODER ---
+// Extracts payload from JWT without verification (verification happens server-side).
+function decodeJwtPayload(token: string): any {
+	try {
+		const payloadBase64 = token.split('.')[1];
+		const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+		return JSON.parse(payloadJson);
+	} catch {
+		return null;
+	}
+}
+
 // TODO Vyřešit co dělat při opakovanym failu uploadu
 // TODO send new user to all devices through socket after saving
 // TODO add question about where they heard about us
@@ -17,6 +29,7 @@ import { checkFavouriteExpertTopicsQuality } from '../../../shared/utilities.ts'
 // TODO need to recalculate distances inside events when user changes location
 // TODO instead of sending all citiesData, send back only the cityIDs and hashID
 // TODO store introAuth in Redis with TTL and check it when /location is called without userID
+// TODO might give user question during introduction, whether  he wants to setup up his profile fully or  just required (and then move all introduction stages beyond this gate). the question could be suggestive, so that users comply
 
 const sections = ['Welcome', 'Personals', 'Cities', 'Indis', 'Basics', 'Favex', 'Picture', 'Groups'];
 const allowedPayloadKeys = new Set(['first', 'last', 'birth', 'gender', 'cities', 'indis', 'basics', 'groups', 'favs', 'exps', 'shortDesc', 'priv', 'defPriv', 'askPriv', 'image']);
@@ -28,6 +41,15 @@ const Setup = () => {
 		passRef = useRef(),
 		[email, setEmail] = useState(''),
 		[loaderData, navigate] = [useLoaderData(), useNavigate()],
+		// INTRODUCTION CREDENTIALS ---
+		// Read email and userID from sessionStorage for PDK derivation in Welcome component.
+		introCredentials = useMemo(() => {
+			if (!isIntroduction) return null;
+			const introEmail = sessionStorage.getItem('introEmail');
+			const authToken = sessionStorage.getItem('authToken')?.split(':')[0];
+			const decoded = authToken ? decodeJwtPayload(authToken) : null;
+			return { email: introEmail, userID: decoded?.userID };
+		}, [isIntroduction]),
 		[curSection, setCurSection] = useState(() => {
 			if (!isIntroduction) return sections[0];
 			try {
@@ -174,15 +196,10 @@ const Setup = () => {
 
 			setSaveButtonState('saving');
 			setInform(['finalizing']);
-			const prep = val => {
-				if (val instanceof Date) return val.toISOString().split('T')[0];
-				if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) return val.split('T')[0];
-				return Array.isArray(val) ? val.sort() : val;
-			};
+
 			const payload = Object.fromEntries(
 				Object.entries(data)
 					.filter(([key]) => allowedPayloadKeys.has(key))
-					.map(([key, val]) => [key, key === 'image' ? val : prep(val)])
 					.filter(([key, val]) => !['locaMode', 'age'].includes(key) && !(!val && !loaderData[key]) && !areEqual(val, loaderData[key]))
 			);
 
@@ -196,8 +213,9 @@ const Setup = () => {
 			}
 			if (!Object.keys(payload).length) return brain.fastLoaded ? navigate('/') : navigate(-1);
 
-			const response = (await axios.post('/setup', Object.assign(payload, !brain.user.id && { print: getDeviceFingerprint(), useAuthToken: true }))).data;
-			const { citiesData, auth, authEpoch, imgVers } = response;
+			const response = (await axios.post('/setup', Object.assign(payload, brain.user.isUnintroduced && { print: getDeviceFingerprint() }))).data;
+
+			const { citiesData, imgVers } = response;
 			const miscel = (await forage({ mode: 'get', what: 'miscel' })) || {};
 			if (imgVers) payload.imgVers = imgVers;
 
@@ -213,10 +231,22 @@ const Setup = () => {
 			}
 
 			// NEW USER REGISTRATION COMPLETE ---
-			// Redirect to login - user needs to enter password to derive encryption keys.
+			// User is fully authenticated (PDK derived, device registered, cookies set during Welcome).
+			// Navigate directly into the app.
 			if (isIntroduction) {
-				sessionStorage.removeItem('registrationData'), sessionStorage.removeItem('authToken');
-				return navigate('/entrance?mess=registrationComplete');
+				sessionStorage.removeItem('registrationData'), sessionStorage.removeItem('authToken'), sessionStorage.removeItem('introEmail');
+				const userID = introCredentials?.userID;
+				// SET USER DATA ---
+				const cityIDs = (payload.cities || []).map(Number);
+				Object.assign(brain.user, { id: userID, cities: cityIDs, ...payload });
+				delete brain.user.isUnintroduced, (brain.isAfterLoginInit = true);
+				await forage({ mode: 'set', what: 'user', val: brain.user });
+				// STORE CITIES IN MISCEL ---
+				const miscelData = (await forage({ mode: 'get', what: 'miscel' })) || {};
+				miscelData.initLoadData = { ...(miscelData.initLoadData || {}), cities: cityIDs };
+				await forage({ mode: 'set', what: 'miscel', val: miscelData });
+
+				return navigate('/');
 			}
 
 			(payload.age = data.age), delete payload.birth, delete payload.image;
@@ -231,18 +261,7 @@ const Setup = () => {
 			const errorData = err.response?.data;
 			const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
 			if (['newMailSameAsCurrent', 'wrongPass', 'emailChangeActive', 'ageAlreadyChanged', 'personalsChangeTooRecent'].includes(errorCode)) return setInform(prev => [...prev, errorCode]);
-			const authErrorCode = errorCode || err.message;
-			// AUTH ERROR HANDLING ---
-			// When unauthorized/tokenExpired/logout occurs, clear session and navigate to entrance
-			// In introduction mode, use autoLogout message and clear registration data
-			if (['unauthorized', 'tokenExpired', 'logout'].includes(authErrorCode)) {
-				if (isIntroduction) {
-					sessionStorage.removeItem('authToken');
-					sessionStorage.removeItem('registrationData');
-					return navigate('/entrance?mess=autoLogout');
-				}
-				return await forage({ mode: 'del', what: 'token' }), sessionStorage.removeItem('authToken'), navigate(`/entrance?mess=${authErrorCode}`);
-			}
+
 			setInform([]);
 			// ERROR UI (NO NAVIGATION) -------------------------------------------------------
 			// Show error state in the button briefly, disable it while visible.
@@ -279,7 +298,9 @@ const Setup = () => {
 			{!isIntroduction && <blue-divider class='hr5  zin1 block bInsetBlueTopXl borTop bgTrans w100 mw120 marAuto posRel' />}
 			<sections-wrapper class={'block '}>
 				{/* PROFILE SETUP CATEGORY WRAPPER  -----------------------------------------------*/}
-				{(isIntroduction || mode === 'profile') && <ProfileSetup {...{ inform, setInform, isIntroduction, superMan: man, brain, nowAt, fadedIn, visibleSections, curSection, data }} />}
+				{(isIntroduction || mode === 'profile') && (
+					<ProfileSetup {...{ inform, setInform, isIntroduction, superMan: man, brain, nowAt, fadedIn, visibleSections, curSection, data, introCredentials }} />
+				)}
 				{/* ADVANCED SETUP SECTION ------------------------------------------------------ */}
 				{mode === 'advanced' && (
 					<AdvancedSetup {...{ data, loaderData, superMan: man, brain, nowAt, inform, setInform, passRef, email, setEmail, changeWhat, setChangeWhat, selDelFreeze, setSelDelFreeze }} />

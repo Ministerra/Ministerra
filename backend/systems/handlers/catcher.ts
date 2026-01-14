@@ -86,6 +86,7 @@ const friendlyMessages: Record<string, string> = {
 	missingData: 'Chybí požadovaná data.',
 	validationError: 'Odeslaná data nejsou platná.',
 	rateLimited: 'Odesíláte příliš mnoho požadavků. Zkuste to znovu později.',
+	registerLimited: 'Z tohoto zařízení jsme dnes přijali příliš mnoho registrací. Zkus to prosím později.',
 	conflict: 'Akci nebylo možné dokončit kvůli konfliktu.',
 	forbidden: 'Tuto akci není možné provést.',
 	noUpdate: 'Nebyla provedena žádná změna.',

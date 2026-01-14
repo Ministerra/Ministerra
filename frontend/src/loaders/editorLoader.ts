@@ -22,8 +22,10 @@ export async function editorLoader(brain, params) {
 		}
 
 		return event || null;
-	} catch (error) {
-		if (error.response?.data === 'unauthorized') {
+	} catch (error: any) {
+		const errorData = error.response?.data;
+		const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
+		if (errorCode === 'unauthorized') {
 			await forage({ mode: 'del', what: 'token' });
 			return redirect('/entrance');
 		}

@@ -103,7 +103,7 @@ export async function fetchLocationSuggestions(query, options: any = {}, isIntro
 		// QUERY SHAPING -------------------------------------------------------
 		// Steps: keep query as-is for city restriction (backend already uses params); avoid client-side concatenation that could degrade search quality.
 		const searchQuery = restrictCity ? `${query}` : query;
-		const response = await axios.post('/locations', { query: searchQuery, params, ...(isIntroduction && { useAuthToken: true }) });
+		const response = await axios.post('/locations', { query: searchQuery, params });
 		const hashIDs = new Set(cities.map(item => item?.hashID || item));
 		if (response.data && response.data.items) {
 			let items = response.data.items.filter(item => !hashIDs.has(generateLocationHash(item)));

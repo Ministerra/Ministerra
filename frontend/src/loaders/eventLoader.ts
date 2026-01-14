@@ -92,12 +92,14 @@ export async function eventLoader(brain, params) {
 		}
 
 		return eve;
-	} catch (error) {
-		if (error.response?.data === 'unauthorized' || error.response?.status === 401) {
+	} catch (error: any) {
+		const errorData = error.response?.data;
+		const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
+		if (errorCode === 'unauthorized' || error.response?.status === 401) {
 			await forage({ mode: 'del', what: 'token' });
 			return redirect('/entrance');
 		}
-		if (error.response?.status === 404 || error.response?.data === 'notFound' || error.message === 'notFound') {
+		if (error.response?.status === 404 || errorCode === 'notFound' || error.message === 'notFound') {
 			delete brain.events[eventID];
 			if (brain.user.eveUserIDs) delete brain.user.eveUserIDs[eventID];
 			return redirect('/');

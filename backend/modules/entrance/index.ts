@@ -1,5 +1,6 @@
 import { Sql, Catcher } from '../../systems/systems.ts';
 import { jwtCreate, jwtQuickies } from '../jwtokens.ts';
+import { generateDeviceId } from '../../utilities/helpers/device.ts';
 
 // SUBMODULE IMPORTS -----------------------------------------------------------
 import { register, resendMail, setRedis as setRegisterRedis } from './register.ts';
@@ -67,18 +68,16 @@ const propsAreInvalid = {
 async function Entrance(req, res) {
 	let con;
 	try {
-		// AUTH CHECK ---
-		// Steps: allow auth via query/body for email-link flows; if missing, remove is so processors don’t assume confirmed state.
-		if (req.query.auth || req.body.auth) Object.assign(req.body, jwtQuickies({ mode: 'verify', payload: (req.query.auth || req.body.auth).split(':')[0] }));
-		else delete req.body.is;
-
-		const { mode, is, userID, devID } = req.body;
+		// DEVICE ID RESOLUTION ---
+		// Steps: get devID from JWT body (authenticated), or cookie (returning device), or generate new (first visit).
+		const { mode, is, userID, devID = req.signedCookies?.devID || generateDeviceId() } = req.body;
+		req.body.devID ??= devID;
 
 		// RENEW TOKEN ----------------------------------------------------------
 		// Steps: short-circuit renewAccessToken to avoid touching processors map; this keeps token refresh fast and predictable.
 		if (mode === 'renewAccessToken') {
 			if (!userID) return res.status(401).json({ error: 'unauthorized' });
-			await jwtCreate({ res, create: 'access', userID, is, deviceInfo: { devID } });
+			await jwtCreate({ req, res, create: 'access', userID, is, deviceInfo: { devID } });
 			return res.status(200).end();
 		}
 		if (mode === 'register') req.body.ip = req.ip;
@@ -88,11 +87,12 @@ async function Entrance(req, res) {
 		if ((propsAreInvalid[mode || is] ?? propsAreInvalid.default)(req.body)) throw new Error('badRequest');
 
 		con = await Sql.getConnection();
-		const { jwtData, redirect, payload, clearRefreshCookie } = (await processors[mode || is](req.body, con)) || {};
+		const result = await processors[mode || is](req.body, con);
+		const { jwtData, redirect, payload, clearRefreshCookie } = result || {};
 
 		// RESPONSE -------------------------------------------------------------
 		// Steps: mint JWTs when processor returned jwtData, optionally clear refresh cookie, then respond as redirect/json/end based on payload type.
-		if (jwtData) await jwtCreate({ res, con, ...jwtData });
+		if (jwtData) await jwtCreate({ req, res, con, ...jwtData });
 		if (clearRefreshCookie) res.clearCookie('rJWT', { path: '/', httpOnly: true, sameSite: 'strict', signed: true, secure: true });
 		res.status(200)[redirect ? 'redirect' : typeof payload === 'object' ? 'json' : 'end'](redirect || payload);
 	} catch (error) {

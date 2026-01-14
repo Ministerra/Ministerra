@@ -1,7 +1,7 @@
 import { redirect } from 'react-router-dom';
 import axios from 'axios';
 import localforage from 'localforage';
-import { forage, updateInteractions, delUndef, setPropsToContent, processMetas, logoutCleanUp, getDeviceFingerprint, getPDK } from '../../helpers';
+import { forage, updateInteractions, delUndef, setPropsToContent, processMetas, logoutAndCleanUp, getDeviceFingerprint, getPDK } from '../../helpers';
 import { emptyBrain } from '../../sources';
 import { notifyGlobalError } from '../hooks/useErrorsMan';
 import { FOUNDATION_LOADS } from '../../../shared/constants';
@@ -46,17 +46,15 @@ const hydrateFromDevice = async (brainRef, flags) => {
 };
 
 // BUILD AXIOS PLAN -------------------------------------------------------------
-// Steps: decide foundation load mode based on route/homeView/newCities, compute which cities need cityData and which need contentMetas, then construct payload with epoch+deviceID so backend can bind salts and deltas.
+// Steps: decide foundation load mode based on route/homeView/newCities, compute which cities need cityData and which need contentMetas, then construct payload with epoch so backend can bind salts and deltas. devID comes from JWT via attachSession.
 const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 	const plan: any = { citiesGetCityData: undefined, citiesGetContentMetas: [], axiosPayload: { load: FOUNDATION_LOADS.auth } };
 	const { homeView, newCities, cities, lastDevSync, lastLinksSync, clientEpoch } = meta;
-	// Include deviceID for per-device salt lookup
-	const deviceID = localStorage.getItem('deviceID');
 	if (homeView) brainRef.homeView = homeView;
-	if (homeView === 'topEvents') (plan.axiosPayload = { load: FOUNDATION_LOADS.topEvents, clientEpoch, deviceID }), (plan.citiesGetContentMetas = ['topEvents']);
+	if (homeView === 'topEvents') (plan.axiosPayload = { load: FOUNDATION_LOADS.topEvents, clientEpoch }), (plan.citiesGetContentMetas = ['topEvents']);
 	else if (path.startsWith('/event'))
-		plan.axiosPayload = { load: Date.now() - brainRef.user.initedAt > 60000 ? FOUNDATION_LOADS.fast : FOUNDATION_LOADS.auth, lastDevSync, lastLinksSync, clientEpoch, deviceID };
-	else if (path !== '/') plan.axiosPayload = { load: FOUNDATION_LOADS.auth, clientEpoch, deviceID };
+		plan.axiosPayload = { load: Date.now() - brainRef.user.initedAt > 60000 ? FOUNDATION_LOADS.fast : FOUNDATION_LOADS.auth, lastDevSync, lastLinksSync, clientEpoch };
+	else if (path !== '/') plan.axiosPayload = { load: FOUNDATION_LOADS.auth, clientEpoch };
 	else {
 		delete brainRef.fastLoaded;
 		plan.citiesGetCityData = cities?.filter(city => !findCity(city));
@@ -70,9 +68,8 @@ const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 					load: newCities ? FOUNDATION_LOADS.cities : FOUNDATION_LOADS.init,
 					gotKey: flags.gotKey,
 					clientEpoch,
-					deviceID,
 			  })
-			: { load: FOUNDATION_LOADS.auth, clientEpoch, deviceID };
+			: { load: FOUNDATION_LOADS.auth, clientEpoch };
 	}
 	return plan;
 };
@@ -211,9 +208,7 @@ const hydratePrevContent = async (ctx, data) => {
 const ensureLocation = async brainRef => {
 	try {
 		if (!('geolocation' in navigator)) return;
-		const position: any = await new Promise((resolve, reject) =>
-			navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 3000, maximumAge: 60000 })
-		);
+		const position: any = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 3000, maximumAge: 60000 }));
 		const { latitude, longitude } = position?.coords || {};
 		if (typeof latitude === 'number' && typeof longitude === 'number') (brainRef.user.location = [latitude, longitude]), await forage({ mode: 'set', what: 'user', val: brainRef.user });
 	} catch {
@@ -419,12 +414,8 @@ export async function foundationLoader({ url, isFastLoad = false, brain: brainPa
 
 		console.log('🚀 ~ foundationLoader ~ brainRef -----------------------------:', brainRef);
 		return brainRef;
-	} catch (error) {
-		if (error.response?.data === 'unauthorized') {
-			await logoutCleanUp(brain, emptyBrain);
-			return redirect('/entrance');
+		} catch (error: any) {
+			notifyGlobalError(error, 'Nepodařilo se načíst data aplikace.');
+			return brainRef;
 		}
-		notifyGlobalError(error, 'Nepodařilo se načíst data aplikace.');
-		return brainRef;
-	}
 }

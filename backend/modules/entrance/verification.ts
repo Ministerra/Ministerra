@@ -26,14 +26,18 @@ interface VerifyResult {
 
 // VERIFY NEW USER EMAIL ---------------------------
 // VERIFY MAIL --------------------------------------------------------------
-// Steps: mark user as unintroduced, mint a short-lived auth token, then redirect to frontend setup flow with the token embedded in URL.
+// Steps: mark user as unintroduced, fetch email for frontend display, mint a short-lived auth token, then redirect to frontend setup flow with token and email embedded in URL.
 async function verifyMail({ userID }: VerifyMailProps, con: any): Promise<VerifyResult> {
+	// FETCH EMAIL FOR FRONTEND DISPLAY ---
+	const [[{ email }]]: [any[], any] = await con.execute(/*sql*/ `SELECT email FROM users WHERE id = ?`, [userID]);
 	await con.execute(/*sql*/ `UPDATE users SET status = "unintroduced" WHERE id = ?`, [userID]);
 	// MINT AUTH TOKEN FOR FRONTEND ---
 	// Frontend stores this in sessionStorage and proceeds to /setup for profile configuration.
-	const authToken: string = jwtQuickies({ mode: 'create', payload: { userID, is: 'unintroduced' }, expiresIn: '30m' });
-	const expiry: number = Date.now() + 30 * 60 * 1000;
-	return { redirect: `${process.env.FRONT_END}/entrance?mode=introduction&auth=${authToken}:${expiry}` };
+	// Email is included so Welcome page can display which account user is confirming.
+	const introToken: string = jwtQuickies({ mode: 'create', payload: { userID, is: 'unintroduced' }, expiresIn: EXPIRATIONS.introductionMailLink });
+	const expiry: number = Date.now() + parseInt(EXPIRATIONS.introductionMailLink) * 60 * 1000;
+	const encodedEmail: string = encodeURIComponent(email);
+	return { redirect: `${process.env.FRONT_END}/entrance?mode=introduction&auth=${introToken}:${expiry}&email=${encodedEmail}` };
 }
 
 // VERIFY NEW EMAIL (AFTER EMAIL CHANGE) ---------------------------
@@ -50,7 +54,7 @@ async function verifyNewMail({ userID }: VerifyMailProps, con: any): Promise<Ver
 			await sendEmail({
 				mode: 'revertEmailChange',
 				token: `${jwtQuickies({ mode: 'create', payload: { userID, is: 'revertEmailChange' }, expiresIn: EXPIRATIONS.revertEmailChangeLink })}:${
-					Date.now() + EXPIRATIONS.revertEmailChangeLink
+					Date.now() + parseInt(EXPIRATIONS.revertEmailChangeLink) * 24 * 60 * 60 * 1000
 				}`,
 				email: prev_mail,
 			});

@@ -406,7 +406,7 @@ export const EXPIRATIONS = {
 	accessToken: '7d', // Access token
 	refreshToken: '7d', // Refresh token
 	authToken: '5m', // Temporary tokens (verify, reset)
-	verifyMailLink: '30m', // Unintroduced user token
+	introductionMailLink: '30m', // Unintroduced user token
 	revertEmailChangeLink: `${REVERT_EMAIL_DAYS}d`, // Email revert window
 } as const;
 

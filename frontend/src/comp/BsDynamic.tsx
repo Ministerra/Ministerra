@@ -14,11 +14,46 @@ const BsDynamic = props => {
 	// Monitors header visibility to toggle between small and large button states
 	useEffect(() => {
 		if (isIntroduction || nowAt === 'setup' || isChatSetup) return;
-		const observer = new IntersectionObserver(entries => entries.forEach(entry => setBigButton(entry.isIntersecting)));
-		const elemToObserve = document.querySelector('header-image');
-		if (elemToObserve) observer.observe(elemToObserve);
-		return () => observer.disconnect();
-	}, []);
+		let observer;
+		let timeoutId;
+
+		const setupObserver = () => {
+			const elemToObserve = document.querySelector('header-image');
+			if (elemToObserve) {
+				observer = new IntersectionObserver(entries => {
+					entries.forEach(entry => {
+						// Always prioritize intersection, but fallback to scroll position if not intersecting
+						const shouldBeBig = entry.isIntersecting || window.scrollY < 100;
+						setBigButton(shouldBeBig);
+					});
+				});
+				observer.observe(elemToObserve);
+			} else {
+				// Retry after a short delay if element not found (e.g. during lazy loading)
+				timeoutId = setTimeout(setupObserver, 500);
+			}
+		};
+
+		// FALLBACK SCROLL LISTENER ---
+		// Ensures state recovery if observer fails or element is lost
+		const onScroll = () => {
+			if (window.scrollY < 50) {
+				setBigButton(prev => {
+					if (!prev) return true;
+					return prev;
+				});
+			}
+		};
+
+		setupObserver();
+		window.addEventListener('scroll', onScroll, { passive: true });
+
+		return () => {
+			if (observer) observer.disconnect();
+			if (timeoutId) clearTimeout(timeoutId);
+			window.removeEventListener('scroll', onScroll);
+		};
+	}, [nowAt, isIntroduction]); // Removed bigButton from dependencies to prevent excessive re-runs
 
 	// PRIMARY BUTTON ACTION MAPPING ---
 	// Defines behaviors for the main action button based on current route
@@ -70,7 +105,7 @@ const BsDynamic = props => {
 					onClick={() => !disabled && bigBsFunctions[nowAt]()}
 					className={`${className || 'bDarkGreen'} ${bigButton && !menuView ? 'fadedIn ' : 'noPoint'} ${disabled ? 'noPoint' : 'pointer'} w95 textAli flexCol justCen ${
 						!isIntroduction ? 'marBotM bsContentGlow mw110 mh6  fs24' : 'mh6  fs20 mw80 bInsetGreen'
-					}  zinMaXl marAuto tSha10  tWhite  padHorXs bInsetGreen borBot8 zinMenu  xBold posRel shaTop borderLight boRadXs  fadingIn  tWhite `}>
+					}  zinMaXl marAuto tSha10  tWhite  padHorXs bInsetGreen borBot8 zinMenu  xBold posRel shaTop borderLight boRadXs  padVerXs fadingIn  tWhite `}>
 					{text}
 				</big-button>
 			)}

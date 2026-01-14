@@ -47,12 +47,14 @@ declare module 'axios' {
 	// AXIOS REQUEST CONFIG EXTENSIONS -------------------------------------------
 	// Steps: allow internal flags and timing fields used by interceptors.
 	export interface AxiosRequestConfig<D = any> {
-		__skipLogoutCleanup?: any;
+		__skiplogoutAndCleanUp?: any;
 		__skipGlobalErrorBanner?: any;
+		__isIntroAuth?: boolean;
 	}
 
 	export interface InternalAxiosRequestConfig<D = any> {
 		__throttle?: { urlKey: string; signature: string };
 		__requestStart?: number;
+		__isIntroAuth?: boolean;
 	}
 }

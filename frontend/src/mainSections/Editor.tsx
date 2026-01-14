@@ -300,7 +300,7 @@ function Editor(props: any) {
 		const safeName = name || 'Kamarád',
 			titleOne = randomInstrumental ? `${randomInstrumental} s ${inflectName(safeName)}?` : null,
 			titleTwo = randomBefore && randomAfter ? `${randomBefore} ${safeName}${randomAfter}` : null;
-		return titleOne || titleTwo || `${safeName}?`;
+		return (Math.random() > 0.5 ? titleOne || titleTwo : titleTwo || titleOne) || `${safeName}?`;
 	}
 
 	return (
@@ -387,41 +387,40 @@ function Editor(props: any) {
 
 					{/* TITLE AND DESCRIPTION ---------------------------------------------- */}
 					{(isQuick || data.type !== null || data.starts) && (
-						<times-wrapper class={`block posRel noBackground ${!isQuick && data.starts ? 'marTopXl' : isQuick ? 'marTopXl' : ''}    w100`}>
+						<times-wrapper class={`block posRel noBackground ${!isQuick && data.starts ? 'marTopXxxl padTopM' : isQuick ? 'marTopXl' : 'marTopM'}    w100`}>
 							{!data.starts && !isQuick && (
-								<info-texts class='posRel marBotS   block'>
-									<span className='boldM block textSha marBotXxxs marTopXxl opacityL fs8'>Začátek tvé události</span>
-									<span className='fs7 inlineBlock marBotXxxs textSha opacityL'>
-										<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
-									</span>
+								<info-texts class='posRel  marTopXxxl marBotXs  block'>
+									<span className='boldM block textSha marBotXxxs  opacityL fs16 tDarkBlue'>Začátek tvé události</span>
+									<span className='fs7 inlineBlock marBotXxxs textSha opacityL'>{`začátek je povinný, konec je nepovinný. Vyber rok -> měsíc -> den -> hodinu -> minutu.`}</span>
 								</info-texts>
 							)}
-							<DateTimePicker {...{ superMan: man, starts, ends, nowAt, ...(isQuick && { mode: 'week', noAutoHide: true }) }} />
+							{!data.starts && !isQuick && <blue-divider class='hr0-3  zin1 block borRed bInsetBlueTopXl borTop bgTrans w80 marAuto' />}
+							<DateTimePicker {...{ superMan: man, starts, ends, nowAt, meetWhen: data.meetWhen, ...(isQuick && { mode: 'week', noAutoHide: true }) }} />
 						</times-wrapper>
 					)}
 
 					{/* LOCATION, CITY, PLACE ---------------------------------- */}
 					{data.starts && (
-						<place-wrapper class={`block   posRel   posRel noBackground marTopXxl  w100`}>
-							<span className='xBold block textSha marBotXxs marTopXl opacityL fs19'>Místo či oblast setkání</span>
+						<place-wrapper class={`block   posRel   posRel noBackground marTopM  marAuto w100`}>
+							<span className='xBold block textSha marBotXxs marTopXl opacityL fs16 tDarkBlue'>Místo či oblast setkání</span>
 							<span className='fs10 inlineBlock marBotS textSha opacityL'>
 								<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
 							</span>
 
 							{/* LOCATION MODE ---------------------------------------------------------- */}
 							{(isQuick || data.type.startsWith('a')) && (
-								<place-mode class='flexCen w100  marAuto borderLight  borBot2    posRel  bPadVerXs  mw120  marTopXxs'>
+								<loca-mode class='flexCen w100  marAuto borderLight  borBot2    posRel  bPadVerXs  mw135  marTopXxs'>
 									{['radius', 'exact', 'city'].map(option => {
 										return (
 											<button
 												key={option}
-												className={`${data.locaMode === option ? 'bDarkGreen tWhite posRel  fs12 boldM' : 'boldXs fs12'} w50 xBold  `}
+												className={`${data.locaMode === option ? 'bDarkGreen tWhite posRel  fs12 boldM' : 'bold fs12'} w50 xBold bHover `}
 												onClick={() => man('locaMode', option)}>
 												{option === 'exact' ? 'Na přesném místě' : option === 'radius' ? 'v okolí místa' : 'kdekoliv ve městě'}
 											</button>
 										);
 									})}
-								</place-mode>
+								</loca-mode>
 							)}
 							{!inform.includes('noCity') && <blue-divider class='hr0-5  zin1 block borRed bInsetBlueTopXl borTop bgTrans w40 marAuto' />}
 
@@ -432,10 +431,10 @@ function Editor(props: any) {
 						</place-wrapper>
 					)}
 					{(data.city || data.cityID) && (
-						<title-descrip class='block w100  marTopL  posRel posRel'>
+						<title-descrip class='block w100    posRel posRel'>
 							<info-texts class='posRel marBotXs marTopXxxl  block'>
-								<span className='xBold block textSha marBotXs marTopM opacityL fs19'>Titulek a úvodní slovo</span>
-								<span className='fsA inlineBlock marBotXxxs textSha opacityL'>
+								<span className='xBold block textSha marBotXxs marTopM opacityL fs16 tDarkBlue'>Titulek a úvodní slovo</span>
+								<span className='fs10 inlineBlock marBotXxxs textSha opacityL'>
 									<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
 								</span>
 							</info-texts>
@@ -443,7 +442,7 @@ function Editor(props: any) {
 							{data.starts && (data.city || data.cityID) && (
 								<input
 									placeholder={`Titulek události ${data.type.startsWith('a') ? '(nepovinný)' : '(povinný)'} ...`}
-									className='hr8 fs12 boldXs noBackground zinMax borderBot  w100'
+									className='hr6 fs16 boldXs noBackground zinMax   w100'
 									type='text'
 									value={title}
 									name='title'
@@ -453,11 +452,11 @@ function Editor(props: any) {
 
 							{/* SHORT DESCRIPTION-------------------------------------------- */}
 							{(data.title || (data.type.startsWith('a') && (data.city || data.cityID))) && (
-								<short-description className='flexCol block bInsetBlueTopXs posRel'>
+								<short-description className='flexCol block shaBot bInsetBlueTopXs posRel'>
 									<textarea
 										defaultValue={data['shortDesc']}
 										placeholder='nepovinný stručný popis události ...'
-										className='textArea shaTopLight borBot2 w100  bInsetBlueTopXs noBackground   borTopLight padTopM fPadHorS padBotS textAli fs11'
+										className='textArea shaTopLight  w100  bInsetBlueTopXs noBackground   borTopLight padTopM fPadHorS padBotS textAli fs11'
 										rows={6}
 										onChange={e => man('shortDesc', e.target.value)}
 									/>
@@ -476,7 +475,7 @@ function Editor(props: any) {
 												if (brain.user.shortDesc) shortDescription += `${shortDescription ? ' +' : ''}Něco málo o mě: ${brain.user.shortDesc}`;
 												man('shortDesc', shortDescription);
 											}}
-											className='w80  bDarkBlue tWhite posAbs arrowUp borRed botCen downLittle zinMax marAuto tBlue border mw60 fsA bold padVerXxs boRadXxxs'>
+											className='w80  bDarkBlue tWhite posAbs arrowUp borRed botCen downLittle zinMax marAuto tBlue border mw40 fs10 bold padVerXxs boRadXxxs'>
 											automaticky vyplnit
 										</button>
 									)}
@@ -489,7 +488,7 @@ function Editor(props: any) {
 					{isQuick && (data.hashID || data.cityID) && (
 						<button
 							onClick={() => ((brain.editorData = data), showMan('quick', false), navigate('/editor'))}
-							className='bgTransXs bGlass shaBlue borderRed downLittle  borderBot bInsetGreenBot    tBlue zinMax  posRel padAllXs bold fs8  boRadXxs w80 marAuto mw60'>
+							className='bgTransXs bGlass shaBlue borderRed downLittle  borderBot bInsetGreenBot    tBlue zinMax  posRel padAllXs bold fs14  boRadXxs w80 marAuto mw60'>
 							Přejí na plný formulář
 						</button>
 					)}
@@ -498,10 +497,10 @@ function Editor(props: any) {
 					{!isQuick && ((data.type.startsWith('a') && (data.city || data.cityID)) || data.title) && (
 						<extrafields-add class='marTopXxxl  block'>
 							<info-texts class='posRel marBotXs block'>
-								<span className='xBold block textSha marBotXxxs marTopM opacityL fs8'>Extra textová pole</span>
+								<span className='xBold block textSha marBotXxxs marTopM opacityL fs25 marBotXs'>Volitelné informace</span>
 								{/* SHORT DESCRIPTION-------------------------------------------- */}
-								<span className='fsA inlineBlock marBotXxxs textSha opacityL'>
-									<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
+								<span className='fs10 inlineBlock marBotXxxs textSha opacityL'>
+									<strong>Doporučujeme:</strong> Vyber si, které další informace chceš do popisku své události přidat.
 								</span>
 							</info-texts>
 							<extras-toggles class='w100   posRel  flexCen  marAuto flexCen wrap'>
@@ -510,8 +509,8 @@ function Editor(props: any) {
 										key={item}
 										name={extraFieldsSrc.en[i].toLowerCase()}
 										className={`${
-											selExtraFields.includes(extraFieldsSrc.en[i].toLowerCase()) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'boldS'
-										} grow  fs7  shaComment bHover padHorS shaBlue padVerXxs bgTrans  posRel  `}
+											selExtraFields.includes(extraFieldsSrc.en[i].toLowerCase()) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'xBold'
+										} grow  fs12  shaComment bHover padHorS shaBlue padVerXxs bgTrans  posRel  `}
 										onClick={() => man('extraFields', extraFieldsSrc.en[i].toLowerCase())}>
 										{item}
 									</button>
@@ -522,21 +521,20 @@ function Editor(props: any) {
 
 					{/* EXTRA FIELDS -----------------------------------------------------*/}
 					{selExtraFields.length > 0 && (
-						<extra-fields class=' bInsetBlueTop posRel w100   textAli marAuto'>
-							<inner-wrapper class='w100 marTopXxl flexCol aliCen  marAuto gapXl'>
+						<extra-fields class=' bInsetBlueTopS posRel w100   textAli marAuto'>
+							<inner-wrapper class='w100 marTopXxxl flexCol aliCen mw160  marAuto gapXl'>
 								{/* MEET */}
 								{selExtraFields.includes('meet') && (
 									<city-meet class='flexCol w100  marAuto'>
-										<span className='fs8 textSha inlineBlock marBotXxs lh1 xBold'>Kde a jak se potkáme?</span>
-										<span className='tRed bold fs8  marAuto marBotXs'>
-											<strong className='tRed xBold fs8'>DOPORUČUJEME</strong> níže popsat místo a způsob setkání, tedy i jak se poznáte.{' '}
-											<strong className='tRed xBold fs8'> Čas nevyplňuj pokud se neliší </strong> od začátku události.
+										<span className='fs16 textSha inlineBlock  lh1 xBold'>Kde a jak se potkáme?</span>
+										<span className='  fs10  marAuto marBotXs'>
+											<strong className='  '>Doporučujeme:</strong> níže popsat místo a způsob setkání, tedy i jak se poznáte.
 										</span>
 										<DateTimePicker {...{ superMan: man, starts: meetWhen, prop: 'meetWhen', maxDate: data.starts, mode: 'week' }} />
 										<textarea
 											defaultValue={meetHow}
-											placeholder='detaily ke srazu, popis místa, oblečení apod ...'
-											className='textArea    w100 shaBlue shaTop borTop borderBot boRadXs borderLight padTopM padBotXs fPadHorS textAli fsB'
+											placeholder='Sem napiš detaily ke srazu = popis místa setkání, oblečení, jak se poznáte/najdete, kontakt ...'
+											className='textArea w100 shaSubtle shaSubtleLong borBotLight borTopLight   boRadXs borderLight padAllS textAli fs15'
 											rows={4}
 											onChange={e => (man('meetHow', e.target.value), (extraFieldsTexts.current.meetHow = e.target.value))}
 										/>
@@ -553,10 +551,11 @@ function Editor(props: any) {
 									if (selExtraFields.includes(field)) {
 										return (
 											<div key={field} className='flexCol w100 marAuto'>
-												<span className='fs8 inlineBlock lh1 xBold textSha marBotXs'>{title}</span>
+												<span className='fs14 inlineBlock lh1 xBold textSha marBotXs'>{title}</span>
 												<textarea
+													title={title}
 													defaultValue={data[field]}
-													className='textArea    w100 shaSubtle shaCon borTopLight borBotLight  boRadXs borderLight padAllS textAli fsB'
+													className='textArea    w100 shaSubtle shaSubtleLong borBotLight borTopLight   boRadXs borderLight padAllS textAli fs15'
 													rows={rows}
 													onChange={e => man(field, e.target.value)}
 												/>
@@ -570,16 +569,19 @@ function Editor(props: any) {
 				</event-info>
 			)}
 			{(data.city || data.cityID) && (
-				<other-info class={'marTopXxl block'}>
+				<other-info class={'marTopXxxl block'}>
 					{/* EVENT VISIBILITY (PRIV) --------------------------------------------- */}
 					{data.title && !isQuick && !event && data.type !== null && data.type !== undefined && (
 						<privacy-settings class={'block '}>
-							<span className='boldM block textSha marBotXxxs marTopXl opacityL fs8'>Kdo událost uvidí a dorazíš?</span>
+							<span className='boldM block textSha marBotXxxs marTopXl opacityL fs16 tDarkBlue'>Kdo událost uvidí a dorazíš?</span>
+							<span className='fs10 inlineBlock marBotS textSha opacityL'>
+								<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
+							</span>
 							<privacy-buttons class='flexCen w100 bw25 bPadXs mw130 marAuto marTopXs shaComment borderBot shaComment gapXxs posRel'>
 								{['public', 'links', 'trusts', 'invited', 'owner'].map(button => (
 									<button
 										key={button}
-										className={`${data.priv === button.slice(0, 3) ? `bInsetBlueBotXl tWhite boldS` : 'boldXs'} noBackground fsA   zin1`}
+										className={`${data.priv === button.slice(0, 3) ? `bInsetBlueBotXl tWhite boldS` : 'boldXs'} noBackground fs12   zin1`}
 										onClick={() => man('priv', button.slice(0, 3))}>
 										{button === 'links' ? 'spojenci' : button === 'trusts' ? 'důvěrní' : button === 'public' ? 'Celá komunita' : button === 'owner' ? 'jen já' : 'pozvaní'}
 									</button>
@@ -612,7 +614,7 @@ function Editor(props: any) {
 								if (inviteStatus === status) {
 									return (
 										<invite-status key={status} class='marTopXs'>
-											<span className='fs8 tBlue xBold'>{statusTexts[status]}</span>
+											<span className='fs14 tBlue xBold'>{statusTexts[status]}</span>
 										</invite-status>
 									);
 								}
@@ -623,9 +625,15 @@ function Editor(props: any) {
 					{/* EXISTING EVENT INVITATIONS */}
 					{event && <Invitations {...({ brain, obj: event, onSuccess: () => setModes(prev => ({ ...prev, invite: false, menu: false })), downMargin: true, setModes } as any)} />}
 
+					{data.type.startsWith('a') && (
+						<attendance-note class='block marTopXs marBotXxs textAli'>
+							<span className='fs12 textSha boldM tGreen opacityL'>Na přátelských setkáních se s účastí z principu počítá</span>
+						</attendance-note>
+					)}
+
 					{/* INTERREST BUTTONS ------------------------------------------------- */}
 					{shouldShowAttendanceButtons && (
-						<inter-sub class='flexCen w100 bw33 bPadXs mw130 marAuto   shaComment borderBot shaComment gapXxs'>
+						<inter-sub class='flexCen w100 bw33 bPadXs mw130 marAuto marBotS   shaComment borderBot shaComment gapXxs'>
 							{[
 								{ inter: 'may', text: 'možná ', class: 'bBlue' },
 								{ inter: 'sur', text: 'přijdu!', class: 'bDarkGreen' },
@@ -647,12 +655,6 @@ function Editor(props: any) {
 								);
 							})}
 						</inter-sub>
-					)}
-
-					{data.type.startsWith('a') && (
-						<attendance-note class='block marTopXs marBotS textAli'>
-							<span className='fs9 textSha boldM tGreen opacityL'>S tvou účastí se z principu počítá</span>
-						</attendance-note>
 					)}
 
 					{/* WARNING MESSAGES ------------------------------------------------*/}

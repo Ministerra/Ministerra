@@ -30,7 +30,7 @@ const ioRedisSetter = redisClient => setRedis(redisClient);
 // Orchestrates the full load flow; keeps ordering explicit so sync watermarks are correct.
 async function Foundation(req, res) {
 	let con = null;
-	const { userID, is, devID, devIsStable, load, getCities = [], cities = [], gotKey, clientEpoch, deviceID } = req.body;
+	const { userID, is, devID, devIsStable, load, getCities = [], cities = [], gotKey, clientEpoch } = req.body;
 	const authLoads = new Set(['init', 'fast', 'auth']);
 
 	try {
@@ -51,11 +51,11 @@ async function Foundation(req, res) {
 		}
 
 		// DEVICE SALT -----------------------------------------------------------
-		// Steps: only hit SQL for device salt when auth rotation happened and a deviceID is present (keeps cost bounded).
+		// Steps: only hit SQL for device salt when auth rotation happened and devID is present (from JWT via attachSession).
 		let deviceSalt = null;
-		if (authData && deviceID) {
+		if (authData && devID) {
 			con = con || (await Sql.getConnection());
-			deviceSalt = await getDeviceSalt(con, userID, deviceID);
+			deviceSalt = await getDeviceSalt(con, userID, devID);
 		}
 
 		// AUTH-ONLY RESPONSE ----------------------------------------------------

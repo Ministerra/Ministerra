@@ -16,7 +16,6 @@ interface DeviceRequest {
 interface FormattedDevice {
 	id: string;
 	name: string;
-	fingerprintHash: string;
 	createdAt: Date | string;
 	lastSeen: Date | string;
 	isRevoked: boolean;
@@ -54,7 +53,6 @@ async function Devices(req: { body: DeviceRequest }, res: any) {
 				const formatted: FormattedDevice[] = devices.map((d: any) => ({
 					id: d.device_id,
 					name: d.name || 'Neznámé zařízení',
-					fingerprintHash: d.fingerprint_hash,
 					createdAt: d.created_at,
 					lastSeen: d.last_seen,
 					isRevoked: Boolean(d.is_revoked),

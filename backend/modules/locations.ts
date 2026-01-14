@@ -84,7 +84,7 @@ async function Locations(req, res) {
 			} catch (redisErr) {
 				// REDIS ERROR FALLBACK ---
 				// Steps: if Redis fails, continue to provider rather than blocking request.
-				logger.warn('Locations Redis cache read failed', { error: redisErr, query, cacheKey });
+				logger.alert('Locations Redis cache read failed', { error: redisErr, query, cacheKey });
 			}
 		}
 
@@ -120,7 +120,7 @@ async function Locations(req, res) {
 			} catch (redisErr) {
 				// REDIS WRITE ERROR (NON-BLOCKING) ---
 				// Steps: log but don't fail request if Redis write fails.
-				logger.warn('Locations Redis cache write failed', { error: redisErr, query, cacheKey });
+				logger.alert('Locations Redis cache write failed', { error: redisErr, query, cacheKey });
 			}
 		}
 

@@ -37,7 +37,7 @@ const imgMessagesMap = {
 	},
 	mailNotSent: {
 		header: 'Profil vytvořen, e-mail neodeslán :-(',
-		detail: 'Ověřovací e-mail jsme ti kvůli technickým potížím bohužel neodeslali. Prosíme, přihlaš se do svého nového účtu později a klikni na tlačítko pro opětovné zaslání e-mailu, které zobrazí. Omlouváme se.',
+		detail: 'Ověřovací e-mail jsme ti kvůli technickým potížím bohužel neodeslali. Prosíme, přihlaš se do svého nového účtu později a klikni na tlačítko pro opětovné zaslání e-mailu, které se Ti zobrazí. Omlouváme se.',
 		image: `/icons/error.png`,
 	},
 	newMailSameAsCurrent: { header: 'Emaily se shodují', detail: 'Nový email se shoduje s tím původním. Zkus to zno', image: `/icons/error.png` },
@@ -74,6 +74,11 @@ const imgMessagesMap = {
 		detail: 'Prosíme, klikni na verifikační odkaz, který ti přišel po registraci do schránky. Předmět e-mailu je "Verifikace e-mailu". Jdi ho najít',
 		image: `/icons/error.png`,
 	},
+	registerLimited: {
+		header: 'Příliš mnoho registrací',
+		detail: 'Z tohoto zařízení jsme dnes přijali příliš mnoho registrací. Zkus to prosím později, nebo z jiného zařízení.',
+		image: `/icons/error.png`,
+	},
 	confChange: {
 		header: 'Změnu potvrď v e-mailu',
 		detail: 'Z bezpečnostních důvodů je nezbytné tuto změnu finalizovat kliknutím na odkaz, který obdržíš do svého e-mailu. Po potvrzení budeš automaticky odhlášen ze všech zařízení.',
@@ -91,11 +96,7 @@ const submitWarnTexts = {
 	newMailSameAsCurrent: 'Nový email se shoduje s aktuálním',
 	emailMismatch: 'Nesouhlasí údaje o změně emailu',
 	wrongPass: 'Nesprávné heslo',
-	registerLimited: 'Z tohoto zařízení jsme dnes přijali příliš mnoho registrací. Zkus to prosím později.',
 };
-
-// PASSWORD STRENGTH EVALUATOR ---
-// Calculates score based on length and character diversity for visual feedback.
 
 // ENTRANCE FORM COMPONENT DEFINITION ---
 // Comprehensive authentication engine handling login, registration, and credential recovery
@@ -179,6 +180,7 @@ function EntranceForm(props: any) {
 			'emailChangeActive',
 			'emailReverted',
 			'newMailVerified',
+			'registerLimited',
 		].some(what => inform[what]),
 		askIfResendMail = ['verifyMail', 'mailSent', 'mailResent'].some(what => inform[what]),
 		isChange = ['changeMail', 'changePass', 'changeBoth'].includes(formMode),
@@ -194,6 +196,7 @@ function EntranceForm(props: any) {
 			'mailTaken',
 			() => inform.mailSent && !isRegister,
 			'mailResent',
+			'registerLimited',
 		].some(what => (typeof what === 'function' ? what() : inform[what])),
 		[mounted, setMounted] = useState(false),
 		[emailValidated, setEmailValidated] = useState(false),
@@ -351,26 +354,35 @@ function EntranceForm(props: any) {
 				}
 
 				// CORE AUTHENTICATION FLOW (LOGIN) ---
-				const print = getDeviceFingerprint();
-				console.log('🟢 SENDING AXIOS REQUEST:', { mode: what, email, print });
+				const print = isLogin ? getDeviceFingerprint() : undefined;
 				const rawResponse = (await axios.post('/entrance', delUndef({ mode: what, email, pass, print }), { __skipGlobalErrorBanner: true } as any))?.data;
-				console.log('🟢 AXIOS RESPONSE:', rawResponse);
 				const response = typeof rawResponse === 'string' ? rawResponse : rawResponse || {};
 
-				const { status, authToken, cities, auth, authEpoch, authExpiry, previousAuth, previousEpoch, deviceID, deviceSalt, deviceKey } = typeof response === 'object' ? response : {};
+				const { status, cities, auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey } = typeof response === 'object' ? response : {};
 
-				// REDIRECT TO ONBOARDING IF NEW USER ---
-				if (status === 'unintroduced') return (brain.user.isUnintroduced = true), sessionStorage.setItem('authToken', authToken), navigate('/setup');
-				else if (cities && auth) {
+				// REDIRECT TO ONBOARDING IF UNINTRODUCED USER ---
+				// User logged in with password, so derive PDK now (skip Welcome password input).
+				if (status === 'unintroduced' && auth) {
+					const [userID] = auth?.split(':') || [];
+					const pdkValue = await deriveKeyFromPassword(pass, userID + (deviceSalt || ''));
+					storePDK(pdkValue);
+					const authVal = { auth, print, pdk: pdkValue, deviceKey, epoch: authEpoch };
+					await forage({ mode: 'set', what: 'auth', val: authVal, id: userID });
+					if (authExpiry) brain.authExpiry = authExpiry;
+					// STORE PDK DERIVED FLAG ---
+					// Welcome will check this and skip password input.
+					sessionStorage.setItem('introPdkDerived', 'true');
+					brain.user.isUnintroduced = true;
+					return navigate('/setup');
+				} else if (cities && auth) {
 					const [userID, authHash] = auth?.split(':') || [];
 
 					// SECURITY AND DATA STORAGE ---
-					const pdk = await deriveKeyFromPassword(pass, userID + (deviceSalt || ''));
-					storePDK(pdk);
-					if (deviceID) localStorage.setItem('deviceID', deviceID);
+					const pdkValue = await deriveKeyFromPassword(pass, userID + (deviceSalt || ''));
+					storePDK(pdkValue);
 					if (previousAuth) setInform(prev => ({ ...prev, reencrypting: true }));
 
-					const authVal = authEpoch !== undefined ? { auth, print, pdk, deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash;
+					const authVal = authEpoch !== undefined ? { auth, print, pdk: pdkValue, deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash;
 					await forage({ mode: 'set', what: 'auth', val: authVal, id: userID });
 
 					setInform(prev => ({ ...prev, reencrypting: false }));
@@ -413,7 +425,25 @@ function EntranceForm(props: any) {
 			];
 			if (errorCode) {
 				setInform({ [errorCode]: true });
-				setTimeout(() => setInform(prev => ({ ...prev, [errorCode]: false })), 3000);
+				const stayVisible = [
+					'mailSent',
+					'mailNotSent',
+					'confChange',
+					'mailResent',
+					'changeSuccess',
+					'userDeleted',
+					'userFrozen',
+					'unfreezing',
+					'verifyMail',
+					'unauthorized',
+					'networkError',
+					'tokenExpired',
+					'emailChangeActive',
+					'emailReverted',
+					'newMailVerified',
+					'registerLimited',
+				];
+				if (!stayVisible.includes(errorCode)) setTimeout(() => setInform(prev => ({ ...prev, [errorCode]: false })), 3000);
 				// SKIP GLOBAL ERROR FOR EXPECTED CODES ---
 				if (expectedAuthErrors.includes(errorCode)) return;
 			}
@@ -431,7 +461,13 @@ function EntranceForm(props: any) {
 				const [authToken, expiry] = urlParams.get('auth')?.split(':') || [];
 				if (authToken && Date.now() < Number(expiry)) {
 					sessionStorage.setItem('authToken', `${authToken}:${expiry}`);
-					if (urlParams.get('mode') === 'introduction') return (brain.user.isUnintroduced = true), navigate('/setup');
+					// INTRODUCTION MODE HANDLING ---
+					// Store email for Welcome page password confirmation and PDK derivation.
+					if (urlParams.get('mode') === 'introduction') {
+						const introEmail = urlParams.get('email');
+						if (introEmail) sessionStorage.setItem('introEmail', decodeURIComponent(introEmail));
+						return (brain.user.isUnintroduced = true), navigate('/setup');
+					}
 				} else if (authToken) setInform(prev => ({ ...prev, tokenExpired: true }));
 				if (urlParams.get('mess')) setInform(prev => ({ ...prev, [urlParams.get('mess')]: true }));
 				window.history.replaceState({}, '', '/entrance');
@@ -887,7 +923,8 @@ function EntranceForm(props: any) {
 									? 'Potvrdit nové heslo!'
 									: isRevertEmail
 									? 'Vrátit email na původní adresu'
-									: ['userDeleted', 'userFrozen', 'unauthorized', 'mailResent', 'serverError', 'networkError'].some(what => inform[what]) || (inform.mailSent && isRegister)
+									: ['userDeleted', 'userFrozen', 'unauthorized', 'mailResent', 'serverError', 'networkError', 'registerLimited'].some(what => inform[what]) ||
+									  (inform.mailSent && isRegister)
 									? 'Na domovskou stránku'
 									: axiosInProg
 									? isLogin

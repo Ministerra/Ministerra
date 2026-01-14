@@ -8,7 +8,7 @@
  * --------------------------------------------------------------------------- */
 
 import { ALLOWED_IDS, PRIVACIES_SET, GENDER_VALUES, MAX_COUNTS, MAX_CHARS, MIN_CHARS, MIN_COUNTS, REGEXES } from '../../../shared/constants.ts';
-import { checkFavouriteExpertTopicsQuality } from '../../../shared/utilities.ts';
+import { checkFavouriteExpertTopicsQuality, toMySqlDateFormat } from '../../../shared/utilities.ts';
 
 // VALIDATION CONSTANTS ---------------------------------------------------------
 // Favex strict limits (mirror frontend `FavexAreas.jsx`)
@@ -35,21 +35,19 @@ function sanitizeName(value, code) {
 function sanitizeBirth(value) {
 	if (value === undefined) return undefined;
 	// MS-ONLY INPUT -------------------------------------------------------------
-	// Frontend guarantees ms timestamps due to axios request normalizer.
-	const birthMs = typeof value === 'number' && Number.isFinite(value) ? value : /^\d{10,13}$/.test(String(value).trim()) ? Number(value) : NaN;
-	if (!Number.isFinite(birthMs)) throw new Error('badRequest');
+	if (!Number.isFinite(value)) throw new Error('badRequest');
 
 	// UTC AGE CHECK -------------------------------------------------------------
 	// Use UTC components so timezone never shifts the "birthday day".
-	const [birthDate, nowDate] = [new Date(birthMs), new Date()];
+	const [birthDate, nowDate] = [new Date(value), new Date()];
 	let age = nowDate.getUTCFullYear() - birthDate.getUTCFullYear();
 	const hadBirthday = nowDate.getUTCMonth() > birthDate.getUTCMonth() || (nowDate.getUTCMonth() === birthDate.getUTCMonth() && nowDate.getUTCDate() >= birthDate.getUTCDate());
 	if (!hadBirthday) age -= 1;
 	if (age < 13 || age > 110) throw new Error('badRequest');
 
-	// DB FORMAT (DATE) ----------------------------------------------------------
-	// Store date-only in UTC.
-	return birthDate.toISOString().slice(0, 10);
+	// DB FORMAT (DATETIME) ------------------------------------------------------
+	// Store full datetime in UTC.
+	return toMySqlDateFormat(birthDate);
 }
 
 // SANITIZE TOPICS (FAVORITES/EXPERIENCES) --------------------------------------
@@ -219,7 +217,7 @@ function normalizeSetupPayload(input: any, { isIntroduction }: any) {
 	}
 
 	if (isIntroduction) {
-		['first', 'last', 'birth', 'gender', 'cities', 'indis', 'basics', 'favs'].forEach(field => {
+		['first', 'last', 'birth', 'gender', 'cities', 'basics', 'favs'].forEach(field => {
 			if (!payload[field]) throw new Error('badRequest');
 		});
 	}

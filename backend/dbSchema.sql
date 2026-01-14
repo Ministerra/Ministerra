@@ -23,7 +23,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '0c8f88ca-c8d0-11f0-b57d-0242ac120002:1-9524';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '0c8f88ca-c8d0-11f0-b57d-0242ac120002:1-11075';
 
 --
 -- Table structure for table `changes_tracking`
@@ -206,13 +206,13 @@ CREATE TABLE `comments` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `eve_feedback_totals`
+-- Table structure for table `eve_feedback`
 --
 
-DROP TABLE IF EXISTS `eve_feedback_totals`;
+DROP TABLE IF EXISTS `eve_feedback`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `eve_feedback_totals` (
+CREATE TABLE `eve_feedback` (
   `event` bigint unsigned NOT NULL,
   `rating_sum` int NOT NULL DEFAULT '0',
   `rating_count` int NOT NULL DEFAULT '0',
@@ -537,7 +537,7 @@ CREATE TABLE `miscellaneous` (
   `last_daily_recalc` datetime DEFAULT NULL,
   `last_arc_mess_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -763,21 +763,16 @@ DROP TABLE IF EXISTS `user_devices`;
 CREATE TABLE `user_devices` (
   `id` bigint unsigned NOT NULL,
   `user_id` bigint unsigned NOT NULL,
-  `device_id` varchar(32) NOT NULL,
+  `device_id` varchar(21) NOT NULL,
   `salt` varchar(64) NOT NULL,
   `device_key` varchar(64) DEFAULT NULL,
-  `fingerprint_hash` varchar(32) DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `last_seen` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `last_purge_sync` timestamp NULL DEFAULT NULL,
   `is_revoked` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_user_device` (`user_id`,`device_id`),
-  KEY `idx_user` (`user_id`),
-  KEY `idx_last_seen` (`last_seen`),
-  KEY `idx_user_devices_user_id` (`user_id`),
-  CONSTRAINT `fk_user_devices_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_user_devices_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -848,20 +843,19 @@ CREATE TABLE `users` (
   `gender` varchar(6) DEFAULT NULL,
   `birth` datetime DEFAULT NULL,
   `cities` varchar(100) DEFAULT NULL,
-  `address` varchar(45) DEFAULT NULL,
   `score` int DEFAULT '0',
   `basics` varchar(255) DEFAULT '',
   `indis` varchar(30) DEFAULT '',
   `groups` varchar(250) DEFAULT '',
-  `favs` varchar(200) DEFAULT NULL,
-  `exps` varchar(200) DEFAULT NULL,
+  `favs` varchar(215) DEFAULT NULL,
+  `exps` varchar(215) DEFAULT NULL,
   `status` enum('verifyMail','user','newUser','unintroduced') DEFAULT 'verifyMail',
   `imgVers` int DEFAULT '0',
   `basiVers` int NOT NULL DEFAULT '0',
   `changed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `shortDesc` varchar(500) DEFAULT NULL,
   `priv` enum('pub','lin','tru','own','ind') DEFAULT 'pub',
-  `defPriv` enum('pub','lin','tru','own','ind') DEFAULT NULL,
+  `defPriv` enum('pub','lin','tru','own','ind') DEFAULT 'pub',
   `askPriv` tinyint DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_users_email` (`email`),
@@ -881,4 +875,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-04 18:23:27
+-- Dump completed on 2026-01-14 11:52:59

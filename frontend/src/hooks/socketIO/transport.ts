@@ -55,7 +55,7 @@ async function refreshToken() {
 	const currentToken = tokenInfo?.token;
 	if (!currentToken) throw new Error('noToken');
 
-	const response = await axios.post('/entrance', { mode: 'renewAccessToken' }, { headers: { Authorization: `Bearer ${currentToken}` }, withCredentials: true, __skipLogoutCleanup: true } as any); // SEND CURRENT TOKEN + REFRESH COOKIE ---------------------------
+	const response = await axios.post('/entrance', { mode: 'renewAccessToken' }, { headers: { Authorization: `Bearer ${currentToken}` }, withCredentials: true, __skiplogoutAndCleanUp: true } as any); // SEND CURRENT TOKEN + REFRESH COOKIE ---------------------------
 	const authHeader = response?.headers?.authorization;
 	if (!authHeader) throw new Error('noToken');
 

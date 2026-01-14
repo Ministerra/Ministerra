@@ -61,14 +61,36 @@ function getDynamicSecret(userID: string | number, secretBase: string, iat: numb
 	return crypto.createHmac('sha256', secretBase).update(`${userID}:${hourSlot}`).digest('hex');
 }
 
-// HELPER: DEVICE ID DERIVATION -------------------------------------------------
-// Hashes the browser fingerprint (print) to derive a stable, anonymized device ID.
-// This avoids storing raw fingerprint values as primary identifiers.
-// Steps: use fallback devID when provided (already derived), otherwise require print and sha1(userID:print) to get a compact stable device id.
-function deriveDeviceId(userID: string | number, print: string | undefined, fallbackDevId?: string): string {
-	if (fallbackDevId) return fallbackDevId;
-	if (!print) throw new Error('missingDeviceFingerprint');
-	return crypto.createHash('sha1').update(`${userID}:${print}`).digest('hex').slice(0, 12);
+// HELPER: GET OR CREATE DEVICE ID ----------------------------------------------
+// Reads devID from signed cookie, or uses existing devID from JWT, or generates new one.
+// deviceID is per-machine, 100% stable (cookie-based), not derived from fingerprint.
+import { generateDeviceId } from '../utilities/helpers/device.ts';
+
+function getOrCreateDeviceId(req: any, previousDevId?: string): { devID: string; isNewDevice: boolean } {
+	// PRIORITY 1: Use existing devID from JWT (already validated session)
+	if (previousDevId) return { devID: previousDevId, isNewDevice: false };
+	// PRIORITY 2: Read from signed cookie
+	const cookieDevId: string | undefined = req?.signedCookies?.devID;
+	if (cookieDevId) return { devID: cookieDevId, isNewDevice: false };
+	// PRIORITY 3: Generate new device ID
+	return { devID: generateDeviceId(), isNewDevice: true };
+}
+
+// HELPER: SET DEVICE COOKIE ----------------------------------------------------
+// Sets the devID cookie with same security settings as refresh token (httpOnly, signed, secure).
+function setDeviceCookie(res: any, devID: string): void {
+	const env: string = (process.env.NODE_ENV || '').toLowerCase();
+	const secureEnv: string = (process.env.COOKIE_SECURE || '').toLowerCase();
+	const secure: boolean = secureEnv === 'true' || secureEnv === '1' ? true : secureEnv === 'false' || secureEnv === '0' ? false : env === 'production';
+	const sameSite: 'strict' | 'lax' | 'none' = (process.env.COOKIE_SAMESITE as any) || (secure ? 'strict' : 'lax');
+	res.cookie('devID', devID, {
+		maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year - device ID is long-lived
+		httpOnly: true,
+		signed: true,
+		secure,
+		sameSite,
+		path: '/',
+	});
 }
 
 // HELPER: COOKIE OPTIONS -------------------------------------------------------
@@ -97,6 +119,7 @@ function getRefreshCookieOptions(): any {
 // TOKEN HANDLERS --------------------------------------------------------------
 
 interface JwtCreateProps {
+	req?: any;
 	res: any;
 	con?: any;
 	create: 'both' | 'access' | 'refresh';
@@ -110,12 +133,12 @@ interface JwtCreateProps {
 /** ----------------------------------------------------------------------------
  * JWT CREATE
  * Generates Access and Refresh tokens, handles device tracking, and sets cookies.
- * Steps: derive devID, optionally rotate/persist refresh token (SQL+Redis+cookie), always issue aJWT with expiry header, and embed small device heuristics for the client.
+ * Steps: get/generate devID from cookie, optionally rotate/persist refresh token (SQL+Redis+cookie), always issue aJWT with expiry header, and embed small device heuristics for the client.
  *
- * @param {Object} context - { res, con, create, userID, is, print, deviceInfo, expiredAt }
+ * @param {Object} context - { req, res, con, create, userID, is, print, deviceInfo, expiredAt }
  * @param {string} create - 'both' (login/refresh) or 'access' (just aJWT renewal)
  * -------------------------------------------------------------------------- */
-async function jwtCreate({ res, con, create, userID, is, print, deviceInfo = {}, expiredAt = null }: JwtCreateProps): Promise<any> {
+async function jwtCreate({ req, res, con, create, userID, is, print, deviceInfo = {}, expiredAt = null }: JwtCreateProps): Promise<any> {
 	if (!redis) throw new Error('Redis client not initialized');
 	try {
 		// SESSION COORDINATES ---------------------------------------------------
@@ -123,7 +146,11 @@ async function jwtCreate({ res, con, create, userID, is, print, deviceInfo = {},
 		const now: number = Date.now();
 		const iat: number = Math.floor(now / 1000); // Calculate iat once and reuse for both tokens
 		let { logins = 1, lastLogin, devID: previousDevId } = deviceInfo;
-		const devID: string = deriveDeviceId(userID, print, previousDevId);
+
+		// DEVICE ID RESOLUTION ---------------------------------------------------
+		// Priority: existing devID from JWT > cookie > generate new
+		const { devID, isNewDevice } = getOrCreateDeviceId(req, previousDevId);
+		if (isNewDevice || !req?.signedCookies?.devID) setDeviceCookie(res, devID);
 
 		// LOGIN FREQUENCY TRACKING --------------------------------------------
 		// Tracks how often this specific device logs in.
@@ -265,7 +292,7 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
 
 		// MINT aJWT -----------------------------------------------------------
 		// Steps: mint a new access token; refresh token is not rotated in this path unless it is expired.
-		await jwtCreate({ res, create: 'access', userID, is, deviceInfo, print: normalizedPrint, expiredAt });
+		await jwtCreate({ req, res, create: 'access', userID, is, deviceInfo, print: normalizedPrint, expiredAt });
 
 		if (providedPrint === undefined) delete req.body.print;
 		if (req.body.mode === 'renewAccessToken') {
@@ -284,7 +311,7 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
 		try {
 			con = await Sql.getConnection();
 			// Rotate BOTH tokens
-			await jwtCreate({ res, con, create: 'both', userID, is, deviceInfo, print: normalizedPrint, expiredAt });
+			await jwtCreate({ req, res, con, create: 'both', userID, is, deviceInfo, print: normalizedPrint, expiredAt });
 		} finally {
 			if (con) con.release();
 		}
@@ -309,20 +336,23 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
  * Steps: accept token from header/body, bypass for explicitly public routes, use LRU cache fast-path, otherwise verify signature; on expiry run refresh flow and attach session.
  * -------------------------------------------------------------------------- */
 async function jwtVerify(req: any, res: any, next: any): Promise<void> {
-	let accessToken: string | undefined = req.headers.authorization?.split(' ')[1] || req.body.auth;
+	let accessToken: string | undefined = req.headers.authorization?.split(' ')[1] || req.body.auth || req.query.auth;
+	console.log('🚀 ~ jwtVerify ~ accessToken:', accessToken);
 
 	if (!accessToken) {
 		// PUBLIC ROUTES (Bypass Auth) -----------------------------------------
 		// Entrance routes allow unauthenticated access for login/register/forgot flows
 		// Event routes allow unauthenticated access for public event viewing
 		if (req.url.startsWith('/entrance') || req.url.startsWith('/event')) {
-			delete req.body.userID, delete req.body.devID;
+			['userID', 'devID', 'is'].forEach(k => delete req.body[k]);
 			return next();
 		}
 
 		// BLOCK REQUEST -------------------------------------------------------
 		return Catcher({ origin: 'jwtVerify', error: new Error('logout'), res });
 	}
+
+	// else if (!req.signedCookies.rJWT) return Catcher({ origin: 'jwtVerify', error: new Error('logout'), res });
 
 	// FAST PATH: LRU CACHE ----------------------------------------------------
 	// If we've recently verified this token, skip crypto operations.

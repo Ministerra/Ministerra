@@ -25,7 +25,9 @@ async function forgotPass({ email, newPass, userID, is }: ForgotPassProps, con: 
 		const [[userExists]]: [any[], any] = await con.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
 		if (!userExists) throw new Error('userNotFound');
 		await sendEmail({
-			token: `${jwtQuickies({ mode: 'create', payload: { userID: userExists.id, is: 'resetPass', expiresIn: EXPIRATIONS.authToken } })}:${Date.now() + EXPIRATIONS.authToken}`,
+			token: `${jwtQuickies({ mode: 'create', payload: { userID: userExists.id, is: 'resetPass', expiresIn: EXPIRATIONS.authToken } })}:${
+				Date.now() + parseInt(EXPIRATIONS.authToken) * 60 * 1000
+			}`,
 			email,
 			mode: 'resetPass',
 		});
@@ -48,7 +50,7 @@ interface ChangeCredentialsProps {
 
 // CHANGE CREDENTIALS (EMAIL/PASSWORD) ---------------------------
 // Steps: verify password, validate new email if present, then either (a) send verification mail(s) for the requested mode, or (b) commit changes after JWT-confirmed second step.
-const getAuthToken = (payload: any): string => `${jwtQuickies({ mode: 'create', payload })}:${Date.now() + EXPIRATIONS.authToken}`;
+const getAuthToken = (payload: any): string => `${jwtQuickies({ mode: 'create', payload })}:${Date.now() + parseInt(EXPIRATIONS.authToken) * 60 * 1000}`;
 async function changeCredentials({ is, userID, mode, pass, newPass, newEmail, hasAccessToCurMail }: ChangeCredentialsProps, con: any): Promise<{ payload: string }> {
 	const [[{ email: currentEmail, pass: storedPass } = {}]]: [any[], any] = await con.execute(/*sql*/ `SELECT email, pass FROM users WHERE id = ?`, [userID]);
 	if (!(await bcrypt.compare(pass, storedPass))) throw new Error('wrongPass');

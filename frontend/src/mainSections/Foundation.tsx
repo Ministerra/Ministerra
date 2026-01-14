@@ -2,7 +2,7 @@ import { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate, Outlet, useLoaderData, useFetcher, ScrollRestoration } from 'react-router-dom';
 import { comps, emptyBrain } from '../../sources';
-import { logoutCleanUp, debounce } from '../../helpers';
+import { logoutAndCleanUp, debounce } from '../../helpers';
 const Home = lazy(() => import('./Home'));
 import LogoAndMenu from '../comp/LogoAndMenu';
 // MOBILE DETECTION - uses multiple signals for reliability ---------------------------
@@ -76,7 +76,7 @@ function Foundation() {
 		}
 		disconnectSocketIO();
 		setFadedIn([]);
-		await logoutCleanUp(brain, emptyBrain);
+		await logoutAndCleanUp(brain, emptyBrain);
 		navigate(`/entrance${searchParam ? `?${searchParam}` : ''}`);
 		if (typeof window !== 'undefined') setTimeout(() => (window.__wipeInProgress = false), 1500);
 	};
@@ -98,10 +98,10 @@ function Foundation() {
 
 	// JXX RENDER -----------------------------------------------
 	return (
-		<foundation-comp class={`fadingIn ${fadedIn.includes('Foundation') ? 'fadedIn' : ''} block w100  h100 ${brain.user.id ? 'bInsetBlueDark' : ''}`}>
+		<foundation-comp class={`fadingIn ${fadedIn.includes('Foundation') ? 'fadedIn' : ''} block w100 mihvh100 h100 ${brain.user.id ? 'bInsetBlueDark' : ''}`}>
 			<globalContext.Provider value={{ brain, isMobile, nowAt, setMenuView, setFadedIn, logOut, menuView }}>
 				<LogoAndMenu {...JSXProps} location={location} setFadedIn={setFadedIn} />
-				{brain.user.id && (
+				{!brain.user.isUnintroduced && (
 					<Suspense fallback={<div>Loading ...</div>}>
 						<Home {...JSXProps} />
 					</Suspense>

@@ -1,8 +1,8 @@
 import { getOrSaveCityData } from '../../utilities/helpers/location.ts';
 import { getAuth } from '../../utilities/helpers/auth.ts';
-import { registerDevice } from '../../utilities/helpers/device.ts';
+import { registerDevice, generateDeviceId } from '../../utilities/helpers/device.ts';
 import { createUserMeta } from '../../utilities/helpers/metasCreate.ts';
-import { delFalsy, calculateAge } from '../../../shared/utilities.ts';
+import { delFalsy, calculateAge, toMySqlDateFormat } from '../../../shared/utilities.ts';
 import { Sql, Catcher } from '../../systems/systems.ts';
 import { jwtCreate } from '../jwtokens.ts';
 import { getLogger } from '../../systems/handlers/loggers.ts';
@@ -37,9 +37,10 @@ const logger = getLogger('Setup');
 // JWT middleware injects `userID` into `req.body`; we still validate shape/type here.
 function sanitizeSetupSessionUserID(value) {
 	if (value === undefined || value === null) throw new Error('unauthorized');
-	const userIDNumber = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
-	if (!Number.isInteger(userIDNumber) || userIDNumber <= 0) throw new Error('unauthorized');
-	return userIDNumber;
+	// IDs are large Snowflake strings - do NOT convert to Number to avoid precision loss (> 2^53).
+	const userIDStr = String(value).trim();
+	if (!/^\d+$/.test(userIDStr)) throw new Error('unauthorized');
+	return userIDStr;
 }
 
 // SANITIZE SESSION STATUS ------------------------------------------------------
@@ -71,6 +72,8 @@ function sanitizeSetupDevicePrint(value) {
  * --------------------------------------------------------------------------- */
 async function Setup(req, res) {
 	let con, citiesData, authData, pipeline;
+	console.log(req.body, 'REQ BODYYYYYYYYYYYYYYYYYYYY');
+
 	const { userID: rawUserID, is: rawIs, print: rawPrint, ...incoming } = req.body || {};
 	const userID = sanitizeSetupSessionUserID(rawUserID);
 	const is = sanitizeSetupSessionStatus(rawIs);
@@ -104,15 +107,7 @@ async function Setup(req, res) {
 				.join(',');
 		}
 
-		// NORMALIZE BIRTH DATE ------------------------------------------------
-		// Steps: keep date-only (YYYY-MM-DD) stable so timezone never shifts stored birthday.
-		if (restData.birth) {
-			// DATE-ONLY (NO TIMEZONE SHIFT) ---------------------------------------
-			// `normalizeSetupPayload` already returns YYYY-MM-DD; keep it stable.
-			if (typeof restData.birth === 'string') restData.birth = restData.birth.slice(0, 10);
-		}
-
-		if (!print && (restData.first || restData.last || restData.birth || restData.gender)) {
+		if (is !== 'unintroduced' && (restData.first || restData.last || restData.birth || restData.gender)) {
 			// PERSONAL DATA THROTTLE --------------------------------------------
 			// Steps: enforce cooldown windows and one-time age-change rule before persisting sensitive personal fields.
 			let changedAge = false;
@@ -137,28 +132,31 @@ async function Setup(req, res) {
 
 		// ARRAY TO STRING CONVERSION ---
 		// Database stores these fields as comma/pipe-separated strings.
-		if (Array.isArray(restData.basics)) restData.basics = restData.basics.join(',');
-		if (Array.isArray(restData.indis)) restData.indis = restData.indis.join(',');
-		if (Array.isArray(restData.groups)) restData.groups = restData.groups.join(',');
-		if (Array.isArray(restData.favs)) restData.favs = restData.favs.join('|');
-		if (Array.isArray(restData.exps)) restData.exps = restData.exps.join('|');
+		['basics', 'indis', 'groups'].forEach(k => Array.isArray(restData[k]) && (restData[k] = restData[k].join(',')));
+		['favs', 'exps'].forEach(k => Array.isArray(restData[k]) && (restData[k] = restData[k].join('|')));
 
 		// SQL UPDATE ----------------------------------------------------------
-		// Steps: update only provided columns, bump basiVers for basi changes, or set status=newUser during introduction.
+		// Steps: update only provided columns, set status=newUser during introduction, or bump basiVers for existing users.
 		const [columns, values] = Object.entries(restData).reduce((acc, [key, value]) => (acc[0].push(key), acc[1].push(value), acc), [[], []]);
 		const sqlQuery = `UPDATE users SET ${columns.map(f => `${f} = ?`).join(', ')}${restData.priv ? ', flag = "pri"' : ''} ${
-			!print ? (USER_BASI_KEYS.some(col => columns.includes(col)) ? ', basiVers = basiVers + 1' : '') : ', status = "newUser"'
+			is === 'unintroduced' ? ', status = "newUser"' : USER_BASI_KEYS.some(col => columns.includes(col)) ? ', basiVers = basiVers + 1' : ''
 		} WHERE id = ?`.replace('groups', '`groups`');
 		await con.execute(sqlQuery, [...values, userID]);
 
 		// NEW USER PATH -------------------------------------------------------
 		// Steps: mint auth/tokens, register device, seed user summary watermarks, and write name/image index so discovery features can find the user.
 		let deviceData;
-		if (print) {
+		if (is === 'unintroduced') {
 			authData = getAuth(userID);
-			deviceData = await registerDevice(con, userID, print);
-			await jwtCreate({ res, con, create: 'both', userID, print, is: 'newUser' });
-			pipeline.hset(`${REDIS_KEYS.userSummary}:${userID}`, 'last_dev', print.slice(0, 8)); // Don't add empty strings to sets - causes filtering issues ---------------------------
+
+			// GET OR CREATE DEVICE ID ---
+			// Read from cookie or generate new; fingerprint is optional (for display hash in device list).
+			const devID = req.signedCookies?.devID || generateDeviceId();
+			deviceData = await registerDevice(con, userID, devID);
+			await jwtCreate({ req, res, con, create: 'both', userID, print, is: 'newUser' });
+
+			// Use deviceID for redis last_dev watermark
+			pipeline.hset(`${REDIS_KEYS.userSummary}:${userID}`, 'last_dev', deviceData.deviceID);
 
 			// ADD NEW USER TO USER NAMES HASH ---------------------------------------------
 			pipeline.hset(REDIS_KEYS.userNameImage, userID, encode([restData.first || '', restData.last || '', restData.imgVers || '']));
@@ -252,7 +250,6 @@ async function Setup(req, res) {
 		}
 		// DEVICE DATA (NEW USER REGISTRATION) ---
 		if (deviceData) {
-			response.deviceID = deviceData.deviceID;
 			response.deviceSalt = deviceData.salt;
 			response.deviceKey = deviceData.deviceKey;
 		}

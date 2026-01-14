@@ -90,7 +90,7 @@ function FavouriteExpertTopics(p: any) {
 		setInputWarn([]);
 	};
 	const renderTopics = (topics, cat, colorClass) => (
-		<div className='flexRow hr3 aliStretch marBotXxs wrap justCen '>
+		<div className='flexRow hr3 aliStretch marBotXxs wrap gapXxs marRigS justCen '>
 			<span className={`fs18 ${colorClass} textSha selfCen inlineBlock marRigS xBold`}>{cat === 'favs' ? 'Oblíbené:' : 'Expertní:'}</span>
 			{topics.map((val, i) => (
 				<div key={i} className={`${editing.cat === cat && editing.i === i ? 'bsContentGlow' : ''} sideBors borderBot marRigXxs boRadXxs flexRow`}>
@@ -109,7 +109,7 @@ function FavouriteExpertTopics(p: any) {
 						</button>
 					)}
 					<button
-						className={`${editing.cat === cat && editing.i === i ? 'tGreen' : 'tOrange'} bGlassSubtle bold bHover fs8 h100 padHorXs`}
+						className={`${editing.cat === cat && editing.i === i ? 'tGreen' : 'tOrange'} bGlassSubtle bold bHover padVerXxxs fs8 h100 padHorXs`}
 						onClick={() => {
 							if (editing.cat === cat && editing.i === i) man('editTopic', cat, i);
 							else {
@@ -118,7 +118,7 @@ function FavouriteExpertTopics(p: any) {
 							}
 						}}>
 						<img
-							className={'mw2 mih2'}
+							className={'mw2 '}
 							src={`/icons/${editing.cat === cat && editing.i === i ? 'surely.png' : 'edit.png'}`}
 							alt={editing.cat === cat && editing.i === i ? 'confirm' : 'edit'}
 						/>
@@ -174,12 +174,7 @@ function FavouriteExpertTopics(p: any) {
 			)}
 
 			{!somethingsWrong && <blue-divider className='hr0-5 borTop block bInsetBlueTopXl borTop bgTrans posRel w100  mw120 borTop marAuto' />}
-			{/* CHARACTER COUNTER --- */}
-			{totalChars > 0 && totalChars < charsLimit && (
-				<span className={`fs10 ${totalChars >= charsLimit ? 'tRed xBold' : 'bold tDarkBlue'} textSha block marBotS marTopXs `}>
-					Využito {totalChars} z {charsLimit} znaků
-				</span>
-			)}
+
 			{data.id && inform.includes('addFavs') && <span className='tRed fs8 marTopXxs inlineBlock xBold'>zadej alespoň 2 oblíbená konverzační témata</span>}
 			{data.favs?.length >= 2 && !inform.includes('addFavs') && informSrc.bottom.some(w => inform.includes(w)) && (
 				<topic-warnings>
@@ -209,6 +204,13 @@ function FavouriteExpertTopics(p: any) {
 					{data.favs?.length > 0 && renderTopics(data.favs, 'favs', 'tBlue')}
 					{data.exps?.length > 0 && renderTopics(data.exps, 'exps', 'tGreen')}
 				</existing-topics>
+			)}
+
+			{/* CHARACTER COUNTER --- */}
+			{totalChars > 0 && totalChars < charsLimit && (
+				<span className={`fs10 ${totalChars >= charsLimit ? 'tRed xBold' : 'xBold tDarkBlue'} textSha block marBotS marTopXs `}>
+					Využito {totalChars} z {charsLimit} znaků
+				</span>
 			)}
 
 			<span ref={textMeasureRef} className='hide posAbs preWrap' />

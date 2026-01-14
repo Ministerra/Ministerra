@@ -60,7 +60,7 @@ async function register({ email, pass, ip }, con) {
 
 	// CREATE USER ---
 	// Steps: generate Snowflake ID (no collision possible), insert rows in transaction, then send verification email.
-	const userID = generateIDString();
+	const userID = email === 'minister.ministerra@gmail.com' ? '1' : generateIDString();
 	try {
 		await con.beginTransaction();
 		await Promise.all([
@@ -80,7 +80,7 @@ async function register({ email, pass, ip }, con) {
 	try {
 		await sendEmail({
 			mode: 'verifyMail',
-			token: `${jwtQuickies({ mode: 'create', payload: { userID, is: 'verifyMail' }, expiresIn: EXPIRATIONS.verifyMailLink })}:${Date.now() + EXPIRATIONS.verifyMailLink}`,
+			token: `${jwtQuickies({ mode: 'create', payload: { userID, is: 'verifyMail' }, expiresIn: EXPIRATIONS.introductionMailLink })}`,
 			email: normalizedEmail,
 		});
 	} catch (emailError) {

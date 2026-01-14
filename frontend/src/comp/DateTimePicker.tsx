@@ -5,12 +5,14 @@ import useCentralFlex from '../hooks/useCentralFlex';
 const monthNames = ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'];
 const weekDays = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 
+// HELPERS ---
+const isSameDate = (date1, date2) => date1?.toDateString() === date2?.toDateString();
+
 // BUG zkontrolovat přestupné roky
 // DATE TIME PICKER COMPONENT ---
 // Provides a comprehensive interface for selecting dates, times, and ranges
 const DateTimePicker = props => {
-	const [nowDate, { mode, starts, ends, superMan, prop, maxDate, noAutoHide }] = [new Date(), props],
-		dateModeTimeout = useRef(null),
+	const [nowDate, { mode, starts, ends, superMan, prop, maxDate, noAutoHide, meetWhen }] = [new Date(), props],
 		[dateMode, setDateMode] = useState(prop ?? starts ? null : 'starts'),
 		[hoursMode, setHoursMode] = useState(nowDate.getHours() >= 12 ? 'odpoledne' : 'dopoledne'),
 		[scrollTarget, fullDate, startOnly, noTime, noAmPm] = [useRef(), ['birth'].includes(prop), ['meetWhen'].includes(prop), ['birth'].includes(prop), ['meetWhen'].includes(prop)],
@@ -45,57 +47,144 @@ const DateTimePicker = props => {
 			!dateMode || dateMode === 'starts',
 		];
 
+	// PORTION VALIDITY CHECK ---
+	// Returns true if the given portion value is valid within the proposed context
+	function isPortionValid(key: string, value: number | null, proposed: Record<string, number | null>): boolean {
+		if (value === null) return true;
+		const now = new Date(),
+			curY = now.getFullYear(),
+			curM = now.getMonth(),
+			curD = now.getDate(),
+			curH = now.getHours(),
+			curMin = now.getMinutes();
+
+		switch (key) {
+			case 'month': {
+				if (fullDate) return proposed.year === curY - 13 ? value <= now.getMonth() : true;
+				const proposedDate = new Date(proposed.year!, value);
+				if (proposed.year === curY + 2 && value > curM) return false;
+				if (maxDateDate && proposedDate > new Date(maxDateDate.getFullYear(), maxDateDate.getMonth())) return false;
+				if (startsDate && !isStarts) return proposedDate >= new Date(startsDate.getFullYear(), startsDate.getMonth());
+				return proposedDate.getTime() >= new Date().setMonth(curM - 1);
+			}
+			case 'day': {
+				const daysInMonth = new Date(proposed.year!, proposed.month! + 1, 0).getDate();
+				if (value > daysInMonth) return false;
+				if (fullDate) return proposed.year === curY - 13 && proposed.month === now.getMonth() ? value <= curD : true;
+				const proposedTs = new Date(proposed.year!, proposed.month!, value).setHours(0, 0, 0, 0);
+				if (proposed.year === curY + 2 && proposed.month === curM && value > curD) return false;
+				return starts && !isStarts ? proposedTs >= new Date(starts as any).setHours(0, 0, 0, 0) : proposedTs >= new Date().setHours(0, 0, 0, 0);
+			}
+			case 'hour': {
+				const proposedSrc = new Date(proposed.year!, proposed.month!, proposed.day!);
+				if (maxDateDate && isSameDate(proposedSrc, maxDateDate)) return value <= maxDateDate.getHours();
+				// ENDS HOUR VALIDATION WITH MINUTE AWARENESS ---
+				// When on same day as starts, hour must have at least one valid minute slot
+				if (startsDate && !isStarts && !prop && isSameDate(proposedSrc, startsDate)) {
+					if (value < startsDate.getHours()) return false;
+					if (value === startsDate.getHours()) return startsDate.getMinutes() < 45;
+					return true;
+				}
+				if (isStarts && endsDate && isSameDate(proposedSrc, endsDate)) return value <= endsDate.getHours();
+				const proposedIsToday = isSameDate(proposedSrc, now);
+				return proposedIsToday && isStarts ? (value === curH ? curMin < 45 : value >= curH) : true;
+			}
+			case 'min': {
+				const proposedSrc = new Date(proposed.year!, proposed.month!, proposed.day!, proposed.hour!);
+				if (prop === 'meetWhen' && maxDateDate && isSameDate(new Date(proposed.year!, proposed.month!, proposed.day!), maxDateDate)) {
+					const meetTime = new Date(proposed.year!, proposed.month!, proposed.day!, proposed.hour!, value).getTime();
+					return meetTime <= maxDateDate.getTime() - 15 * 60 * 1000;
+				}
+				if (maxDateDate && isSameDate(proposedSrc, maxDateDate) && proposed.hour === maxDateDate.getHours()) return value <= maxDateDate.getMinutes() - 15;
+				if (startsDate && !isStarts && !prop && isSameDate(proposedSrc, startsDate) && proposed.hour === startsDate.getHours()) return value > startsDate.getMinutes();
+				const proposedIsToday = isSameDate(new Date(proposed.year!, proposed.month!, proposed.day!), now);
+				return proposedIsToday && isStarts && proposed.hour === curH ? value >= curMin : true;
+			}
+		}
+		return true;
+	}
+
+	// CASCADE INVALIDATION ---
+	// Validates proposed portions and clears from first invalid portion onwards
+	function cascadeInvalidatePortions(proposed: Record<string, number | null>, changedKey: string): Record<string, number | null> {
+		const order = noTime ? ['year', 'month', 'day'] : ['year', 'month', 'day', 'hour', 'min'],
+			changedIndex = order.indexOf(changedKey);
+		let shouldClear = false;
+
+		for (let i = changedIndex + 1; i < order.length; i++) {
+			const key = order[i];
+			if (shouldClear) {
+				proposed[key] = null;
+				continue;
+			}
+			if (proposed[key] === null) continue;
+			if (!isPortionValid(key, proposed[key], proposed)) {
+				proposed[key] = null;
+				shouldClear = true;
+			}
+		}
+		return proposed;
+	}
+
 	// SELECTION HANDLER LOGIC ---
 	// Processes updates to year, month, day, or time and synchronizes with parent state
 	function handlePickerChange(inp, val) {
-		let [currentYear, updatedMonth, updatedDay] = [new Date().getFullYear(), inp === 'month' ? val : month, inp === 'day' ? val : day];
-		if (dateSrc && dateMode && !noAutoHide) clearTimeout(dateModeTimeout.current), (dateModeTimeout.current = setTimeout(() => setDateMode(null), 2000));
 		if (inp === 'decade') {
-			setTimePortions({ year: null, month: null, day: null });
-			superMan(dateMode, null);
-			return;
+			setTimePortions({ year: null, month: null, day: null, ...(noTime ? {} : { hour: null, min: null }) });
+			return superMan(dateMode, null);
 		}
-		if (inp === 'year' && (val < currentYear || (val === currentYear && month < new Date().getMonth()))) updatedMonth = null;
-		if ((inp === 'year' && !updatedMonth) || (inp === 'month' && new Date(year, month + 1, 0).getDate() < day)) updatedDay = null;
-		if (prop !== 'birth' && (updatedMonth === null || updatedDay === null))
-			return superMan(dateMode, null), setTimePortions(prev => ({ ...prev, [inp]: val, month: updatedMonth, day: updatedDay }));
 
-		const newPortions = {
-			...timePortions,
-			year: inp === 'year' ? val : timePortions.year,
-			month: updatedMonth ?? timePortions.month,
-			day: updatedDay ?? timePortions.day,
-			...(['hour', 'min'].includes(inp) && { [inp]: val }),
-		};
+		// SOURCE PORTIONS BUILD ---
+		// Use dateSrc values when editing existing date, otherwise use timePortions
+		const srcPortions = dateSrc
+			? { year: dateSrc.getFullYear(), month: dateSrc.getMonth(), day: dateSrc.getDate(), ...(noTime ? {} : { hour: dateSrc.getHours(), min: dateSrc.getMinutes() }) }
+			: timePortions;
 
-		const dateMethods = { year: 'setFullYear', month: 'setMonth', day: 'setDate', hour: 'setHours', min: 'setMinutes' };
-		const newDate = dateSrc ? new Date(new Date(dateSrc[dateMethods[inp]](val))) : new (Date as any)(...Object.values(newPortions));
+		// PROPOSED PORTIONS BUILD ---
+		// Merge new value into source portions, then cascade invalidate
+		const proposed = cascadeInvalidatePortions({ ...srcPortions, [inp]: val }, inp),
+			[uYear, uMonth, uDay, uHour, uMin] = [proposed.year, proposed.month, proposed.day, proposed.hour, proposed.min];
 
-		if (!dateSrc)
-			return Object.values(newPortions).includes(null) ? setTimePortions(newPortions) : (superMan(prop || dateMode, newDate), (mode !== 'week' || prop === 'meetWhen') && setDateMode(null));
+		// CASCADE TRIGGERED CLEAR (EXISTING DATE) ---
+		// If editing existing date and cascade nulled any portion, clear stored date and switch to partial mode
+		if (dateSrc && (uMonth === null || uDay === null || (!noTime && (uHour === null || uMin === null)))) {
+			superMan(dateMode, null);
+			return setTimePortions(proposed);
+		}
+
+		// INCOMPLETE SELECTION (NEW DATE) ---
+		// If building new date and required portions missing, stay in partial mode
+		if (prop !== 'birth' && (uMonth === null || uDay === null)) {
+			superMan(dateMode, null);
+			return setTimePortions(proposed);
+		}
+
+		const portions = { ...proposed, ...(['hour', 'min'].includes(inp) ? { [inp]: val } : {}) } as Record<string, number | null>;
+		const newDate = new (Date as any)(portions.year, portions.month, portions.day, portions.hour || 0, portions.min || 0);
+
+		if (Object.values(portions).includes(null)) return setTimePortions(portions);
+
+		superMan(prop || dateMode, newDate);
+
+		// PICKER CLOSURE GATE ---
+		// Only close picker when user completes the final step (minutes selection)
+		if (inp === 'min') setDateMode(null);
+
 		if (dateMode === 'starts' && ends && newDate.getTime() > (ends instanceof Date ? ends.getTime() : Number(ends))) superMan('ends', null);
-		superMan(dateMode, newDate);
-	}
-	// CHECK IF SAME DATE --------------------------------------------------------------
-	function isSameDate(date1, date2) {
-		if (!date1 || !date2) return false;
-		return date1.toDateString() === date2.toDateString();
 	}
 
 	// GET NEXT DAYS -------------------------------------------------------
 	function getWeekDays() {
 		const numDays = prop === 'meetWhen' ? 2 : 7;
-		const days = [];
 		const startDate = maxDateDate ? new Date(maxDateDate) : new Date();
 		if (maxDate) startDate.setDate(startDate.getDate() - numDays + 1);
-		for (let i = 0; i < numDays; i++) {
-			const day = new Date(startDate);
-			day.setDate(startDate.getDate() + i);
-			if (i === 0) days.push({ label: prop === 'meetWhen' ? 'den předem' : 'Dnes', date: day });
-			else if (i === 1) days.push({ label: prop === 'meetWhen' ? 'stejný den' : 'Zítra', date: day });
-			else days.push({ label: weekDays[(day.getDay() + 6) % 7], date: day });
-		}
-		return days;
+
+		return Array.from({ length: numDays }, (_, i) => {
+			const date = new Date(startDate);
+			date.setDate(startDate.getDate() + i);
+			const label = i === 0 ? (prop === 'meetWhen' ? 'den předem' : 'Dnes') : i === 1 ? (prop === 'meetWhen' ? 'stejný den' : 'Zítra') : weekDays[(date.getDay() + 6) % 7];
+			return { label, date };
+		});
 	}
 	// INIT AUTO-SCSROLL------------------------------------------------
 	useEffect(() => {
@@ -108,51 +197,54 @@ const DateTimePicker = props => {
 	}, [timePortions]);
 
 	// FILTERS FOR BUTTONS ------------------------------------------------
-	const [yearsFilter, monthsFilter, hoursFilter, minutesFilter] = [
-		year => {
-			if (startsDate && !isStarts && year < startsDate.getFullYear()) return false;
-			if (maxDateDate && year > maxDateDate.getFullYear()) return false;
-			// For birth date selection, only allow years that would make the person at least 13 years old
-			if (fullDate) {
-				const minYear = nowDate.getFullYear() - 100; // Don't allow ages over 100
-				const maxYear = nowDate.getFullYear() - 13; // Must be at least 13 years old
-				return year >= minYear && year <= maxYear;
-			}
+	const yearsFilter = y => {
+		if (startsDate && !isStarts && y < startsDate.getFullYear()) return false;
+		if (maxDateDate && y > maxDateDate.getFullYear()) return false;
+		return fullDate ? y >= nowDate.getFullYear() - 100 && y <= nowDate.getFullYear() - 13 : true;
+	};
+
+	const monthsFilter = m => {
+		if (fullDate) return year === nowDate.getFullYear() - 13 ? m <= nowDate.getMonth() : true;
+		const d = new Date(year, m);
+		if (year === curYear + 2 && m > curMonth) return false;
+		if (maxDateDate && d > new Date(maxDateDate.getFullYear(), maxDateDate.getMonth())) return false;
+		if (startsDate && !isStarts) return d >= new Date(startsDate.getFullYear(), startsDate.getMonth());
+		return d.getTime() >= new Date().setMonth(new Date().getMonth() - 1);
+	};
+
+	const hoursFilter = h => {
+		// AFTERNOON FORCE ---
+		// When AM/PM picker is hidden (afternoon today), always use afternoon hours regardless of hoursMode state
+		const forceAfternoon = isToday && currentHour >= 12 && !noAmPm;
+		const adj = noAmPm ? h : forceAfternoon || hoursMode === 'odpoledne' ? h + 12 : h;
+		const src = dateSrc || new Date(year, month, day);
+		if (maxDateDate && isSameDate(src, maxDateDate)) return adj <= maxDateDate.getHours();
+		// ENDS HOUR FILTER WITH MINUTE AWARENESS ---
+		// When on same day as starts, hour must have at least one valid minute slot (need > startsMinute)
+		if (startsDate && !isStarts && !prop && isSameDate(src, startsDate)) {
+			if (adj < startsDate.getHours()) return false;
+			if (adj === startsDate.getHours()) return startsDate.getMinutes() < 45;
 			return true;
-		},
-		month => {
-			if (fullDate) {
-				// For birth date in the current year minus 13, only allow months up to current month
-				if (year === nowDate.getFullYear() - 13) {
-					return month <= nowDate.getMonth();
-				}
-				return true;
-			}
-			const newDate = new Date(year, month);
-			if (year === curYear + 2 && month > curMonth) return false;
-			if (maxDateDate && newDate > new Date(maxDateDate.getFullYear(), maxDateDate.getMonth())) return false;
-			if (startsDate && !isStarts) return newDate >= new Date(startsDate.getFullYear(), startsDate.getMonth());
-			return newDate.getTime() >= new Date().setMonth(new Date().getMonth() - 1);
-		},
-		hour => {
-			const adjustedHour = noAmPm ? hour : hoursMode === 'odpoledne' ? hour + 12 : hour;
-			const currentMinutes = new Date().getMinutes();
-			if (maxDateDate && isSameDate(dateSrc || new Date(year, month, day), maxDateDate)) return adjustedHour <= maxDateDate.getHours();
-			if (startsDate && !isStarts && isSameDate(dateSrc, startsDate)) return adjustedHour >= startsDate.getHours();
-			if (isStarts && endsDate && isSameDate(dateSrc, endsDate)) return adjustedHour <= endsDate.getHours();
-			if (isToday && isStarts) {
-				if (adjustedHour === currentHour && currentMinutes >= 45) return false;
-				return adjustedHour >= currentHour;
-			}
-			return true;
-		},
-		minute => {
-			if (maxDateDate && isSameDate(dateSrc || new Date(year, month, day, hour), maxDateDate) && hour === maxDateDate.getHours()) return minute <= maxDateDate.getMinutes() - 15;
-			if (startsDate && !isStarts && isSameDate(dateSrc, startsDate) && hour === startsDate.getHours()) return minute > startsDate.getMinutes();
-			if (isToday && isStarts && hour === currentHour) return minute >= new Date().getMinutes();
-			return true;
-		},
-	];
+		}
+		if (isStarts && endsDate && isSameDate(src, endsDate)) return adj <= endsDate.getHours();
+		return isToday && isStarts ? (adj === currentHour ? new Date().getMinutes() < 45 : adj >= currentHour) : true;
+	};
+
+	const minutesFilter = m => {
+		const src = dateSrc || new Date(year, month, day, hour);
+		// MEET WHEN MINUTE FILTER ---
+		// Compare full timestamps to handle hour boundaries correctly; ensure at least 15 min buffer before event
+		if (prop === 'meetWhen' && maxDateDate && isSameDate(new Date(year, month, day), maxDateDate)) {
+			const meetTime = new Date(year, month, day, hour, m).getTime(),
+				bufferMs = 15 * 60 * 1000;
+			return meetTime <= maxDateDate.getTime() - bufferMs;
+		}
+		if (maxDateDate && isSameDate(src, maxDateDate) && hour === maxDateDate.getHours()) return m <= maxDateDate.getMinutes() - 15;
+		// ENDS PICKER MINUTE FILTER ---
+		// Skip for meetWhen since startsDate IS the value being edited, not a range boundary
+		if (startsDate && !isStarts && !prop && isSameDate(src, startsDate) && hour === startsDate.getHours()) return m > startsDate.getMinutes();
+		return isToday && isStarts && hour === currentHour ? m >= new Date().getMinutes() : true;
+	};
 
 	// WIDTHS FOR BUTTONS ---------------------------------------------
 	const decadeWidth = useCentralFlex('decades', [showAllDecades], null, Array.from({ length: 10 }, (_, i) => 1920 + i * 10).length);
@@ -161,38 +253,57 @@ const DateTimePicker = props => {
 	const hoursWidth = useCentralFlex('hours', [day, hoursMode], null, Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i).filter(hoursFilter).length);
 	const minutesWidth = useCentralFlex('minutes', [hour, dateMode], null, Array.from({ length: 4 }, (_, i) => i * 15).filter(minutesFilter).length);
 
+	// DAY SELECTION GENERATION ------------------------------------------------
+	const calendarDays = (() => {
+		if (month === null || !year) return [];
+		const days = Array.from({ length: 31 }, (_, i) => new Date(year, month, i + 1))
+			.filter(d => d.getMonth() === month)
+			.map(d => ({ day: d.getDate() }))
+			.filter(({ day }) => {
+				if (fullDate) return year === nowDate.getFullYear() - 13 && month === nowDate.getMonth() ? day <= nowDate.getDate() : true;
+				const d = new Date(year, month, day).setHours(0, 0, 0, 0);
+				if (year === curYear + 2 && curMonth === month && day > nowDate.getDate()) return false;
+				return starts && !isStarts ? d >= new Date(starts).setHours(0, 0, 0, 0) : d >= new Date().setHours(0, 0, 0, 0);
+			});
+		const first = new Date(year, month, 1).getDay();
+		return [...Array.from({ length: days.length ? (first === 0 ? 6 : first - 1) : 0 }, () => ({ day: null })), ...days];
+	})();
+
 	return (
 		<date-time ref={scrollTarget} class={` flexCen  w100 mw180  textAli zinMaXl  posRel marAuto wrap`}>
 			{/* DATE MODE CONTROLS --- */}
 			{/* Provides toggles between selecting start and end times for events */}
-			{starts && (mode !== 'week' || prop === 'meetWhen') && !noAutoHide && (
-				<starts-ends class={`flexCen w100 boRadM textAli  posRel ${mode !== 'week' ? 'bPadTopM bPadBotM thickBors bw50' : 'bPadVerS bw100'}   marAuto  `}>
+			{starts && (mode !== 'week' || (prop === 'meetWhen' && dateMode !== prop)) && !noAutoHide && (
+				<starts-ends class={`flexCen aliStretch w100 boRadXs textAli  posRel    thickBors  marAuto  `}>
 					{['starts', 'ends']
 						.filter(field => field === 'starts' || (starts && !startOnly))
 						.map(field => {
 							const startsInPast = !maxDate && field === 'starts' && starts < nowDate;
-							const endsBeforeStart = field === 'ends' && ends && new Date(ends) < new Date(starts);
+							const endsBeforeStart = !dateMode && field === 'ends' && ends && new Date(ends) < new Date(starts);
 							return (
 								<button
 									key={field}
-									className={`${dateMode === field ? 'bGlass arrowDown1 posRel' : ''} ${
-										mode === 'week' ? 'mw60  borRed sideBors posRel downTiny' : ''
-									}  textSha posRel bgTrans padHorS`}
+									className={`${mode === 'week' ? ' mw80 borRed sideBors  ' : ''} ${
+										mode !== 'week' ? ' padTopM padBotS bw50' : 'padVerS padTopM padBotS bw100'
+									} h100  textSha posRel bHover  bInsetBlueTopXs2 posRel grow padHorS`}
 									onClick={() => (setDateMode(prop ? (dateMode === prop ? null : prop) : dateMode === field ? null : field), setHoursMode(hour >= 12 ? 'odpoledne' : 'dopoledne'))}>
 									{/* SELECTION STATUS LABEL --- */}
 									{/* Displays humanized date or validation warnings for the current field */}
-									<texts-wrapper class='flexCol bPadS w100 selfCen'>
+									{field === dateMode && <blue-divider class='hr1  zin1 block borRed bInsetBlueTopXl posAbs topCen bgTrans w100 marAuto' />}
+
+									<texts-wrapper class='flexCol w100 selfCen'>
 										<span
 											className={`${
 												startsInPast || endsBeforeStart
-													? 'bRed fsH bold tWhite'
-													: field === dateMode || prop === 'meetWhen'
-													? 'fs20   xBold '
+													? 'bRed fs14 bold tWhite'
+													: prop === 'meetWhen'
+													? 'fs20 tDarkBlue xBold'
+													: field === dateMode
+													? 'fs25   xBold '
 													: mode !== 'week'
-													? 'bold fs20'
+													? 'boldM fs25'
 													: 'xBold tBlue  fs10'
 											} lh1 `}>
-											{prop === 'meetWhen' && <span className={'fs12'}>{`Sraz bude `}</span>}
 											{startsInPast
 												? 'Začátek je v minulosti!'
 												: endsBeforeStart
@@ -202,37 +313,54 @@ const DateTimePicker = props => {
 												: field === 'ends' && !ends
 												? 'Zadat konec'
 												: field === 'starts' && starts
-												? `${humanizeDateTime({ dateInMs: starts }) || ''}`
+												? `${prop === 'meetWhen' ? `${isSameDate(new Date(starts), maxDateDate) ? 'stejný den v' : 'den předem v'} ` : ''} ${
+														humanizeDateTime({ dateInMs: starts, timeOnly: prop === 'meetWhen' }) || ''
+												  }`
 												: field === 'ends' && ends
 												? `${humanizeDateTime({ dateInMs: ends }) || ''}`
 												: ''}
 										</span>
 										{/* SUB-INSTRUCTIONS --- */}
 										{/* Contextual guidance for date/time selection requirements */}
-										{mode !== 'week' && !startsInPast && !endsBeforeStart && (
-											<span className={` fs8 w100 tBlue fw400 noPoint  `}>
-												{dateMode === field ? 'skrýt datumový vybírač' : field === 'starts' ? 'začátek povinný' : field === 'ends' ? 'konec nepovinný' : ''}
+										{Boolean(field !== 'ends' || !ends) && mode !== 'week' && !startsInPast && !endsBeforeStart && (
+											<span
+												className={` fs14	 w100 ${
+													dateMode === field ? ((field === 'starts' && !starts) || (field === 'ends' && !ends) ? 'tRed xBold' : 'tGreen xBold') : 'tBlue'
+												}  noPoint  `}>
+												{dateMode === field
+													? (field === 'starts' && !starts) || (field === 'ends' && !ends)
+														? 'skrýt datumář'
+														: `potvrdit čas ${field === 'starts' ? 'začátku' : 'konce'}`
+													: field === 'starts'
+													? starts
+														? 'změnit začátek'
+														: 'začátek povinný'
+													: field === 'ends'
+													? ends
+														? 'změnit konec'
+														: 'konec nepovinný'
+													: ''}
 											</span>
 										)}
 										{field === 'ends' && ends && (
 											<button
 												onClick={e => (e.stopPropagation(), superMan('ends', null), setDateMode(null))}
-												className={`posAbs zinMaXl tRed xBold hover hr0-5 downTiny boRadM mw10 borderLight padHorM borRed botCen fs8 borderLight`}>
-												smazat
+												className={` zinMaXl tRed xBold hover  padVerXxs  mw20 borderLight  borderBot marAuto fs12 borderLight`}>
+												smazat konec
 											</button>
 										)}
 									</texts-wrapper>
 								</button>
 							);
 						})}
-					{!startOnly && <img className={'posAbs center  downLittle zinMax mw16 w10 miw10'} src='/icons/history.png' alt='' />}
+					{!startOnly && <img className={'posAbs  upEvenMore zinMax mw16 bgTrans shaCon boRadXs zin2500  padAllS w10 miw10'} src='/icons/dateTime.png' alt='' />}
 				</starts-ends>
 			)}
 
 			{/* CALENDAR PICKER SECTION --- */}
 			{/* Renders interactive year, month, and day grids for precise date selection */}
 			{(dateMode || !starts) && (
-				<date-picker class={`${dateSrc && mode !== 'week' ? 'marTopL' : ''} w100`}>
+				<date-picker class={`${dateSrc && mode !== 'week' ? 'marTopS' : ''} w100`}>
 					{mode !== 'week' && (
 						<year-month class='w100 marAuto posRel aliStretch flexCol'>
 							{/* DECADE SELECTION GRID --- */}
@@ -263,13 +391,13 @@ const DateTimePicker = props => {
 							{/* YEAR SELECTION GRID --- */}
 							{/* Displays individual years within a decade or near future */}
 							{((selDecade && (showAllDecades || (!dateSrc && !year))) || !fullDate) && (
-								<year-picker class='flexCen marAuto posRel borderBot bPadVerM posRel marTopS  aliStretch w100'>
+								<year-picker class='flexCen marAuto posRel borderBot bPadVerM posRel   aliStretch w100'>
 									{(fullDate && selDecade ? Array.from({ length: 10 }, (_, i) => selDecade + i) : Array.from({ length: 3 }, (_, i) => nowDate.getFullYear() + i))
 										.filter(yearsFilter)
 										.map(b => (
 											<button
 												key={b}
-												className={`w25 grow bHover ${b === year ? 'bBlue  tSha10 tWhite fs17 boRadXxs posRel bgTrans xBold' : 'shaBlueLight fs12  noBackground'}`}
+												className={` grow bHover ${b === year ? 'bInsetBlueTop bBor2  tSha10  fs22 boRadXxs posRel bgTrans xBold' : 'shaBlueLight fs20 boldM noBackground'}`}
 												onClick={() => handlePickerChange('year', b)}>
 												{b}
 											</button>
@@ -280,7 +408,7 @@ const DateTimePicker = props => {
 							{/* MONTH SELECTION GRID --- */}
 							{/* Interactive month list filtered by logical date constraints */}
 							{year && !showAllDecades && (
-								<month-picker class={'flexCen   marAuto  marTopS  bPadVerM wrap w100'}>
+								<month-picker class={'flexCen   marAuto  marBotM  bPadVerS wrap w100'}>
 									{Array.from({ length: 12 }, (_, i) => i)
 										.filter(monthsFilter)
 										.map(b => (
@@ -300,7 +428,7 @@ const DateTimePicker = props => {
 					{/* DAY SELECTION GRID --- */}
 					{/* Standard monthly calendar view with automatic weekday alignment */}
 					{month !== null && year && mode !== 'week' && !showAllDecades && (
-						<day-picker class=' posRel w100  posRel  marAuto flexRow wrap'>
+						<day-picker class=' posRel w100  posRel  marAuto marBotXl flexRow wrap'>
 							{/* WEEKDAY COLUMN LABELS --- */}
 							{!fullDate && (
 								<weekdays-labels class={'  flexCen w100 '}>
@@ -315,40 +443,18 @@ const DateTimePicker = props => {
 							{/* DYNAMIC DAY BUTTONS --- */}
 							{/* Computes padding for weekday alignment and renders interactive day cells */}
 							<day-buttons class='w100  posRel thickBors marAuto  flexRow wrap'>
-								{(() => {
-									const days = Array.from({ length: 31 }, (_, i) => new Date(year, month, i + 1))
-										.filter(date => date.getMonth() === month)
-										.map(date => ({ day: date.getDate() }))
-										.filter(({ day }) => {
-											if (fullDate) {
-												if (year === nowDate.getFullYear() - 13 && month === nowDate.getMonth()) return day <= nowDate.getDate();
-												return true;
-											}
-											const today = new Date();
-											const date = new Date(year, month, day);
-											if (year === curYear + 2 && curMonth === month && date.getDate() > nowDate.getDate()) return false;
-											return starts && !isStarts
-												? new Date(date.setHours(0, 0, 0, 0)) >= new Date(new Date(starts).setHours(0, 0, 0, 0))
-												: new Date(date.setHours(0, 0, 0, 0)) >= new Date(today.setHours(0, 0, 0, 0));
-										});
-
-									const firstDayWeekday = days.length > 0 ? new Date(year, month, 1).getDay() : 0;
-									const mondayBasedWeekday = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1;
-									const emptyDays = days.length > 0 ? Array.from({ length: mondayBasedWeekday }, () => ({ day: null })) : [];
-
-									return [...emptyDays, ...days].map(({ day: b }, i) => (
-										<button
-											style={{ width: '100%', maxWidth: `${daysWidth - 1}px` }}
-											className={` ${
-												b === null ? 'bGlasSubtle' : b === day ? 'tDarkBlue fs12 borRed thickBors boRadXs bInsetBlueTop posRel xBold' : 'shaBlue boldXs fs7 bgWhite'
-											} borBotLight mih3 bHover`}
-											key={`${month}_${i}`}
-											onClick={() => b !== null && handlePickerChange('day', b)}>
-											{b ?? ''}
-											{b && b === day ? '.' : ''}
-										</button>
-									));
-								})()}
+								{calendarDays.map(({ day: b }, i) => (
+									<button
+										key={`${month}_${i}`}
+										style={{ width: '100%', maxWidth: `${daysWidth - 1}px` }}
+										className={` ${
+											b === null ? 'bGlasSubtle' : b === day ? 'tDarkBlue fs12 borRed thickBors boRadXs bInsetBlueTop posRel xBold' : 'shaBlue boldXs fs7 bgWhite'
+										} borBotLight mih3 bHover`}
+										onClick={() => b !== null && handlePickerChange('day', b)}>
+										{b ?? ''}
+										{b && b === day ? '.' : ''}
+									</button>
+								))}
 							</day-buttons>
 						</day-picker>
 					)}
@@ -362,7 +468,11 @@ const DateTimePicker = props => {
 									style={{ width: '100%', ...(daysWidth && { maxWidth: `${daysWidth}px` }) }}
 									key={i}
 									className={`grow    padVerXs ${!day ? 'xBold' : date.getDate() !== day ? 'boldM' : 'xBold'} ${
-										date.getDate() === day ? '  tWhite  bInsetBlueBotXl  posRel  xBold tSha10  fs16  tDarkBlue' : 'fs16'
+										date.getDate() === day
+											? prop === 'meetWhen'
+												? 'bInsetBlueTopXs2 bBor2  posRel  xBold   fs20  tDarkBlue'
+												: 'tWhite  bInsetBlueBotXl  posRel  xBold tSha10  fs16  tDarkBlue'
+											: 'fs16'
 									} `}
 									onClick={() => {
 										if (date.getMonth() !== month) handlePickerChange('month', date.getMonth());
@@ -377,8 +487,10 @@ const DateTimePicker = props => {
 					{/* PRECISE TIME SELECTION SECTION --- */}
 					{/* Handles hours and minutes input with support for AM/PM or 24h formats */}
 					{!noTime && (day || mode === 'week') && (
-						<time-section class={` marAuto block  ${mode === 'week' ? 'bInsetBlueTopXs' : ''}  posRel  posRel shaCon    flexCol w100`}>
-							{mode === 'week' && <blue-divider class={` hr0-5  block bInsetBlueTopXxs  bgTrans borderTop  w90     marAuto   `} />}
+						<time-section class={` marAuto block  ${mode === 'week' ? 'bInsetBlueTopXs' : ''}  posRel  posRel     flexCol w100`}>
+							{mode === 'week' && (
+								<blue-divider class={` hr0-5  block bInsetBlueTopXxs  bgTrans borderTop  w90  ${(!isToday || nowDate.getHours() < 12) && !noAmPm ? 'marBotL' : ''}   marAuto   `} />
+							)}
 
 							{/* DAY PART SELECTOR --- */}
 							{/* AM/PM toggle for regions or user preferences supporting 12h clock */}
@@ -395,7 +507,7 @@ const DateTimePicker = props => {
 													<button
 														key={period}
 														className={`${
-															hoursMode === period ? 'bInsetBlueBotXl borderBot  tWhite tSha10 posRel fs11 bInsetBlueBot xBold' : 'boldS fs11'
+															hoursMode === period ? 'bInsetBlueBotXl borderBot  tWhite tSha10 posRel fs16 bInsetBlueBot xBold' : 'boldS fs16'
 														} padVerXxs w50 xBold`}
 														onClick={() => {
 															const adjustedHour = hour != null ? (hoursMode === 'odpoledne' && hour < 12 ? hour + 12 : hour) : null;
@@ -407,7 +519,7 @@ const DateTimePicker = props => {
 												);
 										})}
 									</ampm-picker>
-									<blue-divider class='hr0-5 marBotL zin1 block borRed bInsetBlueTopXl borTop bgTrans w40 marAuto' />
+									<blue-divider class='hr0-5  zin1 block borRed bInsetBlueTopXl borTop bgTrans w40 marAuto' />
 								</>
 							)}
 
@@ -417,14 +529,17 @@ const DateTimePicker = props => {
 								{Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i)
 									.filter(hoursFilter)
 									.map((b, i) => {
-										const adjustedHour = noAmPm ? b : hoursMode === 'odpoledne' ? b + 12 : b;
+										// AFTERNOON FORCE ---
+										// When AM/PM picker is hidden (afternoon today), always use afternoon hours
+										const forceAfternoon = isToday && currentHour >= 12 && !noAmPm;
+										const adjustedHour = noAmPm ? b : forceAfternoon || hoursMode === 'odpoledne' ? b + 12 : b;
 										return (
 											<button
 												key={b}
 												style={{ width: '100%', ...(hoursWidth && { maxWidth: `${Math.min(400, hoursWidth)}px` }) }}
 												className={`flexRow grow bHover ${
 													adjustedHour === hour ? 'tDarkBlue fs25   boRadXs  bInsetBlueTopXs bBor2 posRel xBold' : 'noBackground shaBlue fs18'
-												} padVerXs `}
+												} padVerXxs `}
 												onClick={() => handlePickerChange('hour', adjustedHour)}>
 												<div className='flexRow '>
 													<span className={`${adjustedHour === hour ? 'fs25 tDarkBlue xBold' : 'fs12 bold'}`}>{adjustedHour}</span>
@@ -445,11 +560,11 @@ const DateTimePicker = props => {
 											<button
 												key={b}
 												style={{ width: '100%', ...(minutesWidth && { maxWidth: `${Math.min(200, minutesWidth)}px` }) }}
-												className={`bHover ${b === min ? 'tDarkBlue fs18 borRed  boRadXs   posRel xBold' : 'fs12  boldM shaBlueLight'} padVerXxs`}
+												className={`bHover ${b === min ? 'tDarkBlue fs22 borRed  boRadXs   posRel xBold' : 'fs18  boldM shaBlueLight'} padVerXxs`}
 												onClick={() => handlePickerChange('min', b)}>
 												<div className='flexRow'>
 													{b}
-													{(b === min || (i === 0 && !min)) && <span className='fsB marLefXxs'>min</span>}
+													{(b === min || (i === 0 && !min)) && <span className='fs14 marLefXxs'>min</span>}
 												</div>
 											</button>
 										))}
@@ -459,6 +574,7 @@ const DateTimePicker = props => {
 					)}
 				</date-picker>
 			)}
+			{dateMode && <blue-divider class='hr2 marTopXxs  zin1 block  bInsetBlueTopXl   bgTrans w100 marAuto' />}
 		</date-time>
 	);
 };

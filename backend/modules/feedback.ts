@@ -126,7 +126,7 @@ async function Feedback(req: { body: FeedbackRequest }, res: any) {
 			};
 			const [rows]: [any[], any] = await con.execute('SELECT rating,praises,reprimands,aspects,payload,comment,ideas FROM eve_feedback_user WHERE event=? AND user=?', [eventID, userID || 0]);
 			const row = rows[0];
-			const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback_totals WHERE event=?', [eventID]);
+			const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback WHERE event=?', [eventID]);
 			const totals = totalsRows[0];
 			return res.status(200).json({
 				feedback: row
@@ -155,7 +155,7 @@ async function Feedback(req: { body: FeedbackRequest }, res: any) {
 		// READ TOTALS ---------------------------------------------------------
 		// Steps: owner-only read; return parsed totals or a zeroed shape so UI doesn’t branch on null.
 		if (mode === 'getTotals') {
-			const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback_totals WHERE event=?', [eventID]);
+			const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback WHERE event=?', [eventID]);
 			const totals = totalsRows[0];
 			return res.status(200).json(
 				totals
@@ -232,7 +232,7 @@ async function Feedback(req: { body: FeedbackRequest }, res: any) {
 
 		// UPDATE AGGREGATES ---------------------------------------------------
 		// Steps: load totals under lock, then apply rating/praise/reprimand/aspect deltas so totals reflect the new user submission.
-		const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback_totals WHERE event=? FOR UPDATE', [eventID]);
+		const [totalsRows]: [any[], any] = await con.execute('SELECT rating_sum,rating_count,praises,reprimands,aspects FROM eve_feedback WHERE event=? FOR UPDATE', [eventID]);
 		const totalsRow = totalsRows[0];
 		const totals: FeedbackTotals = totalsRow
 			? {
@@ -258,7 +258,7 @@ async function Feedback(req: { body: FeedbackRequest }, res: any) {
 		mergeAspects(totals.aspects, prevAspects, safeAspects as any);
 
 		await con.execute(
-			`INSERT INTO eve_feedback_totals (event,rating_sum,rating_count,praises,reprimands,aspects,updated_at)
+			`INSERT INTO eve_feedback (event,rating_sum,rating_count,praises,reprimands,aspects,updated_at)
              VALUES (?,?,?,?,?,?,NOW())
              ON DUPLICATE KEY UPDATE rating_sum=VALUES(rating_sum), rating_count=VALUES(rating_count), praises=VALUES(praises), reprimands=VALUES(reprimands), aspects=VALUES(aspects), updated_at=NOW()`,
 			[eventID, totals.rating_sum, totals.rating_count, JSON.stringify(totals.praises), JSON.stringify(totals.reprimands), JSON.stringify(totals.aspects)]

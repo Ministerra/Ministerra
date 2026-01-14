@@ -82,19 +82,20 @@ function Home(props) {
 
 	// INITIALIZATION -------------------------------------------------------
 	useEffect(() => {
-		if (initialize === null || !brain.user.id) return;
+		if (!brain.user.id || (initialize === null && snap)) return;
+		const initView = initialize || brain.homeView || 'cityEvents';
 		setFadedIn([]), setMenuView(''), setInform([]), snap && showMan('resetView');
 		// Store homeView reference without direct mutation
-		(brain.homeView = initialize), (brain.contQueueIDs = []);
-		if (initialize === 'cityEvents') setSnap(setAvailOrGetAvaTypes(provideSnap('newInitSnap'), false, true));
-		else if (initialize === 'topEvents') setSnap({ fetch: true, contView: 'events' });
-		setInitialize(null);
-	}, [initialize]);
+		(brain.homeView = initView), (brain.contQueueIDs = []);
+		if (initView === 'cityEvents') setSnap(setAvailOrGetAvaTypes(provideSnap('newInitSnap'), false, true));
+		else if (initView === 'topEvents') setSnap({ fetch: true, contView: 'events' });
+		if (initialize) setInitialize(null);
+	}, [initialize, brain.user.id]);
 
 	// GET OR FIND SNAP ------------------------------------------------
 	const provideSnap = useCallback(
 		mode => {
-			const history = brain.user.history;
+			const history = brain.user.history || [];
 			if (mode !== 'newInitSnap')
 				return history.find(histSnap => {
 					if (mode === 'init') return areEqual(histSnap.cities, brain.user.curCities) && histSnap.init;
@@ -138,9 +139,7 @@ function Home(props) {
 
 			const allTypesAnytime = new Set(citiesAvail['anytime'] || []);
 			const allTypesInSelTime = new Set(citiesAvail[time] || []);
-			const avaTypes = [...allTypesInSelTime]
-				.filter(type => cats.some(cat => catTypesStructure.get(cat).ids.includes(type)))
-				.sort((a, b) => Number(a) - Number(b));
+			const avaTypes = [...allTypesInSelTime].filter(type => cats.some(cat => catTypesStructure.get(cat).ids.includes(type))).sort((a, b) => Number(a) - Number(b));
 
 			if (returnTypes) return avaTypes;
 
@@ -352,8 +351,10 @@ function Home(props) {
 		]
 	);
 
+	console.log(show, snap, brain, initialize, 'SHOW, SNAP, BRAIN, INITIALIZE');
+
 	return (
-		<home-section class={`${nowAt !== 'home' ? 'hide' : ''} w100 block`}>
+		<home-section class={`${nowAt !== 'home' ? 'hide' : ''} h100 padBotXxxl w100 block`}>
 			{/* HEADER IMAGE ------------------------------------------------- */}
 			<HeaderImage fadedIn={fadedIn} thisIs={nowAt} />
 			{/* CHANGE VIEWS MENU ------------------------------------------- */}

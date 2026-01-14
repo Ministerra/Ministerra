@@ -50,47 +50,49 @@ function HeaderImage({ fadedIn, isLastVisible = false, thisIs, currentSection, i
 
 	const currentTexts = currentSection && src[currentSection] ? src[currentSection] : defaultTexts;
 
-	return (
-		<header-image class={`posRel block ${!isLastVisible && thisIs !== 'home' ? 'marBotM' : thisIs === 'home' ? 'hvh65 mh75 ' : 'marBotS'} maskTopXxs   textAli posRel pointer w100`}>
-			{/* MAIN IMAGE ------------------------------------------ */}
-			<img
-				title='Background image'
-				className={`${!fadedIn || fadedIn.includes('Header') ? 'fadedIn' : ''} fadingIn ${
-					thisIs === 'home' ? 'hvw120 mh70' : isLastVisible ? 'hvh50  selfStart' : 'hvh25 '
-				} cover  maskLowXs  w100`}
-				src={`${import.meta.env.VITE_FRONT_END}/public/headers/${src[thisIs || currentSection].imgSrc}`}
-			/>
+	if (!src[thisIs || currentSection]) return null;
+	else
+		return (
+			<header-image class={`posRel block ${!isLastVisible && thisIs !== 'home' ? 'marBotM' : thisIs === 'home' ? 'hvh65 mh75 ' : 'marBotS'} maskTopXxs   textAli posRel pointer w100`}>
+				{/* MAIN IMAGE ------------------------------------------ */}
+				<img
+					title='Background image'
+					className={`${!fadedIn || fadedIn.includes('Header') ? 'fadedIn' : ''} fadingIn ${
+						thisIs === 'home' ? 'hvw120 mh70' : isLastVisible ? 'hvh50  selfStart' : 'hvh25 '
+					} cover  maskLowXs  w100`}
+					src={`${import.meta.env.VITE_FRONT_END}/public/headers/${src[thisIs || currentSection].imgSrc}`}
+				/>
 
-			{/* PAGE BUTTONS ---------------------------------------- */}
-			{!isIntroduction && (
-				<page-bs class='flexRow posAbs center spaceBet w100 boRadS marAuto'>
-					<button className='bgTransXs miw4 fsG boldM mih6 shaTop'>{'<'}</button>
-					<button className='bgTransXs fsG boldM miw4 mih6 shaTop'>{'>'}</button>
-				</page-bs>
-			)}
-
-			{/* HEADER TEXTS ---------------------------------------- */}
-			<content-wrapper class={`${!fadedIn || fadedIn.includes('HeaderTexts') ? 'fadedIn' : ''} fadingIn textAli fPadHorS  padBotS  boRadXs  posAbs botCen flexCol marAuto  w100 `}>
-				{/* CENTER IMAGE (LOGO) --------------------------------- */}
+				{/* PAGE BUTTONS ---------------------------------------- */}
 				{!isIntroduction && (
-					<img
-						title='Logo'
-						className={`marAuto maskLow bor2White  posRel cover bgTrans shaWhite w35 ${isIntroduction ? 'mw30 marBotM' : 'mw25'}  boRadS`}
-						src='https://png.pngtree.com/png-clipart/20211009/original/pngtree-letter-m-logo-png-design-vector-png-image_6841484.png'
-					/>
+					<page-bs class='flexRow posAbs center spaceBet w100 boRadS marAuto'>
+						<button className='bgTransXs miw4 fsG boldM mih6 shaTop'>{'<'}</button>
+						<button className='bgTransXs fsG boldM miw4 mih6 shaTop'>{'>'}</button>
+					</page-bs>
 				)}
-				{currentSection ? (
-					<strong className={`tDarkBlue  lh1 tShaWhiteXl xBold ${isLastVisible ? 'fs45' : 'fs35'}`}>{currentTexts.title}</strong>
-				) : (
-					<texts-wrapper class='block textAli'>
-						<span className='fs38 lh1-2 bold      '>Vítá Tě </span>
-						<span className='xBold  fs44'>Ministerra</span>
-						<span className='fs48 xBold tDarkBlue  tShaWhite mw180   '>Brno</span>
-					</texts-wrapper>
-				)}
-				<span className='fs13 lh1 w100 inlineBlock  mw160 marAuto  marTopS '>{currentTexts.subtitle}</span>
-			</content-wrapper>
-		</header-image>
-	);
+
+				{/* HEADER TEXTS ---------------------------------------- */}
+				<content-wrapper class={`${!fadedIn || fadedIn.includes('HeaderTexts') ? 'fadedIn' : ''} fadingIn textAli fPadHorS  padBotS  boRadXs  posAbs botCen flexCol marAuto  w100 `}>
+					{/* CENTER IMAGE (LOGO) --------------------------------- */}
+					{!isIntroduction && (
+						<img
+							title='Logo'
+							className={`marAuto maskLow bor2White  posRel cover bgTrans shaWhite w35 ${isIntroduction ? 'mw30 marBotM' : 'mw25'}  boRadS`}
+							src='https://png.pngtree.com/png-clipart/20211009/original/pngtree-letter-m-logo-png-design-vector-png-image_6841484.png'
+						/>
+					)}
+					{currentSection ? (
+						<strong className={`tDarkBlue  lh1 tShaWhiteXl xBold ${isLastVisible ? 'fs45' : 'fs35'}`}>{currentTexts.title}</strong>
+					) : (
+						<texts-wrapper class='block textAli'>
+							<span className='fs38 lh1-2 bold      '>Vítá Tě </span>
+							<span className='xBold  fs44'>Ministerra</span>
+							<span className='fs48 xBold tDarkBlue  tShaWhite mw180   '>Brno</span>
+						</texts-wrapper>
+					)}
+					<span className='fs13 lh1 w100 inlineBlock  mw160 marAuto  marTopS '>{currentTexts.subtitle}</span>
+				</content-wrapper>
+			</header-image>
+		);
 }
 export default HeaderImage;

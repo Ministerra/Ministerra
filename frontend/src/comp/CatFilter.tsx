@@ -46,7 +46,7 @@ function CatFilter(props) {
 	// COMPONENT RENDERING ---
 	// Renders category icons and labels with state-driven visual feedback
 	return (
-		<cat-filter ref={wrapperRef} class={`fadingIn ${fadedIn.includes('CatFilter') ? 'fadedIn' : ''}  shaTop   posRel aliStretch flexCen w100 marBotXs wrap `}>
+		<cat-filter ref={wrapperRef} class={`fadingIn ${fadedIn.includes('CatFilter') ? 'fadedIn' : ''}  shaTop   posRel aliStretch flexCen w100 ${nowAt !== 'editor' ? 'marBotXs' : ''} wrap `}>
 			{/* BACKGROUND OVERLAY --- */}
 			{/* Semi-transparent background for better text legibility */}
 			<div className={`bgWhite topCen opacityXs shaCon hr2 posAbs w100 zinMaXl`} />
@@ -59,9 +59,9 @@ function CatFilter(props) {
 					<img-wrapper
 						key={cat}
 						style={{ width: '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }}
-						class={` ${nowAt === 'editor' ? 'hvw30 mh30' : 'aspect165 mih10'} ${
-							nowAt === 'editor' && isSel ? 'bsContentGlow borBot8' : ''
-						}   flexCol  posRel  grow bHover shaBot marBotXxxxs  `}
+						class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 mih10'} ${
+							nowAt === 'editor' && isSel ? 'bsContentGlow' : ''
+						} noBackground  flexCol  posRel  grow bHover  marBotXxxxs  `}
 						onClick={() => handleCategorySelection(cat)}>
 						{/* CATEGORY IMAGE DISPLAY --- */}
 						{/* Visual representation of the category with desaturation when inactive */}
@@ -71,14 +71,14 @@ function CatFilter(props) {
 							src={`/covers/eventCategories/${['meet.jpg', 'public.jpg', 'proffesional.jpg', 'volunteers.jpg'][i]}`}
 							className={`${nowAt === 'editor' && isSel ? ' arrowDown   bsContentGlow zinMax' : ''} ${
 								!isSel && nowAt !== 'editor' ? 'desaturated' : ''
-							} h100    boRadXxs  grow  cover posRel   w100`}
+							} h100    boRadXxs  grow }  cover posRel   w100`}
 						/>
 
 						{/* CATEGORY TEXT OVERLAY --- */}
 						{/* Contains the category name and status indicators (availability, counts) */}
 						<span-wrapper
 							style={{ bottom: '-0px' }}
-							class={' 	 posAbs   marAuto  textAli  zinMaXl padTopXxxxs padBotXxxs hvw10 mh1-6  flexCol aliCen justCen   bgTrans  marBotXxxs    w50       botCen'}>
+							class={` 	 posAbs   marAuto  textAli  zinMaXl   hvw10 mh1-6  flexCol aliCen justCen   bgTrans           botCen ${nowAt === 'editor' ? 'w100' : 'w50  '}`}>
 							<span
 								className={`${
 									nowAt !== 'editor'
@@ -88,8 +88,8 @@ function CatFilter(props) {
 											? `fs12 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bOrange bgTrans bold  lh1`
 											: `fs8 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `
 										: nowAt === 'editor' && isSel
-										? 'boldM fs10 tWhite w100  posRel bDarkBlue tWhite arrowDown1 borTop2 tSha10 padVerXxs '
-										: 'fs11  padVerXxs  xBold'
+										? 'boldM fs15 tWhite w100  posRel bBlue tWhite arrowDown1  tSha10 padVerXxs '
+										: 'fs10   tShaWhiteXl padVerXxs  xBold'
 								}        posRel    textAli        w100    marAuto  inlineBlock    zinMax      `}>
 								{nowAt !== 'editor' && notInTimeButAvail
 									? `${timeLabel[snap.time][0].toUpperCase() + timeLabel[snap.time].slice(1)} nic`
@@ -101,7 +101,7 @@ function CatFilter(props) {
 			})}
 			{/* VISUAL DIVIDER --- */}
 			{/* Bottom decorative divider for the category filter section */}
-			<blue-divider class={` hr1  block bInsetBlueTopXl opacityL  borTopLight bgTrans  posAbs botCen  w100 posRel mw120 zinMax   marAuto   `} />
+			{nowAt !== 'editor' && <blue-divider class={` hr1  block bInsetBlueTopXl opacityL  borTopLight bgTrans  posAbs botCen  w100 posRel mw120 zinMax   marAuto   `} />}
 		</cat-filter>
 	);
 }

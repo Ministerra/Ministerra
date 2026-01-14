@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt';
-import { jwtQuickies } from '../jwtokens.ts';
 import { getAuth } from '../../utilities/helpers/auth.ts';
 import { registerDevice } from '../../utilities/helpers/device.ts';
 import { getLogger } from '../../systems/handlers/loggers.ts';
@@ -72,8 +71,9 @@ export async function updateLoginsTable(req, userID, con) {
 
 // LOGIN ------------------------------------------------------------------------
 // Steps: validate print + credentials, branch on status (verifyMail/unintroduced/frozen), register device when needed, then return jwtData + auth payload for the dispatcher to mint cookies/tokens.
-export async function login({ email, pass, print }, con) {
+export async function login({ email, pass, print, devID }, con) {
 	if (print?.length < 8 || print?.length > 128) throw new Error('invalidDevicePrint');
+	if (!devID) throw new Error('missingDeviceID');
 
 	let frozen = false;
 	const loginCols = 'id, created, pass, flag, cities, status';
@@ -102,28 +102,23 @@ export async function login({ email, pass, print }, con) {
 	// Steps: if flag was set but tasks haven’t reconciled yet, clear it so the session can proceed normally.
 	if (u.flag === 'fro') await con.execute(`UPDATE users SET flag = "ok" WHERE id = ?`, [u.id]);
 
-	if (u.status === 'unintroduced')
-		return { payload: { status: u.status, authToken: `${jwtQuickies({ mode: 'create', payload: { userID: u.id, is: 'unintroduced' }, expiresIn: '30m' })}:${Date.now() + 18e5}` } };
-
+	const isIntroduction = u.status === 'unintroduced';
 	const auth = getAuth(u.id),
-		dev = await registerDevice(con, u.id, print);
+		dev = await registerDevice(con, u.id, devID);
 	return {
-		jwtData: { is: u.status, create: 'both', userID: u.id, print },
+		jwtData: { is: u.status, create: isIntroduction ? 'access' : 'both', userID: u.id, print },
 		payload: {
 			auth: auth.auth,
 			authEpoch: auth.epoch,
 			authExpiry: auth.expiry,
-			deviceID: dev.deviceID,
 			deviceSalt: dev.salt,
 			deviceKey: dev.deviceKey,
-			cities: u.cities,
+			...(isIntroduction ? { status: u.status } : { cities: u.cities }),
 			...(auth.previousAuth && { previousAuth: auth.previousAuth, previousEpoch: auth.previousEpoch }),
 		},
 	};
 }
 
-// LOGOUT HELPERS --------------------------------------------------------------
-// Steps: delete refresh tokens (redis + SQL), then disconnect sockets best-effort; caller decides single device vs “everywhere”.
 // LOGOUT USER DEVICES ----------------------------------------------------------
 // Steps: bulk-delete matching refresh token fields, delete SQL rows, then disconnect sockets (excluding current device when requested).
 export async function logoutUserDevices({ userID, devID = null, excludeCurrentDevice = true, reason = 'sessionInvalidated', con }) {

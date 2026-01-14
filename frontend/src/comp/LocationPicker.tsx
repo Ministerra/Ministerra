@@ -274,6 +274,8 @@ function LocationPicker(props) {
 	const handleSuggestionClick = item => {
 		suggestClicked.current = true;
 		setShowSuggest(false);
+		setSuggestItems([]);
+		setSearchValue('');
 		setLocaInput(getLocaInput(item));
 
 		if (isIntroduction) {
@@ -288,7 +290,7 @@ function LocationPicker(props) {
 			man(nowAt === 'editor' ? 'location' : nowAt === 'setup' ? 'addCity' : 'searchedCity', existingCity || item);
 		}
 		// REFOCUS SEARCH INPUT AFTER SELECTION ---
-		setTimeout(() => locaInp.current?.focus(), 50);
+		if (nowAt !== 'editor') setTimeout(() => locaInp.current?.focus(), 50);
 	};
 
 	const suggestionsRef = useRef(null);
@@ -356,21 +358,21 @@ function LocationPicker(props) {
 				<input
 					value={locaInput}
 					disabled={disableSearch}
-					autoFocus={nowAt === 'home' && !isMobile}
+					autoFocus={(nowAt === 'home' && !isMobile) || (nowAt === 'editor' && !data.city && !data.cityID)}
 					onKeyDown={e => e.key === 'Enter' && locaInp.current.blur()}
 					onBlur={handleInputBlur}
 					onChange={handleInputChange}
 					onFocus={handleInputFocus}
-					className={`${inform.includes('noCity') ? 'borderRed' : 'shaBlue '}  ${(inMenu && locaInput) || isIntroduction ? 'boldXs fs16 mw160' : 'fs16'} ${
+					className={`${inform.includes('noCity') ? 'borderRed' : 'shaBlue '}  ${(inMenu && locaInput) || isIntroduction ? 'boldXs fs18 mw160' : 'fs16'} ${
 						disableSearch ? '' : ''
-					} hvw3 mih5  textAli w100 marAuto borderBot  phLight`}
+					} hvw3 mih5  textAli w100 marAuto borderBot boldXs phLight`}
 					placeholder={inputPlaceholder()}
 					type='text'
 					ref={locaInp}
 				/>
 			)}
 
-			{inform.includes('noCity') && <span className='tRed fs8 inlineBlock marTopXs xBold'>Přidej si alespoň 1 město (domovské)</span>}
+			{inform.includes('noCity') && !isIntroduction && <span className='tRed fs12 block marTopXs xBold'>Přidej si alespoň 1 město (domovské)</span>}
 
 			{/* SEARCH RESULTS --------------------------------------------------------------------------------- */}
 			{showSuggest && suggestItems.length > 0 && (
@@ -389,7 +391,7 @@ function LocationPicker(props) {
 
 			{/* CITIES WRAPPER ---------------------------------------------------------------------------- */}
 			{(nowAt !== 'editor' || (data.locaMode === 'city' && (!isEditing || (isEditing && brain.user.cities.some(city => city === data.cityID))))) && !showSuggest && (
-				<cities-wrapper class={`${!inMenu && nowAt !== 'editor' ? '' : ''} flexCen wrap marTopS w100 gapXxs  posRel   marAuto  `}>
+				<cities-wrapper class={`flexCen wrap marTopXs w100 gapXxs  posRel   marAuto  `}>
 					{(isIntroduction ? data.cities || [] : nowAt === 'setup' ? data.cities || [] : brain.user.cities).map((city, i) => {
 						city = brain.cities.find(c => c.cityID === city) || city;
 
@@ -413,11 +415,11 @@ function LocationPicker(props) {
 								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${
 									invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBluTopS ' : ''
 								} ${`${
-									nowAt === 'editor' ? (isSelected ? 'bInsetBlueTop  textSha boRadS  xBold fs8' : '  fs11 xBold') : inMenu ? '  boldM fs10  padTopXxs' : '  bold fs13'
+									nowAt === 'editor' ? (isSelected ? 'bInsetBlueTop  borTop textSha boRadS  xBold fs14' : '  fs14 xBold') : inMenu ? '  boldM fs15  ' : '  bold fs13'
 								}  posRel miw16  `}  
 								  ${inMenu && curSelCities.includes(id) ? 'bInsetBlueTopS borTop xBold' : ''}
 								 
-								 ${nowAt === 'setup' ? 'textLeft' : ''} shaLight   flexCen bgTrans       `}>
+								 ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXs   flexCen bgTrans       `}>
 								{nowAt === 'setup' && (
 									<button
 										title='Domovské město'
