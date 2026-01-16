@@ -15,12 +15,16 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
  * keeps brain cache + forage storage in sync while animating choices.
  * --------------------------------------------------------------------------- */
 function RateAwards(props) {
+	console.log('RateAwards', props);
 	const { obj, thisIs, brain: propsBrain, nowAt: propsNowAt, status, modes, setStatus, setModes } = props, // isCardOrStrip removed - unused ---------------------------
 		{ brain = propsBrain, nowAt = propsNowAt } = useOutletContext() || {},
 		[fade, setFade] = useState(false),
 		[blinkAwards, setBlinkAwards] = useState(true),
 		[marks, powersOfTwo] = [{ event: [-4, 1, 3, 5], user: [1, 5], comment: [-2, 1, 3, 5] }, [1, 2, 4, 8, 16, 32]],
-		awardsSrc = ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.en.slice(0, ['comment', 'event'].includes(thisIs) ? undefined : obj.exps?.length > 0 ? 4 : 3),
+		awardsSrc = ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs]?.awards.en.slice(
+			0,
+			['comment', 'event'].includes(thisIs) ? undefined : obj.exps?.length > 0 ? 4 : 3
+		),
 		bWidth = useCentralFlex('awards', [modes, status], nowAt, awardsSrc.length),
 		hideTimeout = useRef(),
 		{ mark, awards = [] } = status;
@@ -119,7 +123,7 @@ function RateAwards(props) {
 							className={`${!isSelected ? ` boldM textSha  ${nowAt === 'event' ? 'fs14' : 'fs10'}` : `xBold ${nowAt === 'event' ? 'fs18' : 'fs16'} borRedSel `}   ${
 								nowAt === 'event' ? 'padVerXs ' : 'padVerXs'
 							} textSha posRel      zin10 w25 bHover   noBackground flexCol aliCen`}>
-							{isSelected && <blue-divider class='hr0-3  zin1 block posAbs botCen w80 bInsetBlueTopXl borTop bgTrans w40 marAuto' />}
+							{isSelected && <blue-divider class='hr0-5  zin1 block posAbs botCen w80 bInsetBlueTopXl borTop bgTrans w40 marAuto' />}
 							<button-texture style={{ filter: 'brightness(1.5)' }} class='noPoint padAllXxxs posAbs botCen zin1 w100 h100 bInsetBlueBotXs opacityM hr2' />
 							{button}
 						</button>

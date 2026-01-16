@@ -14,7 +14,7 @@ const useCentralFlex = (mode, dependencyArr = [], nowAt, numOfItems, wrapperRef 
 		thumbs: { cont: 'user-card', minOnRow: 4, maxOnRow: 4 },
 		typesFilter: { cont: 'types-filter', minOnRow: 6, maxOnRow: 22 },
 		awards: { cont: 'awards-bs', minOnRow: numOfItems > 4 ? 3 : 4, maxOnRow: Math.min(numOfItems || 6, 6) },
-		groupsCats: { cont: 'groups-comp', minOnRow: 3, maxOnRow: 6 },
+		traitsCats: { cont: 'traits-comp', minOnRow: 3, maxOnRow: 6 },
 		eventBs: { cont: 'attend-bs', minOnRow: 3, maxOnRow: 3 },
 		basics: { cont: 'basics-bs', minOnRow: 4, maxOnRow: 10, minWidth: 140 },
 		decades: { cont: 'decade-picker', minOnRow: 5, maxOnRow: 10 },

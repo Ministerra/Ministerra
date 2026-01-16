@@ -46,10 +46,9 @@ function summarizeQueryForLogs(queryObj: any): QuerySummary {
 		params == null
 			? ''
 			: Array.isArray(params)
-			? params.slice(0, 3).map(safeParam).join(', ')
+			? params.map(safeParam).join(', ')
 			: params && typeof params === 'object'
 			? Object.entries(params)
-					.slice(0, 6)
 					.map(([key, value]) => `${key}=${safeParam(value)}`)
 					.join(', ')
 			: String(safeParam(params));

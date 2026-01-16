@@ -65,7 +65,7 @@ export interface UserMetaInput {
 	gender: string;
 	indis: string;
 	basics: string;
-	groups: string;
+	traits: string;
 	score: number;
 	imgVers: number;
 	basiVers: number;
@@ -84,5 +84,5 @@ export interface User extends UserMetaInput, UserBasics {}
 
 export type Indicator = keyof typeof ALLOWED_IDS.indis;
 export type Basic = keyof typeof ALLOWED_IDS.basics;
-export type Group = keyof typeof ALLOWED_IDS.groups;
+export type Trait = keyof typeof ALLOWED_IDS.traits;
 export type Type = keyof typeof ALLOWED_IDS.type;

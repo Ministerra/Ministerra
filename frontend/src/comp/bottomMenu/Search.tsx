@@ -172,18 +172,18 @@ export function Search(props) {
 			type='text'
 			placeholder={
 				manageMode === 'manage'
-					? 'Zadej jméno uživatele'
+					? 'Vyhledej jméno uživatele'
 					: cat === 'users'
-					? 'Zadej jméno uživatele'
+					? 'Vyhledej jméno uživatele'
 					: cat === 'links'
-					? 'Zadej jméno spojence'
+					? 'Vyhledej jméno spojence'
 					: cat === 'trusts'
-					? 'Zadej jméno důvěrníka'
+					? 'Vyhledej jméno důvěrníka'
 					: cat === 'chats'
-					? 'Zadej jméno chatu nebo uživatele'
+					? 'Vyhledej jméno chatu nebo uživatele'
 					: cat === 'pastEvents'
-					? 'Zadej název proběhlé události...'
-					: 'Zadej název události...'
+					? 'Vyhledej název proběhlé události...'
+					: 'Vyhledej název události...'
 			}
 			className={`w100 h100 fPadHorXxs posRel zin100 mh5 hvw10 aliCen flexCol justCen marAuto ${isChatSetup ? ' noBackground bold ' : 'phXbold bgTransXs xBold '} ${
 				cat === 'chats' ? 'fs14' : 'fs16'
@@ -244,24 +244,38 @@ export function Search(props) {
 							if (isInvitations === 'userToEvents') return searchInput.current.focus({ preventScroll: true });
 							cat !== 'chats' ? setShowCats(true) : setModes(prev => ({ ...prev, searchChats: !prev.searchChats }));
 						}}
-						className={` w20 posRel borTop flexCol bHover iw70 imw4 bInsetBlueTopXs bBor padAllXs bold`}>
+						className={` w20 posRel borTop flexCol bHover iw70 imw5 bInsetBlueTopXs bBor  bold`}>
 						<img
-							className={'zinMenu posRel'}
+							className={'zinMenu posRel downTinyBit maskLowXs'}
 							src={`/icons/${
 								cat === 'users' ? 'people' : cat === 'events' ? 'event' : cat === 'pastEvents' ? 'history' : cat === 'links' ? 'indicators/1' : cat === 'trusts' ? 'types/11' : 'error'
 							}.png`}
 							alt=''
 						/>
-						<span className='fs5 bold'>
+						<span className='fs7 bold'>
 							{cat === 'users' ? 'Uživatelé' : cat === 'events' ? 'Události' : cat === 'pastEvents' ? 'Proběhlé' : cat === 'links' ? 'Spojenci' : cat === 'trusts' ? 'Důvěrníci' : 'Zpět'}
 						</span>
 					</button>
 					{/* INPUT --- */}
 					{inputJSX}
 					{/* SEARCH BUTTON --- */}
-					<button onClick={() => !content && performSearch(searchQ, true)} className={` w20 miw5 borTop posRel flexCol bHover iw70 imw4 bInsetBlueTopXs bBor padAllXxs bold`}>
-						<img src='/icons/search.png' alt='' className='zinMenu posRel' />
-						<span className='fs5 bold'>Najít</span>
+					<button
+						onClick={() => {
+							if (searchQ.trim().length < 2) {
+								setInform(['shortSearch']);
+								setTimeout(() => setInform([]), 2000);
+							} else if (!content) performSearch(searchQ, true);
+						}}
+						className={` w20 miw5 borTop posRel flexCol bHover iw70 imw5-5 bInsetBlueTopXs bBor bold ${
+							inform.includes('shortSearch') ? 'bRed tWhite xBold' : ''
+						}`}>
+						<img
+							style={{ transform: 'rotate(-10deg)' }}
+							src='/icons/search.png'
+							alt=''
+							className={`zinMenu downTinyBit maskLowXs posRel ${inform.includes('shortSearch') ? 'hide' : ''}`}
+						/>
+						<span className='fs7 bold'>{inform.includes('shortSearch') ? 'min. 2 znaky' : 'Najít'}</span>
 					</button>
 				</input-wrapper>
 			)}

@@ -27,6 +27,7 @@ const delEveProps = ['own', 'inter', 'mark', 'awards', 'commsData', 'commsSynced
 let auth: string | null = null,
 	userID: string | null = null,
 	devicePrint: string | null = null,
+	pdkSalt: string | null = null, // Server-issued salt for PDK encryption - prevents offline brute-force
 	pdk: string | null = null,
 	dek: string | null = null, // Device Encryption Key - backend-controlled, GDPR-compliant
 	wipeMode = false;
@@ -94,20 +95,21 @@ const decryptGCM = async (keyString, ciphertextB64) => {
 	return decoder.decode(plaintext);
 };
 
-// PDK STORAGE - encrypted with device print in IndexedDB ---------------------------
+// PDK STORAGE - encrypted with server-issued pdkSalt in IndexedDB ---------------------------
+// Security: pdkSalt from server prevents offline brute-force and allows server-side revocation
 const PDK_KEY = '_encPDK';
-const storePDKEncrypted = async (pdkValue, print) => {
-	if (!pdkValue || !print) return;
-	await localforage.setItem(PDK_KEY, await encryptGCM(print, pdkValue));
+const storePDKEncrypted = async (pdkValue, salt) => {
+	if (!pdkValue || !salt) return;
+	await localforage.setItem(PDK_KEY, await encryptGCM(salt, pdkValue));
 };
-const loadPDKEncrypted = async print => {
-	if (!print) return null;
+const loadPDKEncrypted = async salt => {
+	if (!salt) return null;
 	const encrypted = await localforage.getItem(PDK_KEY);
 	if (!encrypted) return null;
 	try {
-		return await decryptGCM(print, encrypted);
+		return await decryptGCM(salt, encrypted);
 	} catch (e) {
-		console.warn('PDK decryption failed - likely wrong device print or tampered storage');
+		console.warn('PDK decryption failed - likely wrong pdkSalt or tampered storage');
 		return null;
 	}
 };
@@ -256,7 +258,7 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 	try {
 		if (mode === 'init') return self.postMessage({ inited: true });
 		if (mode === 'wipe') return (wipeMode = Boolean(val)), respond({ data: wipeMode });
-		if (mode === 'clearPDK') return await clearPDKEncrypted(), (pdk = null), respond({ data: true });
+		if (mode === 'clearPDK') return await clearPDKEncrypted(), (pdk = null), (pdkSalt = null), respond({ data: true });
 		if (mode === 'clearDEK') return await pruneDeviceBoundData(), respond({ data: true });
 		if (mode === 'status') {
 			const keys = await localforage.keys();
@@ -307,13 +309,17 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 				userID = id;
 				if (typeof val !== 'object' || !val.print) return respond({ error: 'invalidAuthFormat' });
 
-				const { auth: authStr, print, pdk: newPdk, deviceKey: newDek, epoch, prevAuth } = val,
+				const { auth: authStr, print, pdk: newPdk, pdkSalt: newPdkSalt, deviceKey: newDek, epoch, prevAuth } = val,
 					newAuthHash = authStr.split(':')[1];
 				devicePrint = print;
 
+				// PDK SALT LIFECYCLE - server-controlled, required for PDK encryption/decryption ---
+				if (newPdkSalt) pdkSalt = newPdkSalt;
+				else if (!pdkSalt) return respond({ error: 'noPdkSalt' });
+
 				// PDK/DEK LIFECYCLE MANAGEMENT ---
-				if (newPdk) (pdk = newPdk), await storePDKEncrypted(newPdk, print);
-				else if (!(pdk = await loadPDKEncrypted(print))) return respond({ error: 'noPDK' });
+				if (newPdk) (pdk = newPdk), await storePDKEncrypted(newPdk, pdkSalt);
+				else if (!(pdk = await loadPDKEncrypted(pdkSalt))) return respond({ error: 'noPDK' });
 
 				if (newDek) (dek = newDek), await storeDEKEncrypted(newDek, print);
 				else if (newDek === null) {
@@ -361,11 +367,11 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 
 			// DELETE DATA -------------------------------------------------------------------
 		} else if (mode === 'del') {
-			if (what === 'everything') await localforage.clear(), (auth = userID = devicePrint = pdk = dek = null);
+			if (what === 'everything') await localforage.clear(), (auth = userID = devicePrint = pdkSalt = pdk = dek = null);
 			else if (what === 'user') {
 				const keys = (await localforage.keys()).filter(k => userID && k.startsWith(userID));
 				for (const key of keys) await localforage.removeItem(key);
-				await clearPDKEncrypted(), await clearDEKEncrypted(), (auth = userID = pdk = dek = null);
+				await clearPDKEncrypted(), await clearDEKEncrypted(), (auth = userID = pdkSalt = pdk = dek = null);
 			} else {
 				const ids = Array.isArray(id) ? id : [id];
 				for (const itemId of ids) await localforage.removeItem(getStorageKey(what, itemId));

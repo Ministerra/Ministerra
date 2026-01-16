@@ -2038,6 +2038,9 @@
 .imw5 img {
 	max-width: 5rem;
 }
+.imw5-5 img {
+	max-width: 5.5rem;
+}
 .imw6 img {
 	max-width: 6rem;
 }

@@ -22,7 +22,7 @@ interface ForgotPassProps {
 // Steps: if request is unauthenticated, verify email exists and send reset token; if request is via JWT (is=resetPass), update password and notify via email.
 async function forgotPass({ email, newPass, userID, is }: ForgotPassProps, con: any): Promise<void> {
 	if (is !== 'resetPass') {
-		const [[userExists]]: [any[], any] = await con.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+		const [[userExists]]: [any[], any] = await con.execute(`SELECT id FROM users WHERE email = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [email]);
 		if (!userExists) throw new Error('userNotFound');
 		await sendEmail({
 			token: `${jwtQuickies({ mode: 'create', payload: { userID: userExists.id, is: 'resetPass', expiresIn: EXPIRATIONS.authToken } })}:${

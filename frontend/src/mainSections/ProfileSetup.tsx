@@ -1,7 +1,7 @@
 import Basics from '../comp/Basics';
 import ImageCropper from '../comp/ImageCropper';
 import FavouriteExpertTopics from '../comp/FavouriteExpertTopics';
-import Groups from '../comp/Groups';
+import Traits from '../comp/Traits';
 import Indicators from '../comp/Indicators';
 import Personals from '../comp/Personals';
 import LocationPicker from '../comp/LocationPicker';
@@ -24,7 +24,7 @@ const informTexts = {
 	addFavs: 'Zadej alespoň 2 oblíbená témata',
 };
 
-const components = { Welcome: Welcome, Personals: Personals, Cities: LocationPicker, Indis: Indicators, Basics: Basics, Favex: FavouriteExpertTopics, Groups: Groups, Picture: ImageCropper };
+const components = { Welcome: Welcome, Personals: Personals, Cities: LocationPicker, Indis: Indicators, Basics: Basics, Favex: FavouriteExpertTopics, Traits: Traits, Picture: ImageCropper };
 const bigButtonSrc = {
 	Welcome: 'Pokračovat k osobním údajům',
 	Personals: 'K nastavení měst',
@@ -33,7 +33,7 @@ const bigButtonSrc = {
 	Basics: 'K vlastním tématům',
 	Favex: 'K profilovému obrázku',
 	Picture: 'K zájmovým skupinám',
-	Groups: 'Vytvořit profil a vstoupit!',
+	Traits: 'Vytvořit profil a vstoupit!',
 };
 // TODO  probably use the header texts when isRegistation to display necessary info, and hide the title texts currently in all components. display the title texts only when isIntroduction is false (and thus header is not visible)
 

@@ -59,10 +59,10 @@ function Indicators(props) {
 						<button
 							key={id}
 							onClick={() => (nowAt === 'setup' || avail.indis?.includes(id) || data.indis.includes(id)) && man(id)}
-							style={{ width: '100%', ...(indiWidth && { maxWidth: `${indiWidth}px` }) }}
+							style={{ width: '100%', ...(indiWidth && { maxWidth: `${Math.min(350, indiWidth)}px` }) }}
 							className={`${nowAt !== 'setup' && !avail.indis?.includes(id) ? ' opaque' : ''} ${
 								data.indis?.includes(id) ? ' boRadXxs sideBors bInsetBlueTopXs2 borTop     zin1' : 'shaBlue zin2'
-							}  posRel grow bgTrans  bHover `}>
+							}  posRel grow bgTrans   bHover `}>
 							<img className='marBotXxxs posRel downTiny maskLowXs' src={`/icons/indicators/${id}.png`} alt='' />
 							<span className={`${data.indis?.includes(id) ? ' boldM   borBotLight' : 'boldM'} lh1 marBotXxxs textSha fs13 marVerXxs`}>
 								{invertButton === id ? 'invert?' : value.label}

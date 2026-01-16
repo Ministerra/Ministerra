@@ -283,7 +283,7 @@ function EveMenuStrip({
 
 	// RENDER --------------------------------------------------------------------
 	return (
-		<event-menu onClick={e => e.stopPropagation()} class={'zinMenu posRel borTopLight '}>
+		<event-menu onClick={e => e.stopPropagation()} class={'zin3000 point posRel borTopLight '}>
 			{/* STANDARD MENU BUTTONS */}
 			{!hideMenu && (
 				<MenuButtons

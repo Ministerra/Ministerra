@@ -31,8 +31,8 @@ function decodeJwtPayload(token: string): any {
 // TODO store introAuth in Redis with TTL and check it when /location is called without userID
 // TODO might give user question during introduction, whether  he wants to setup up his profile fully or  just required (and then move all introduction stages beyond this gate). the question could be suggestive, so that users comply
 
-const sections = ['Welcome', 'Personals', 'Cities', 'Indis', 'Basics', 'Favex', 'Picture', 'Groups'];
-const allowedPayloadKeys = new Set(['first', 'last', 'birth', 'gender', 'cities', 'indis', 'basics', 'groups', 'favs', 'exps', 'shortDesc', 'priv', 'defPriv', 'askPriv', 'image']);
+const sections = ['Welcome', 'Personals', 'Cities', 'Indis', 'Basics', 'Favex', 'Picture', 'Traits'];
+const allowedPayloadKeys = new Set(['first', 'last', 'birth', 'gender', 'cities', 'indis', 'basics', 'traits', 'favs', 'exps', 'shortDesc', 'priv', 'defPriv', 'askPriv', 'image']);
 const commandInputs = new Set(['bigButton', 'delFreezeUser', 'changeMail', 'changePass', 'changeBoth', 'logoutEverywhere', 'hasAccessToCurMail']);
 
 const Setup = () => {
@@ -206,10 +206,11 @@ const Setup = () => {
 			// NOTE: Don't join arrays before sending - backend expects arrays.
 			// splitStrgOrJoinArr is only used for local storage after response.
 			delete payload.age, delete payload.imgVers;
-			if (payload.cities?.length) {
-				const payloadCityIds = payload.cities.map(city => city.cityID || city).sort();
+			const payloadCities = payload.cities as any[] | undefined;
+			if (payloadCities?.length) {
+				const payloadCityIds = payloadCities.map(city => city.cityID || city).sort();
 				if (areEqual(payloadCityIds, (loaderData.cities || []).slice().sort())) delete payload.cities;
-				else payload.cities = payload.cities.map(city => (city.cityID ? city.cityID : city));
+				else payload.cities = payloadCities.map(city => (city.cityID ? city.cityID : city));
 			}
 			if (!Object.keys(payload).length) return brain.fastLoaded ? navigate('/') : navigate(-1);
 
@@ -223,7 +224,8 @@ const Setup = () => {
 				if (citiesData) citiesData.forEach(city => brain.cities.push({ ...city, cityID: Number(city.cityID) }));
 				// RESOLVE CITY IDS ---
 				// Match by hashID; filter out any unresolved cities.
-				payload.cities = payload.cities
+				const cities = payload.cities as any[];
+				payload.cities = cities
 					.map(city => (typeof city === 'object' ? brain.cities.find(c => c.hashID === city.hashID)?.cityID : city))
 					.filter(id => id != null)
 					.map(Number);
@@ -237,7 +239,7 @@ const Setup = () => {
 				sessionStorage.removeItem('registrationData'), sessionStorage.removeItem('authToken'), sessionStorage.removeItem('introEmail');
 				const userID = introCredentials?.userID;
 				// SET USER DATA ---
-				const cityIDs = (payload.cities || []).map(Number);
+				const cityIDs = ((payload.cities || []) as any[]).map(Number);
 				Object.assign(brain.user, { id: userID, cities: cityIDs, ...payload });
 				delete brain.user.isUnintroduced, (brain.isAfterLoginInit = true);
 				await forage({ mode: 'set', what: 'user', val: brain.user });

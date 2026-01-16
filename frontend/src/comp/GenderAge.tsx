@@ -20,7 +20,7 @@ const GenderAge = ({ data, superMan, avail, nowAt, inform }) => {
 	};
 
 	return (
-		<gender-age class='flexCen marAuto marBotL   posRel bw20 growAll  '>
+		<gender-age class='flexCen marAuto marBotS   posRel bw20 growAll  '>
 			{/* GENDER BS */}
 			<gender-bs class='  flexRow  shaBlue    mw60 boRadS growAll'>
 				{/* MALE GENDER */}

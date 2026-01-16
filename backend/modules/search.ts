@@ -47,26 +47,26 @@ const getQuery = (mode, useFullText, offset) => {
 		const futureOrPastWhere = mode === 'events' ? `e.type NOT LIKE 'a%' AND e.starts >= NOW()` : 'e.starts < NOW()';
 		return /*sql*/ `SELECT ${eveCols}, c.city${useFullText ? `, MATCH(e.title) ${fullText} AS relevance` : ''}
 		FROM events e JOIN cities c ON e.cityID = c.id
-		WHERE ${futureOrPastWhere} ${useFullText ? '' : `AND e.title ${likeConc}`}
+		WHERE e.flag != 'del' AND ${futureOrPastWhere} ${useFullText ? '' : `AND e.title ${likeConc}`}
 		${useFullText ? 'HAVING relevance > 0' : ''}
 		ORDER BY ${useFullText ? 'relevance DESC, ' : ''}e.starts ASC ${limOff}`;
 	}
 	if (mode === 'users')
-		return `SELECT ${usersCols} ${useFullText ? `, ${matchUser} ${fullText} AS relevance` : ''} FROM users u WHERE ${
+		return `SELECT ${usersCols} ${useFullText ? `, ${matchUser} ${fullText} AS relevance` : ''} FROM users u WHERE u.flag NOT IN ('del', 'fro') AND ${
 			useFullText ? `${matchUser} ${fullText}` : `(u.first ${likeConc} OR u.last ${likeConc})`
 		} ${useFullText ? 'HAVING relevance > 0' : ''} ORDER BY ${useFullText ? 'relevance DESC,' : ''} u.last ASC, u.id ASC ${limOff}`;
 	if (mode === 'links')
 		// INFO is not used anywhere
 		return `SELECT ${usersCols} ${
 			useFullText ? `, ${matchUser} ${fullText} AS relevance` : ''
-		} FROM users u JOIN (SELECT user2 AS other FROM user_links WHERE user = ? AND link IN ('ok', 'tru') UNION ALL SELECT user AS other FROM user_links WHERE user2 = ? AND link IN ('ok', 'tru')) l ON u.id = l.other WHERE ${
+		} FROM users u JOIN (SELECT user2 AS other FROM user_links WHERE user = ? AND link IN ('ok', 'tru') UNION ALL SELECT user AS other FROM user_links WHERE user2 = ? AND link IN ('ok', 'tru')) l ON u.id = l.other WHERE u.flag NOT IN ('del', 'fro') AND ${
 			useFullText ? `${matchUser} ${fullText}` : `(u.first ${likeConc} OR u.last ${likeConc})`
 		} ${useFullText ? 'HAVING relevance > 0' : ''} ORDER BY ${useFullText ? 'relevance DESC,' : ''} u.last ASC, u.id ASC ${limOff}`;
 	if (mode === 'trusts')
 		// INFO is not used anywhere
 		return `SELECT ${usersCols} ${
 			useFullText ? `, ${matchUser} ${fullText} AS relevance` : ''
-		} FROM users u JOIN (SELECT user2 AS other FROM user_links WHERE user = ? AND link = 'tru' AND who IN (1, 3) UNION ALL SELECT user AS other FROM user_links WHERE user2 = ? AND link = 'tru' AND who IN (2, 3)) l ON u.id = l.other WHERE ${
+		} FROM users u JOIN (SELECT user2 AS other FROM user_links WHERE user = ? AND link = 'tru' AND who IN (1, 3) UNION ALL SELECT user AS other FROM user_links WHERE user2 = ? AND link = 'tru' AND who IN (2, 3)) l ON u.id = l.other WHERE u.flag NOT IN ('del', 'fro') AND ${
 			useFullText ? `${matchUser} ${fullText}` : `(u.first ${likeConc} OR u.last ${likeConc})`
 		} ${useFullText ? 'HAVING relevance > 0' : ''} ORDER BY ${useFullText ? 'relevance DESC,' : ''} u.last ASC, u.id ASC ${limOff}`;
 };

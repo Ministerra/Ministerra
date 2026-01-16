@@ -48,18 +48,18 @@ function LocationPicker(props) {
 
 	const getLocaInput = (item = data) => {
 		if (!item) return '';
-		const { city, place, location, is, label, part, hashID } = item;
+		const { city, place, location, locaType, label, part, hashID } = item;
 		if (![city, place, location, label, part].some(Boolean)) return '';
 		if (inMenu && brain.user.cities.includes(curSelCities[0]?.cityID || curSelCities[0])) {
 			const storedCity = brain.cities.find(c => c.hashID === hashID);
 			if (storedCity && brain.user.cities.includes(storedCity.cityID)) return '';
 		} else if (nowAt === 'setup') return '';
 
-		let newValue = '';
-		if (is === 'city') newValue = `${label ? `${label} ` : ''}${city}${location ? `, ${location}` : ''}`;
-		else if (is === 'part') newValue = `${label ? `${label} ` : ''}${part ? `${part}, ` : ''}${city ? `${city}, ` : ''}${location ? `${location}` : ''}`;
-		else if (is === 'place') newValue = `${place ? `${place}, ` : ''}${location ? `${location}` : ''} ${label ? `(${label})` : ''}`;
-		else newValue = `${place ? `${place}, ` : ''}${location ? `${location}` : ''} ${label ? `(${label})` : ''}`;
+	let newValue = '';
+	if (locaType === 'city') newValue = `${label ? `${label} ` : ''}${city}${location ? `, ${location}` : ''}`;
+	else if (locaType === 'part') newValue = `${label ? `${label} ` : ''}${part ? `${part}, ` : ''}${city ? `${city}, ` : ''}${location ? `${location}` : ''}`;
+	else if (locaType === 'place') newValue = `${place ? `${place}, ` : ''}${location ? `${location}` : ''} ${label ? `(${label})` : ''}`;
+	else newValue = `${place ? `${place}, ` : ''}${location ? `${location}` : ''} ${label ? `(${label})` : ''}`;
 		return newValue;
 	};
 
@@ -174,9 +174,9 @@ function LocationPicker(props) {
 	// ------------------------ keep city name in input when switching to city mode during edit, even if city not in user list
 	useLayoutEffect(() => {
 		if (nowAt !== 'editor' || data.locaMode !== 'city' || !isEditing) return;
-		const existingCity = (typeof data.city === 'object' && data.city) || brain.cities.find(c => c.cityID === data.cityID) || (eventCityObj ? { ...eventCityObj, is: 'city' } : null);
+		const existingCity = (typeof data.city === 'object' && data.city) || brain.cities.find(c => c.cityID === data.cityID) || (eventCityObj ? { ...eventCityObj, locaType: 'city' } : null);
 		if (!existingCity || !existingCity.city) return;
-		const value = getLocaInput({ is: 'city', ...existingCity });
+		const value = getLocaInput({ locaType: 'city', ...existingCity });
 		if (value && value !== locaInput) setLocaInput(value);
 	}, [nowAt, data.locaMode, data.city, data.cityID, eventCityObj, locaInput, isEditing]);
 
@@ -317,7 +317,7 @@ function LocationPicker(props) {
 					padHorS padVerXs boRadS shaCon w100
 					`}>
 					<icon-wrapper class='flexRow gapXs aliCen justCen padTopXxxs'>
-						<img src={`/icons/${item.is === 'city' ? 'home' : item.is === 'place' ? 'premise' : 'location'}.png`} className='mw5 aspect1610 ' alt='' />
+						<img src={`/icons/${item.locaType === 'city' ? 'home' : item.locaType === 'place' ? 'premise' : 'location'}.png`} className='mw5 aspect1610 ' alt='' />
 						<texts-part class='flexCol noPoint textLeft marTopXs w100 h100'>
 							<span className='fs11 inline marBotXxxs boldS'>{place || `${part || city}`}</span>
 							<span className='fs7 textLeft'>

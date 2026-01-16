@@ -195,8 +195,8 @@ async function processInvites(con, redis) {
 
 						const inviteResponse = { user: userID, dir: 'out', flag: alertFlag };
 						try {
-							const [[userRow] = []] = await con.execute('SELECT first, last, imgVers FROM users WHERE id = ? LIMIT 1', [userID]);
-							const [[eventRow] = []] = await con.execute('SELECT title FROM events WHERE id = ? LIMIT 1', [targetEvent]);
+							const [[userRow] = []] = await con.execute(`SELECT first, last, imgVers FROM users WHERE id = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [userID]);
+							const [[eventRow] = []] = await con.execute(`SELECT title FROM events WHERE id = ? AND flag != 'del' LIMIT 1`, [targetEvent]);
 							if (userRow)
 								Object.assign(inviteResponse, {
 									first: userRow.first || '',

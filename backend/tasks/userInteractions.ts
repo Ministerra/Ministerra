@@ -96,25 +96,27 @@ async function processUserInteractions(con, redis) {
 
 		// BACKLOG WARNINGS -----------------------------------------------------
 		// Steps: sample xlen and xpending, emit alerts when configured thresholds are crossed; this is diagnostics only.
-		try {
-			const STREAM_MAXLEN = Number(process.env.STREAM_MAXLEN) || 0;
-			const STREAM_XLEN_WARN_RATIO = Number(process.env.STREAM_XLEN_WARN_RATIO) || 0.8;
-			const STREAM_XPENDING_WARN = Number(process.env.STREAM_XPENDING_WARN) || 0; // 0 disables
-			await Promise.all(
-				streams.map(async streamName => {
-					try {
-						const [len, pending] = await Promise.all([redis.xlen(streamName).catch(() => 0), redis.xpending(streamName, CONSUMER_GROUP).catch(() => null)]);
-						const pendCnt = Array.isArray(pending) && typeof pending[0] === 'number' ? pending[0] : 0;
-						if (STREAM_XPENDING_WARN && pendCnt >= STREAM_XPENDING_WARN) logger.alert('userInteractions.stream_pending_backlog', { streamName, pending: pendCnt });
-						if (STREAM_MAXLEN && len / STREAM_MAXLEN >= STREAM_XLEN_WARN_RATIO)
-							logger.alert('userInteractions.stream_near_maxlen', { streamName, length: len, ratio: Number((len / STREAM_MAXLEN).toFixed(2)) });
-					} catch (err) {
-						logger.alert('userInteractions.stream_monitor_item_failed', { error: err?.message, streamName });
-					}
-				})
-			);
-		} catch (err) {
-			logger.alert('userInteractions.stream_monitor_failed', { error: err?.message });
+		const STREAM_MAXLEN = Number(process.env.STREAM_MAXLEN) || 0;
+		const STREAM_XPENDING_WARN = Number(process.env.STREAM_XPENDING_WARN) || 0;
+		if (STREAM_MAXLEN || STREAM_XPENDING_WARN) {
+			try {
+				const STREAM_XLEN_WARN_RATIO = Number(process.env.STREAM_XLEN_WARN_RATIO) || 0.8;
+				await Promise.all(
+					streams.map(async streamName => {
+						try {
+							const [len, pending] = await Promise.all([redis.xlen(streamName).catch(() => 0), redis.xpending(streamName, CONSUMER_GROUP).catch(() => null)]);
+							const pendCnt = Array.isArray(pending) && typeof pending[0] === 'number' ? pending[0] : 0;
+							if (STREAM_XPENDING_WARN && pendCnt >= STREAM_XPENDING_WARN) logger.alert('userInteractions.stream_pending_backlog', { streamName, pending: pendCnt });
+							if (STREAM_MAXLEN && len / STREAM_MAXLEN >= STREAM_XLEN_WARN_RATIO)
+								logger.alert('userInteractions.stream_near_maxlen', { streamName, length: len, ratio: Number((len / STREAM_MAXLEN).toFixed(2)) });
+						} catch (err) {
+							logger.alert('userInteractions.stream_monitor_item_failed', { error: err?.message, streamName });
+						}
+					})
+				);
+			} catch (err) {
+				logger.alert('userInteractions.stream_monitor_failed', { error: err?.message });
+			}
 		}
 
 		// Check if there's anything to process
@@ -204,6 +206,7 @@ async function processUserInteractions(con, redis) {
 
 				const processedMetas = [];
 				const metasBuffer = await redis.hmgetBuffer(REDIS_KEYS.eveMetas, ...affectEveMetaIDs);
+				const basiInterUpdatePipe = redis.pipeline();
 
 				for (let idx = 0; idx < metasBuffer.length; idx++) {
 					const strMeta = metasBuffer[idx];
@@ -212,7 +215,6 @@ async function processUserInteractions(con, redis) {
 					const id = affectEveMetaIDs[idx];
 					try {
 						const meta = decode(strMeta);
-						const basiInterUpdatePipe = redis.pipeline();
 						const changes = eveSumScoreAttendComms.get(id);
 						if (changes) {
 							const [, eveScoreChange, surelyChange, maybeChange, interestedChange, commentsChange] = changes;
@@ -223,7 +225,6 @@ async function processUserInteractions(con, redis) {
 								(meta[eveCommentsIdx] += Number(commentsChange) || 0),
 								(meta[eveScoreIdx] += eveScoreChange || 0);
 						}
-						await basiInterUpdatePipe.exec();
 						processedMetas.push([id, meta]);
 					} catch (error) {
 						logger.error('userInteractions.decode_event_meta_failed', { error, eventId: id });
@@ -231,6 +232,7 @@ async function processUserInteractions(con, redis) {
 					}
 				}
 
+				await basiInterUpdatePipe.exec();
 				if (processedMetas.length) processRecEveMetas({ data: processedMetas, state });
 			} catch (error) {
 				logger.error('userInteractions.recalc_eve_metas_failed', { error });
@@ -281,7 +283,7 @@ async function processUserInteractions(con, redis) {
 			try {
 				if (missingUserIDs.size) {
 					try {
-						const [usersToCache] = await con.execute(`SELECT ${USER_GENERIC_KEYS} FROM users WHERE users.id IN (${getIDsString(missingUserIDs)})`); // Quote string IDs ---------------------------
+						const [usersToCache] = await con.execute(`SELECT ${USER_GENERIC_KEYS} FROM users WHERE users.id IN (${getIDsString(missingUserIDs)}) AND flag NOT IN ('del', 'fro')`); // Quote string IDs ---------------------------
 						for (const user of usersToCache) {
 							user.score += userSumScore.get(user.id)?.[1] || 0;
 							user.eveInterPriv = Array.from(userEveInterPriv.get(user.id)?.entries() || [])

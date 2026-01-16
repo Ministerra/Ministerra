@@ -5,16 +5,18 @@ const ALLOWED_MODES = new Set(['delete', 'cancel', 'create', 'edit', undefined])
 const ALLOWED_PRIVS = new Set(['pub', 'lin', 'own', 'tru', 'inv']);
 const ALLOWED_INTERS = new Set(['sur', 'may', 'int', null]);
 const ALLOWED_LOCA_MODES = new Set(['city', 'radius', 'exact']);
-const EVENT_ID_REGEX = /^[a-zA-Z0-9_-]{4,64}$/;
+const ID_REGEX = /^[a-zA-Z0-9_-]{4,64}$/;
+
+// TODO need to unify these limits across frontend, sanitizers and DB! Should probably  create some scripts, which also update the ALTER TABLE statems in dbSchema and run those.
 
 const STRING_LIMITS = {
-	title: 100,
+	title: 150,
 	shortDesc: 300,
 	place: 200,
 	location: 200,
 	city: 100,
 	part: 100,
-	meetHow: 1000,
+	meetHow: 300,
 	detail: 5000,
 	contacts: 500,
 	fee: 200,
@@ -89,13 +91,11 @@ function sanitizeCityID(value) {
 	return num;
 }
 
-// SANITIZE USER/OWNER ID -------------------------------------------------------
-// Downstream code compares ownership using strict equality; normalize to integer.
-function sanitizeUserOrOwnerID(value, field) {
-	if (value === undefined || value === null) return undefined;
-	const normalized = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
-	if (!Number.isInteger(normalized) || normalized <= 0) throw new Error(`invalid ${field}`);
-	return normalized;
+// SANITIZE USER ID -------------------------------------------------------------
+// Validates userID format (nanoid-style or test ID '1').
+function sanitizeUserID(value) {
+	if (!ID_REGEX.test(value) && value !== '1') throw new Error('invalid userID');
+	return value;
 }
 
 // SANITIZE DATE FIELDS ---------------------------------------------------------
@@ -108,8 +108,13 @@ function sanitizeStartsDate(value, type, isEdit = false) {
 	const now = Date.now();
 	const tenMinutesFromNow = now + 10 * 60 * 1000;
 	const twoYearsFromNow = now + 2 * 365 * 24 * 60 * 60 * 1000;
-	const twoMonthsFromNow = now + 2 * 30 * 24 * 60 * 60 * 1000;
-	const maxAllowed = type?.startsWith('a') ? twoMonthsFromNow : twoYearsFromNow;
+	// FRIENDLY EVENTS 6-WEEK LIMIT (ROUNDED TO END OF DAY) ---
+	const sixWeeksEndOfDay = (() => {
+		const endDate = new Date(now + 6 * 7 * 24 * 60 * 60 * 1000);
+		endDate.setHours(23, 59, 59, 999);
+		return endDate.getTime();
+	})();
+	const maxAllowed = type?.startsWith('a') ? sixWeeksEndOfDay : twoYearsFromNow;
 	// RANGE GUARD -------------------------------------------------------------
 	// Steps: reject starts that are too soon (anti-spam / avoids “already started”) or too far (keeps indexes stable and prevents pathological scheduling).
 	if (date.getTime() < tenMinutesFromNow || date.getTime() > maxAllowed) {
@@ -128,7 +133,7 @@ function sanitizeEndsDate(value, starts) {
 	return value;
 }
 
-function sanitizeMTime(value) {
+function sanitizeMeetWhen(value) {
 	if (value === undefined) return undefined;
 	const date = new Date(value);
 	if (isNaN(date.getTime())) throw new Error('invalid meetWhen date');
@@ -172,7 +177,7 @@ function sanitizeEventID(value) {
 	if (value === undefined || value === null) return null;
 	if (typeof value !== 'string') throw new Error('invalid id');
 	const id = value.trim();
-	if (!EVENT_ID_REGEX.test(id)) throw new Error('invalid id');
+	if (!ID_REGEX.test(id) && value !== '1') throw new Error('invalid id');
 	return id;
 }
 
@@ -188,8 +193,7 @@ function normalizeEditorPayload(input) {
 		id: sanitizeEventID(input.id),
 		mode,
 		type,
-		userID: sanitizeUserOrOwnerID(input.userID, 'userID'),
-		owner: sanitizeUserOrOwnerID(input.owner, 'owner'),
+		userID: sanitizeUserID(input.userID),
 		title: sanitizeStringField(input.title, 'title'),
 		shortDesc: sanitizeStringField(input.shortDesc, 'shortDesc'),
 		place: sanitizeStringField(input.place, 'place'),
@@ -211,7 +215,7 @@ function normalizeEditorPayload(input) {
 		locaMode: sanitizeLocaMode(input.locaMode),
 		starts: sanitizeStartsDate(input.starts, type, !!input.id),
 		ends: sanitizeEndsDate(input.ends, input.starts),
-		meetWhen: sanitizeMTime(input.meetWhen),
+		meetWhen: sanitizeMeetWhen(input.meetWhen),
 		imgVers: sanitizeVImg(input.imgVers),
 	};
 

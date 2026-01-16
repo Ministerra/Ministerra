@@ -36,15 +36,17 @@ const sortMaps: Record<string, Record<string, string>> = {
 
 // SUBQUERIES ------------------------------------------------------------------
 
-const blocksQ = `SELECT ${USER_MINI_KEYS.map(c => `u.${c}`).join(', ')},tab.created FROM users u JOIN user_blocks tab ON((tab.user=? AND tab.user2=u.id) OR(tab.user2=? AND tab.user=u.id))`;
+const blocksQ = `SELECT ${USER_MINI_KEYS.map(c => `u.${c}`).join(
+	', '
+)},tab.created FROM users u JOIN user_blocks tab ON((tab.user=? AND tab.user2=u.id) OR(tab.user2=? AND tab.user=u.id)) WHERE u.flag NOT IN ('del', 'fro')`;
 const invitesAggQ = (dir: 'in' | 'out') => {
 	const isIn = dir === 'in',
 		where = isIn ? 'ei.user2=? AND ei.flag NOT IN("del","ref")' : 'ei.user=?';
 	return `WITH RankedInvites AS(SELECT ei.event,ei.created,ei.flag,u.id,u.first,u.last,u.imgVers,ROW_NUMBER()OVER(PARTITION BY ei.event ORDER BY ei.created DESC) rn FROM users u JOIN eve_invites ei ON u.id=${
 		isIn ? 'ei.user' : 'ei.user2'
-	} WHERE ${where}) SELECT ${eveCols},c.city,MAX(ei.created) created,COUNT(*) ${
+	} WHERE ${where} AND u.flag NOT IN ('del', 'fro')) SELECT ${eveCols},c.city,MAX(ei.created) created,COUNT(*) ${
 		isIn ? 'invitesInTotal' : 'invitesOutTotal'
-	},(SELECT JSON_ARRAYAGG(JSON_OBJECT('id',ri2.id,'first',ri2.first,'last',ri2.last,'imgVers',ri2.imgVers,'created',ri2.created,'flag',ri2.flag)) FROM RankedInvites ri2 WHERE ri2.event=e.id AND ri2.rn<=3 AND ri2.id IS NOT NULL) invites FROM events e JOIN eve_invites ei ON ei.event=e.id JOIN cities c ON e.cityID=c.id LEFT JOIN RankedInvites ri ON ri.event=e.id AND ri.rn<=3 WHERE ${where} GROUP BY e.id`;
+	},(SELECT JSON_ARRAYAGG(JSON_OBJECT('id',ri2.id,'first',ri2.first,'last',ri2.last,'imgVers',ri2.imgVers,'created',ri2.created,'flag',ri2.flag)) FROM RankedInvites ri2 WHERE ri2.event=e.id AND ri2.rn<=3 AND ri2.id IS NOT NULL) invites FROM events e JOIN eve_invites ei ON ei.event=e.id JOIN cities c ON e.cityID=c.id LEFT JOIN RankedInvites ri ON ri.event=e.id AND ri.rn<=3 WHERE ${where} AND e.flag != 'del' GROUP BY e.id`;
 };
 
 // QUERY BUILDER ---------------------------------------------------------------
@@ -64,7 +66,7 @@ const buildQuery = ({ mode, sort, devIsStable }: { mode: string; sort: string; d
 				: 'tab.link="tru"'
 		}${mode === 'trusts' ? ` AND ((tab.user=? AND tab.who IN(1,3)) OR (tab.user2=? AND tab.who IN(2,3)))` : ''}) SELECT ${USER_MINI_KEYS.map(c => `u.${c}`).join(
 			', '
-		)},cte.created,cte.note,cte.who${mode === 'requests' ? ',cte.message' : ''} FROM users u JOIN cte ON u.id=cte.other_user`;
+		)},cte.created,cte.note,cte.who${mode === 'requests' ? ',cte.message' : ''} FROM users u JOIN cte ON u.id=cte.other_user WHERE u.flag NOT IN ('del', 'fro')`;
 		return { sql, order: sortMaps.links[sort] || sortMaps.created.recent, orderNeedsUser: ['incoming', 'outgoing'].includes(sort) };
 	}
 	const isPast = mode.startsWith('past');
@@ -73,7 +75,14 @@ const buildQuery = ({ mode, sort, devIsStable }: { mode: string; sort: string; d
 		needsInters ? 'LEFT JOIN eve_inters ei ON e.id=ei.event AND ei.user=?' : ''
 	}`;
 	const when = isPast ? 'e.starts<NOW()' : 'e.starts>=NOW()';
-	const cond = mode.includes('Own') ? `${when} AND e.owner=?` : mode.includes('SurMay') ? `${when} AND ei.inter IN("sur","may")` : mode.includes('Int') ? `${when} AND ei.inter="int"` : when;
+	const flagFilter = `e.flag != 'del'`;
+	const cond = mode.includes('Own')
+		? `${when} AND ${flagFilter} AND e.owner=?`
+		: mode.includes('SurMay')
+		? `${when} AND ${flagFilter} AND ei.inter IN("sur","may")`
+		: mode.includes('Int')
+		? `${when} AND ${flagFilter} AND ei.inter="int"`
+		: `${when} AND ${flagFilter}`;
 	return { sql: `${base} WHERE ${cond}`, order: sortMaps.events[sort] || sortMaps.events.recent };
 };
 

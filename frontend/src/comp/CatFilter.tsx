@@ -59,7 +59,7 @@ function CatFilter(props) {
 					<img-wrapper
 						key={cat}
 						style={{ width: '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }}
-						class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 mih10'} ${
+						class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 mih20'} ${
 							nowAt === 'editor' && isSel ? 'bsContentGlow' : ''
 						} noBackground  flexCol  posRel  grow bHover  marBotXxxxs  `}
 						onClick={() => handleCategorySelection(cat)}>
@@ -80,13 +80,13 @@ function CatFilter(props) {
 						<span-wrapper
 							style={{ bottom: '-0px' }}
 							class={` 	 posAbs   marAuto  ${nowAt === 'editor' && isSel ? 'padVerS' : 'padVerXs'} bgTrans  textAli  zinMaXl   hvw10 mh2  flexCol aliCen justCen              botCen ${
-								nowAt === 'editor' ? 'w100' : 'w50  '
+								nowAt === 'editor' ? 'w100' : 'mw16  '
 							}`}>
 							<span
 								className={`inlineBlock ${
 									nowAt !== 'editor'
 										? isInTime
-											? 'fs15 xBold     tShaWhiteXl    '
+											? 'fs20 xBold     tShaWhiteXl    '
 											: notInTimeButAvail
 											? `fs12 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bOrange bgTrans bold  lh1`
 											: `fs8 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `

@@ -44,7 +44,7 @@ export function splitStrgOrJoinArr(obj, method = 'split') {
 			else if (method === 'join' && Array.isArray(obj[key]) && !obj[key].some(item => typeof item === 'object')) obj[key] = obj[key].join(delimiter);
 		}
 	};
-	['basics', 'indis', 'groups', 'cities'].forEach(key => applyMethod(key, ',', true));
+	['basics', 'indis', 'traits', 'cities'].forEach(key => applyMethod(key, ',', true));
 	['favs', 'exps'].forEach(key => applyMethod(key, '|'));
 	return obj;
 }

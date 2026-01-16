@@ -45,14 +45,14 @@
 -   [ ] Complete the canceled events cleanup. Probably DONT DO separate logic, maybe simply change flag from 'can' to 'del' and then handle it in the same way as the other events. Or maybe add the logic to the flagChanges handler and at the end of the day, treat it as deleted here.
 -   [ ] Might need to clear socketIO rooms for the deleted users here
 -   [ ] Implement cleanup for userchatroles
--   [ ] How to properly handle "froUsers" in chat_members? Can't change flag to Fro, because that would overwrite the "del" or "arc" flag etc.
+-   [ ] How to properly handle frozen users in chat_members? Can't change flag to Fro, because that would overwrite the "del" flag.
 -   [ ] Need to implement deletion of permanently banned user or deleted accounts by us
 -   [ ] Cleanup remEve and remUse sets
 -   [ ] Update logins.inactive for users that have not logged in for 3 months + delete their redis data. On login, update the logins table and check if they are inactive, if so, recache their redis data. Possibly simply remove the usersummary and check that on login. If its not present, recache everything.
 -   [ ] Need to clean up old images (>3 months from users folder - they are stored because of alerts)
 -   [ ] Create regular cleanup for possibly unwanted items in sql tables. For example comments, that should have been posted into past_comments, but were posted into regular comments table instead (whatever the reason was)
 -   [ ] Implement a minBaseTimeVisibleAfterEnded + extraTimeBecauseEventIsPopular calculation when flagging the pastEvents
--   [ ] Move deleted comments to rem_comments after certain time. DONT FORGET TO UPDATE THE COMMENTS COUNTS for events metas.
+-   [ ] Hard-delete old comments (flag='del') after certain time. DONT FORGET TO UPDATE THE COMMENTS COUNTS for events metas.
 -   [ ] Also move images from events to past_events folder
 -   [ ] Clear redis of dead chats entries (chatMembers, chatRoles etc. here)
 -   [ ] Rethink what actually gets deleted when user is frozen. We might actually want to remove the user completely (same as when deleting) and then on unfreezing, run the user somehow through cacher as if the server was just starting up again. The only time other users need to know, that user is frozen might be in chat_members (which will be synced anyway)

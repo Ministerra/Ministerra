@@ -95,7 +95,7 @@ async function processNewUsers({ data, state: { userBasics }, userMetasProcessor
 	const today = Date.now();
 	const packed = [];
 	data.forEach((userRow, idx) => {
-		const { id, priv, score, birth, gender, basiVers, imgVers, eveInterPriv, indis, basics, groups, ...rest } = userRow;
+		const { id, priv, score, birth, gender, basiVers, imgVers, eveInterPriv, indis, basics, traits, ...rest } = userRow;
 		const userIDString = String(id);
 
 		const attend =
@@ -105,7 +105,7 @@ async function processNewUsers({ data, state: { userBasics }, userMetasProcessor
 			}) ?? [];
 
 		const age = calculateAge(birth, today);
-		packed[idx] = [id, createUserMeta({ priv, age, gender, indis, basics, groups, score, imgVers, basiVers, attend })];
+		packed[idx] = [id, createUserMeta({ priv, age, gender, indis, basics, traits, score, imgVers, basiVers, attend })];
 		userBasics.set(userIDString, { ...rest, basiVers });
 	});
 	await userMetasProcessor({ data: packed, is: 'new' });
@@ -186,10 +186,11 @@ const addScored = (meta, eveID, id, inter, priv, map) => {
 // USER META PIPELINE ---
 // Steps: for each user meta, detach attendance array, apply diffs (newAttenMap / removals / priv changes), rebuild scored sets,
 // then fan the user meta back into per-city maps and filtering indexes.
-async function processUserMetas({ data, is, newAttenMap, privUse, state, pipe }) {
+async function processUserMetas({ data, is, newAttenMap, privUse, state, pipe, redis: passedRedis }) {
+	const redisClient = passedRedis || redis;
 	const { eveCityIDs, remEve, cityMetas, cityPubMetas, userMetas, friendlyEveScoredUserIDs, cityFiltering } = state,
 		missed = new Set<string | number>(),
-		localPipe = pipe || redis?.pipeline();
+		localPipe = pipe || redisClient?.pipeline();
 
 	for (const [id, meta] of data) {
 		try {
@@ -249,7 +250,7 @@ async function processUserMetas({ data, is, newAttenMap, privUse, state, pipe })
 				if (missed.size)
 					try {
 						const missedArr = [...missed];
-						const results = await redis.hmget(REDIS_KEYS.eveCityIDs, ...missedArr.map(String));
+						const results = await redisClient.hmget(REDIS_KEYS.eveCityIDs, ...missedArr.map(String));
 						results.forEach((c, i) => c && eveCityIDs.set(String(missedArr[i]), Number(c)));
 					} catch (e) {
 						logger.error('contentHelpers.fetch_city_ids_failed', { error: e });

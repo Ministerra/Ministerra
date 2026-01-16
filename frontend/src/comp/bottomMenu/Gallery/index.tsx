@@ -82,7 +82,7 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 		clearTimeout(galleryTimers.current[k]);
 		delete galleryTimers.current[k];
 		brain.user.galleryIDs[k] = {};
-		if (brain.user.noMore.gallery) delete brain.user.noMore.gallery[k];
+		delete brain.user.noMore.gallery[k];
 		brain.user.galleryOpenCounts[k] = 0;
 	};
 
@@ -219,8 +219,11 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 			}
 
 			// SERVER FETCH ------------------------------------- */}
-			let newData = ((await (axios.post('gallery', { mode, offset: locally.current ? null : ids.length, sort: selSort }) as any).catch((error: any) => (notifyGlobalError(error, 'Nepodařilo se načíst galerii.'), { data: [] }))) as any)
-				.data;
+			let newData = (
+				(await (axios.post('gallery', { mode, offset: locally.current ? null : ids.length, sort: selSort }) as any).catch(
+					(error: any) => (notifyGlobalError(error, 'Nepodařilo se načíst galerii.'), { data: [] })
+				)) as any
+			).data;
 			if (!newData) return setInform([]);
 
 			if (newData.length) brain.user.galleryIDs[mode][selSort] = [...(ids || []), ...newData.map(i => i.id || 'pH').filter(id => !new Set(ids).has(id))];

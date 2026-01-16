@@ -3,6 +3,7 @@ import { Writer } from '../systems.ts';
 import { encode, decode } from 'cbor-x';
 import { getLogger } from './loggers.ts';
 import { REDIS_KEYS } from '../../../shared/constants.ts';
+import { generateIDString } from '../../utilities/idGenerator.ts';
 
 const logger = getLogger('Emitter');
 
@@ -52,7 +53,7 @@ async function Emitter(data: AlertData, con: any, redis: any): Promise<void> {
 
 		// Invites: Collect IDs from user invites
 		for (const invites of userInvitesMap.values()) {
-			for (const { target, data: iData } of (invites as any[])) {
+			for (const { target, data: iData } of invites as any[]) {
 				add(uniqueEventIds, target);
 				add(uniqueUserIds, iData.user);
 			}
@@ -75,13 +76,13 @@ async function Emitter(data: AlertData, con: any, redis: any): Promise<void> {
 			dbAlerts: any[][] = [];
 
 		// Helper: Adds alert to memory map and DB queue
-		// Steps: normalize recipient id, stage alert for socket fanout, and stage SQL row only when store=true.
+		// Steps: normalize recipient id, stage alert for socket fanout, generate snowflake ID, and stage SQL row only when store=true.
 		const pushAlert = (recipient: any, what: string, target: any, dataObj: any, store: boolean = true): void => {
 			if (!recipient) return;
 			const normRec: string = String(recipient);
 			if (!alertsByRecipient.has(normRec)) alertsByRecipient.set(normRec, []);
 			alertsByRecipient.get(normRec)!.push({ what, target, data: dataObj, store });
-			if (store) dbAlerts.push([normRec, what, target, JSON.stringify(dataObj)]);
+			if (store) dbAlerts.push([generateIDString(), normRec, what, target, JSON.stringify(dataObj)]);
 		};
 		// Helper: Hydrates title if missing
 		const setTitle = (obj: any, id: any): void => {
@@ -133,7 +134,7 @@ async function Emitter(data: AlertData, con: any, redis: any): Promise<void> {
 
 		// PROCESS: Invites
 		for (const [recId, invites] of userInvitesMap) {
-			for (const { target: eId, data: iData } of (invites as any[])) {
+			for (const { target: eId, data: iData } of invites as any[]) {
 				const sender: any = iData?.user;
 				if (!sender || !userData[String(sender)]) continue;
 
@@ -187,7 +188,7 @@ async function Emitter(data: AlertData, con: any, redis: any): Promise<void> {
 		// 5) PERSISTENCE -------------------------------------------------------------
 		// Steps: bulk insert stored alerts only (skip transient/cleanup alerts) so inbox/history stays consistent.
 		if (dbAlerts.length) {
-			await Writer({ mode: 'userAlerts', tasksConfig: [{ arrs: dbAlerts, table: 'user_alerts', cols: ['user', 'what', 'target', 'data'], is: 'insert' }], redis, con });
+			await Writer({ mode: 'userAlerts', tasksConfig: [{ arrs: dbAlerts, table: 'user_alerts', cols: ['id', 'user', 'what', 'target', 'data'], is: 'insert' }], redis, con });
 		}
 	} catch (error) {
 		logger.error('emitter.unhandled', { error });

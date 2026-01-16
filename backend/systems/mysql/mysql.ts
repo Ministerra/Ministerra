@@ -252,15 +252,10 @@ function summarizeParamsSnippet(params: any): any {
 	};
 
 	// ARRAY PARAMS --------------------------------------------------------------
-	if (Array.isArray(params)) return params.slice(0, 3).map(safeParam);
+	if (Array.isArray(params)) return params.map(safeParam);
 
 	// OBJECT PARAMS -------------------------------------------------------------
-	if (params && typeof params === 'object')
-		return Object.fromEntries(
-			Object.entries(params)
-				.slice(0, 6)
-				.map(([k, v]) => [k, safeParam(v)])
-		);
+	if (params && typeof params === 'object') return Object.fromEntries(Object.entries(params).map(([k, v]) => [k, safeParam(v)]));
 
 	// OTHER ---------------------------------------------------------------------
 	return params ? safeParam(params) : null;

@@ -103,7 +103,7 @@ async function Feedback(req: { body: FeedbackRequest }, res: any) {
 
 		// EVENT META + ACCESS -------------------------------------------------
 		// Steps: load owner/type/time window, enforce feedback window rules, then branch by mode (getMine/getTotals/submit).
-		const [eventMetas]: [any[], any] = await con.execute(/*sql*/ 'SELECT owner,type,starts,ends FROM events WHERE id=?', [eventID]);
+		const [eventMetas]: [any[], any] = await con.execute(/*sql*/ `SELECT owner,type,starts,ends FROM events WHERE id=? AND flag != 'del'`, [eventID]);
 		const eventMeta = eventMetas[0];
 		if (!eventMeta) return res.status(404).json({ reason: 'notFound' });
 		if (eventMeta.type.startsWith('a')) return res.status(403).json({ reason: 'forbidden' });

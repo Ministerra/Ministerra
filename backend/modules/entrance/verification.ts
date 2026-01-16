@@ -29,7 +29,7 @@ interface VerifyResult {
 // Steps: mark user as unintroduced, fetch email for frontend display, mint a short-lived auth token, then redirect to frontend setup flow with token and email embedded in URL.
 async function verifyMail({ userID }: VerifyMailProps, con: any): Promise<VerifyResult> {
 	// FETCH EMAIL FOR FRONTEND DISPLAY ---
-	const [[{ email }]]: [any[], any] = await con.execute(/*sql*/ `SELECT email FROM users WHERE id = ?`, [userID]);
+	const [[{ email }]]: [any[], any] = await con.execute(/*sql*/ `SELECT email FROM users WHERE id = ? AND flag NOT IN ('del', 'fro')`, [userID]);
 	await con.execute(/*sql*/ `UPDATE users SET status = "unintroduced" WHERE id = ?`, [userID]);
 	// MINT AUTH TOKEN FOR FRONTEND ---
 	// Frontend stores this in sessionStorage and proceeds to /setup for profile configuration.

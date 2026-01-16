@@ -69,7 +69,7 @@ async function Foundation(req, res) {
 							auth: authData.auth,
 							authEpoch: authData.epoch,
 							authExpiry: authData.expiry,
-							...(deviceSalt && { deviceSalt }),
+							...(deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
 							...(authData.previousAuth && { previousAuth: authData.previousAuth, previousEpoch: authData.previousEpoch }),
 					  }
 					: {}),
@@ -132,7 +132,7 @@ async function Foundation(req, res) {
 						auth: authData.auth,
 						authEpoch: authData.epoch,
 						authExpiry: authData.expiry,
-						...(deviceSalt && { deviceSalt }),
+						...(deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
 						...(authData.previousAuth && { previousAuth: authData.previousAuth, previousEpoch: authData.previousEpoch }),
 				  }
 				: {}),

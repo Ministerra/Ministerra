@@ -337,7 +337,6 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
  * -------------------------------------------------------------------------- */
 async function jwtVerify(req: any, res: any, next: any): Promise<void> {
 	let accessToken: string | undefined = req.headers.authorization?.split(' ')[1] || req.body.auth || req.query.auth;
-	console.log('🚀 ~ jwtVerify ~ accessToken:', accessToken);
 
 	if (!accessToken) {
 		// PUBLIC ROUTES (Bypass Auth) -----------------------------------------
@@ -361,6 +360,10 @@ async function jwtVerify(req: any, res: any, next: any): Promise<void> {
 		const now: number = Math.floor(Date.now() / 1000);
 		if (cachedDecoded.exp && cachedDecoded.exp > now) {
 			attachSession(req, cachedDecoded);
+			logger.debug('REQUEST CACHED', {
+				url: req.url,
+				body: req.body,
+			});
 			return next();
 		} else {
 			jwtCache.delete(accessToken);
@@ -377,6 +380,10 @@ async function jwtVerify(req: any, res: any, next: any): Promise<void> {
 		jwtCache.set(accessToken, decoded, { ttl });
 
 		attachSession(req, decoded);
+		logger.debug('REQUEST', {
+			url: req.url,
+			body: req.body,
+		});
 		return next();
 	} catch (error: any) {
 		// TOKEN EXPIRED OR INVALID --------------------------------------------

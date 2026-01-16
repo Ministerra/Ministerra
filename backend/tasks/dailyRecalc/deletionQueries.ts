@@ -13,18 +13,24 @@ export function buildRecalcQueries({ pastEveIDs, remEventsIDs, froUse, delUse, u
 		ids = set => getIDsString(set);
 	if (pastEveIDs.length) recalcQs.pastEve = [`UPDATE events SET flag = 'pas' WHERE id IN (${pastEveIDs.map(id => `'${id}'`).join(',')})`];
 
+	// DELETED EVENTS CLEANUP ---
+	// Delete comments, delete ratings/invites, clear nextTask
 	if (remEventsIDs.size)
 		recalcQs.remEventsIDs = [
-			`INSERT INTO rem_comments SELECT * FROM comments WHERE event IN (${ids(remEventsIDs)})`,
+			`UPDATE comments SET flag = 'del' WHERE event IN (${ids(remEventsIDs)})`,
 			`DELETE comm_rating FROM comm_rating JOIN comments ON comments.id = comm_rating.comment WHERE comments.event IN (${ids(remEventsIDs)})`,
 			`DELETE FROM eve_rating WHERE event IN (${ids(remEventsIDs)})`,
 			`DELETE FROM eve_invites WHERE event IN (${ids(remEventsIDs)})`,
 			...(delEve.size ? [`DELETE FROM eve_inters WHERE event IN (${ids(delEve)})`] : []),
-			`UPDATE rem_events SET flag = 'don' WHERE id IN (${ids(remEventsIDs)})`,
+			`UPDATE events SET nextTask = NULL WHERE id IN (${ids(remEventsIDs)})`,
 		];
 
-	if (froUse.size) recalcQs.froUse = [`UPDATE eve_inters SET inter = 'int' WHERE user in (${ids(froUse)})`, `UPDATE fro_users SET flag = 'don' WHERE id IN (${ids(froUse)})`];
+	// FROZEN USERS CLEANUP ---
+	// Downgrade attendance to interested only, clear nextTask
+	if (froUse.size) recalcQs.froUse = [`UPDATE eve_inters SET inter = 'int' WHERE user IN (${ids(froUse)})`, `UPDATE users SET nextTask = NULL WHERE id IN (${ids(froUse)})`];
 
+	// DELETED USERS CLEANUP ---
+	// Remove all user-related data from junction tables, clear nextTask
 	if (delUse.size)
 		recalcQs.delUse = [
 			`DELETE FROM rjwt_tokens WHERE user IN (${ids(delUse)})`,
@@ -36,14 +42,13 @@ export function buildRecalcQueries({ pastEveIDs, remEventsIDs, froUse, delUse, u
 			`DELETE FROM eve_inters WHERE user IN (${ids(delUse)})`,
 			`DELETE FROM comm_rating WHERE user IN (${ids(delUse)})`,
 			`DELETE FROM user_alerts WHERE user IN (${ids(delUse)})`,
+			`UPDATE users SET nextTask = NULL WHERE id IN (${ids(delUse)})`,
 		];
 
-	if (unfUse.size)
-		recalcQs.unfUse = [
-			`INSERT INTO users SELECT * FROM fro_users WHERE id IN (${ids(unfUse)})`,
-			`DELETE FROM fro_users WHERE id IN (${ids(unfUse)})`,
-			`UPDATE users SET flag = 'ok' WHERE id IN (${ids(unfUse)})`,
-		];
+	// UNFREEZING USERS ---
+	// Reset flag to 'ok', clear nextTask
+	if (unfUse.size) recalcQs.unfUse = [`UPDATE users SET flag = 'ok', nextTask = NULL WHERE id IN (${ids(unfUse)})`];
+
 	return recalcQs;
 }
 

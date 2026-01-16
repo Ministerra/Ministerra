@@ -169,7 +169,7 @@ function Home(props) {
 	const isSherActive = useCallback(
 		(obj = sherData) => {
 			if (obj.mode === 'strict') return !areEqual(obj, { ...sherlockObj, mode: 'strict' });
-			return Object.keys(obj).some(key => (['gender', 'minAge', 'maxAge'].includes(key) && obj[key]) || ['indis', 'basics', 'groups'].some(k => obj[k]?.length));
+			return Object.keys(obj).some(key => (['gender', 'minAge', 'maxAge'].includes(key) && obj[key]) || ['indis', 'basics', 'traits'].some(k => obj[k]?.length));
 		},
 		[sherData]
 	);
@@ -497,7 +497,7 @@ function Home(props) {
 
 					{/* MAP ----------------- */}
 					{(show.map !== false || mapLoaded) && (
-						<Suspense fallback={<div>Loading Map...</div>}>
+						<Suspense fallback={<map-placeholder ref={mapWrapperRef} class='block w100 hvh70 marTopM shaTop boRadS bgTrans' />}>
 							<map-wrapper ref={mapWrapperRef} class='block w100' style={{ display: show.map === true ? 'block' : 'none' }}>
 								<Map {...jsxProps} />
 							</map-wrapper>

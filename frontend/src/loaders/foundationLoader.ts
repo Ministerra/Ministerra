@@ -121,10 +121,10 @@ const handleUnstableDev = (brainRef, { unstableDev, devSync, linksSync }) => {
 };
 
 // APPLY AUTH + USER ------------------------------------------------------------
-// Steps: when backend sends auth, persist it via forage worker (bind to print + PDK/DEK), rehydrate miscel if needed (refresh flow), then merge user+notifDots and update interactions.
+// Steps: when backend sends auth, persist it via forage worker (bind to print + PDK/pdkSalt/DEK), rehydrate miscel if needed (refresh flow), then merge user+notifDots and update interactions.
 const applyAuthAndUser = async (ctx, data) => {
 	const { brainRef, meta } = ctx;
-	const { auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey, user, notifDots, devSync, linksSync, interactions, delInteractions, unstableDev = null } = data;
+	const { auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey, pdkSalt, user, notifDots, devSync, linksSync, interactions, delInteractions, unstableDev = null } = data;
 	if (!(auth || brainRef.isAfterLoginInit)) return false;
 
 	if (auth) {
@@ -138,12 +138,12 @@ const applyAuthAndUser = async (ctx, data) => {
 			await forage({
 				mode: 'set',
 				what: 'auth',
-				val: authEpoch !== undefined ? { auth, print, ...(pdk && { pdk }), ...(deviceSalt && { deviceSalt }), deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash,
+				val: authEpoch !== undefined ? { auth, print, ...(pdk && { pdk }), ...(pdkSalt && { pdkSalt }), ...(deviceSalt && { deviceSalt }), deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash,
 				id: userID,
 			});
 		} catch (e) {
-			if (e.message === 'noPDK') {
-				console.warn('PDK missing - session expired, redirecting to login');
+			if (e.message === 'noPDK' || e.message === 'noPdkSalt') {
+				console.warn('PDK/pdkSalt missing - session expired, redirecting to login');
 				return 'session_expired';
 			}
 			throw e;

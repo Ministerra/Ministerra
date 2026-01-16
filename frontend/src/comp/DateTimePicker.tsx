@@ -19,20 +19,30 @@ const DateTimePicker = props => {
 		// Accept Date OR ms timestamps from app state (numbers only).
 		startsDate = starts instanceof Date ? starts : typeof starts === 'number' ? new Date(starts) : null,
 		endsDate = ends instanceof Date ? ends : typeof ends === 'number' ? new Date(ends) : null,
-		maxDateDate = maxDate instanceof Date ? maxDate : typeof maxDate === 'number' ? new Date(maxDate) : null,
+		// FRIENDLY EVENTS MAX DATE LIMIT (6 WEEKS, ROUNDED TO END OF DAY) ---
+		friendlyMaxTs = type?.startsWith('a')
+			? (() => {
+					const endOfDay = new Date(Date.now() + 6 * 7 * 24 * 60 * 60 * 1000);
+					endOfDay.setHours(23, 59, 59, 999);
+					return endOfDay.getTime();
+			  })()
+			: null,
+		maxDateDate = friendlyMaxTs ? new Date(friendlyMaxTs) : maxDate instanceof Date ? maxDate : typeof maxDate === 'number' ? new Date(maxDate) : null,
 		dateSrc = dateMode === 'ends' ? endsDate || (startsDate ? new Date(startsDate.getFullYear(), startsDate.getMonth(), startsDate.getDate(), startsDate.getHours()) : null) : startsDate;
 
 	// TIME PORTIONS STATE ---
 	// Manages individual components of the date and time selection
+	// For meetWhen, don't pre-select day - user must explicitly choose
 	const [timePortions, setTimePortions] = useState({
 			year: !fullDate && (maxDateDate || nowDate).getFullYear(),
 			month: mode === 'week' ? (maxDateDate || nowDate).getMonth() : null,
-			day: mode === 'week' ? (maxDateDate || nowDate).getDate() : null,
+			day: mode === 'week' && prop !== 'meetWhen' ? (maxDateDate || nowDate).getDate() : null,
 			...(!noTime && {
 				hour: null,
 				min: null,
 			}),
 		}),
+		[meetWhenDaySelected, setMeetWhenDaySelected] = useState(false),
 		// DESTRUCTURED TIME UNITS ---
 		[year, month, day, hour, min] = dateSrc ? [dateSrc.getFullYear(), dateSrc.getMonth(), dateSrc.getDate(), dateSrc.getHours(), dateSrc.getMinutes()] : (Object.values(timePortions) as any[]),
 		// DECADE AND CALENDAR STATE ---
@@ -166,8 +176,8 @@ const DateTimePicker = props => {
 		superMan(prop || dateMode, newDate);
 
 		// PICKER CLOSURE GATE ---
-		// Only close picker when user completes the final step (minutes selection)
-		if (inp === 'min') setDateMode(null);
+		// Only close picker when user completes the final step (minutes selection), unless noAutoHide is set
+		if (inp === 'min' && !noAutoHide) setDateMode(null);
 
 		if (dateMode === 'starts' && ends && newDate.getTime() > (ends instanceof Date ? ends.getTime() : Number(ends))) superMan('ends', null);
 	}
@@ -217,6 +227,17 @@ const DateTimePicker = props => {
 		const forceAfternoon = isToday && currentHour >= 12 && !noAmPm;
 		const adj = noAmPm ? h : forceAfternoon || hoursMode === 'odpoledne' ? h + 12 : h;
 		const src = dateSrc || new Date(year, month, day);
+		// MEET WHEN HOUR FILTER ---
+		// When meetWhen is on same day as event start, hours must be before event hour (with buffer for minutes)
+		if (prop === 'meetWhen' && maxDateDate && year && month !== null && day !== null) {
+			const selectedDate = new Date(year, month, day);
+			const isSameDay = selectedDate.getFullYear() === maxDateDate.getFullYear() && selectedDate.getMonth() === maxDateDate.getMonth() && selectedDate.getDate() === maxDateDate.getDate();
+			if (isSameDay) {
+				if (adj > maxDateDate.getHours()) return false;
+				if (adj === maxDateDate.getHours()) return maxDateDate.getMinutes() >= 15;
+			}
+			return true;
+		}
 		if (maxDateDate && isSameDate(src, maxDateDate)) return adj <= maxDateDate.getHours();
 		// ENDS HOUR FILTER WITH MINUTE AWARENESS ---
 		// When on same day as starts, hour must have at least one valid minute slot (need > startsMinute)
@@ -261,9 +282,12 @@ const DateTimePicker = props => {
 			.map(d => ({ day: d.getDate() }))
 			.filter(({ day }) => {
 				if (fullDate) return year === nowDate.getFullYear() - 13 && month === nowDate.getMonth() ? day <= nowDate.getDate() : true;
-				const d = new Date(year, month, day).setHours(0, 0, 0, 0);
+				const dayDate = new Date(year, month, day);
+				dayDate.setHours(0, 0, 0, 0);
+				// FRIENDLY EVENTS 6-WEEK MAX CHECK ---
+				if (maxDateDate && dayDate > new Date(maxDateDate.getFullYear(), maxDateDate.getMonth(), maxDateDate.getDate())) return false;
 				if (year === curYear + 2 && curMonth === month && day > nowDate.getDate()) return false;
-				return starts && !isStarts ? d >= new Date(starts).setHours(0, 0, 0, 0) : d >= new Date().setHours(0, 0, 0, 0);
+				return starts && !isStarts ? dayDate.getTime() >= new Date(starts).setHours(0, 0, 0, 0) : dayDate.getTime() >= new Date().setHours(0, 0, 0, 0);
 			});
 		const first = new Date(year, month, 1).getDay();
 		return [...Array.from({ length: days.length ? (first === 0 ? 6 : first - 1) : 0 }, () => ({ day: null })), ...days];
@@ -441,7 +465,7 @@ const DateTimePicker = props => {
 							{!fullDate && (
 								<weekdays-labels class={'  flexCen w100 '}>
 									{weekDays.map((day, i) => (
-										<div key={i} className='w15 xBold fs13 tDarkBlue posRel padVerXxs'>
+										<div key={i} className='w15 xBold fs14 tDarkBlue posRel padVerXxs'>
 											{day}
 										</div>
 									))}
@@ -475,16 +499,17 @@ const DateTimePicker = props => {
 								<button
 									style={{ width: '100%', ...(daysWidth && { maxWidth: `${daysWidth}px` }) }}
 									key={i}
-									className={`grow    padVerXs ${!day ? 'xBold' : date.getDate() !== day ? 'boldM' : 'xBold'} ${
+									className={`grow    padVerXs ${!day ? 'xBold' : date.getDate() !== day ? 'xBold' : 'xBold'} ${
 										date.getDate() === day
 											? prop === 'meetWhen'
 												? 'bInsetBlueTopXs2 bBor2  posRel  xBold   fs20  tDarkBlue'
-												: 'tWhite  bInsetBlueBotXl  posRel  xBold tSha10  fs16  tDarkBlue'
-											: 'fs16'
+												: 'tWhite  bInsetBlueBotXl  posRel  xBold tSha10  fs18  tDarkBlue'
+											: 'fs18 bInsetBlueTopXs posRel'
 									} `}
 									onClick={() => {
 										if (date.getMonth() !== month) handlePickerChange('month', date.getMonth());
 										handlePickerChange('day', date.getDate());
+										if (prop === 'meetWhen') setMeetWhenDaySelected(true);
 									}}>
 									{label}
 								</button>
@@ -494,10 +519,11 @@ const DateTimePicker = props => {
 
 					{/* PRECISE TIME SELECTION SECTION --- */}
 					{/* Handles hours and minutes input with support for AM/PM or 24h formats */}
-					{!noTime && (day || mode === 'week') && (
+					{/* For meetWhen, only show after user explicitly selects a day */}
+					{!noTime && (day || mode === 'week') && (prop !== 'meetWhen' || meetWhenDaySelected) && (
 						<time-section class={` marAuto block  ${mode === 'week' ? 'bInsetBlueTopXs' : ''}  posRel  posRel     flexCol w100`}>
 							{mode === 'week' && (
-								<blue-divider class={` hr0-5  block bInsetBlueTopXxs  bgTrans borderTop  w90  ${(!isToday || nowDate.getHours() < 12) && !noAmPm ? 'marBotL' : ''}   marAuto   `} />
+								<blue-divider class={` hr0-5  block bInsetBlueTopXxs  bgTrans   w90  ${(!isToday || nowDate.getHours() < 12) && !noAmPm ? 'marBotL' : ''}   marAuto   `} />
 							)}
 
 							{/* DAY PART SELECTOR --- */}
@@ -515,8 +541,8 @@ const DateTimePicker = props => {
 													<button
 														key={period}
 														className={`${
-															hoursMode === period ? 'bInsetBlueBotXl borderBot  tWhite tSha10 posRel fs16 bInsetBlueBot xBold' : 'boldS fs16'
-														} padVerXxs w50 xBold`}
+															hoursMode === period ? 'bInsetBlueBotXl borderBot  tWhite tSha10 posRel fs14 bInsetBlueBot xBold' : 'boldS fs14'
+														} padVerXxxs w50 xBold`}
 														onClick={() => {
 															const adjustedHour = hour != null ? (hoursMode === 'odpoledne' && hour < 12 ? hour + 12 : hour) : null;
 															if (adjustedHour != null) handlePickerChange('hour', adjustedHour);
@@ -533,7 +559,7 @@ const DateTimePicker = props => {
 
 							{/* HOUR SELECTION GRID --- */}
 							{/* Interactive hour blocks filtered by availability and timeframe */}
-							<hour-picker className='flexCen posRel w100  marAuto wrap'>
+							<hour-picker className='flexCen posRel w100 mw150 marAuto wrap'>
 								{Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i)
 									.filter(hoursFilter)
 									.map((b, i) => {
@@ -547,10 +573,10 @@ const DateTimePicker = props => {
 												style={{ width: '100%', ...(hoursWidth && { maxWidth: `${Math.min(400, hoursWidth)}px` }) }}
 												className={`flexRow grow bHover ${
 													adjustedHour === hour ? 'tDarkBlue fs25   boRadXs  bInsetBlueTopXs bBor2 posRel xBold' : 'shaBlueLight  fs18'
-												} padVerXxs `}
+												} padVerXs `}
 												onClick={() => handlePickerChange('hour', adjustedHour)}>
 												<div className='flexRow '>
-													<span className={`${adjustedHour === hour ? 'fs25 tDarkBlue xBold' : 'fs12 bold'}`}>{adjustedHour}</span>
+													<span className={`${adjustedHour === hour ? 'fs25 tDarkBlue xBold' : 'fs12 '}`}>{adjustedHour}</span>
 													{((i === 0 && !hour) || adjustedHour === hour) && <span className='fsB marLefXxs'>hod</span>}
 												</div>
 											</button>
@@ -561,14 +587,14 @@ const DateTimePicker = props => {
 							{/* MINUTE SELECTION GRID --- */}
 							{/* Quick access to 15-minute intervals for efficient time entry */}
 							{hour !== null && (
-								<minutes-picker className='flexCen borBotLight posRel  w100 marAuto wrap'>
+								<minute-picker className='flexCen borBotLight posRel  w100 marAuto wrap'>
 									{Array.from({ length: 4 }, (_, i) => i * 15)
 										.filter(minutesFilter)
 										.map((b, i) => (
 											<button
 												key={b}
-												style={{ width: '100%', ...(minutesWidth && { maxWidth: `${Math.min(200, minutesWidth)}px` }) }}
-												className={`bHover ${b === min ? 'tDarkBlue fs22 borRed  boRadXs   posRel xBold' : 'fs18  boldM shaBlueLight'} padVerXxs`}
+												style={{ width: '100%', ...(minutesWidth && { maxWidth: `${Math.min(minutesWidth, minutesWidth)}px` }) }}
+												className={`bHover ${b === min ? 'tDarkBlue fs22 borRed  boRadXs   posRel xBold' : `${!min ? 'fs18' : 'fs14'}  boldM shaBlueLight`} padVerXxs`}
 												onClick={() => handlePickerChange('min', b)}>
 												<div className='flexRow'>
 													{b}
@@ -576,7 +602,7 @@ const DateTimePicker = props => {
 												</div>
 											</button>
 										))}
-								</minutes-picker>
+								</minute-picker>
 							)}
 						</time-section>
 					)}

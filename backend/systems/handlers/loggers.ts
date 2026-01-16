@@ -30,7 +30,7 @@ const HOSTNAME = os.hostname();
 // Desired channels: debug, info, alert, error (+ slow as a category).
 // This removes "http" + "verbose" as first-class levels.
 const LEVELS = { error: 0, alert: 1, info: 2, debug: 3 };
-const LEVEL_COLORS = { error: 'red bold', alert: 'yellow bold', info: 'cyan bold', debug: 'blue' };
+const LEVEL_COLORS = { error: 'red bold', alert: 'yellow bold', info: 'cyan bold', debug: 'green' };
 const LOG_LEVEL = process.env.LOG_LEVEL || (IS_PROD ? 'info' : 'debug');
 
 // LOG DIRECTORIES --------------------------------------------------------------
@@ -237,53 +237,118 @@ const baseFormat = winston.format.combine(
 // CONSOLE EXTRA META ---
 // Creates a compact "key=value" string for a selected subset of frequently useful fields.
 // Keeps console logs readable without dumping the full structured payload.
+// SQL queries (Q) and params (P) are formatted on separate lines for readability.
 function formatConsoleExtraMeta(info: any): string {
 	const extras: Record<string, any> = {};
+	const sqlParts: string[] = [];
+
+	// SQL QUERY/PARAMS SPECIAL HANDLING ---
+	// Format Q (query) and P (params) on separate lines with visual distinction
+	if (info?.Q !== undefined) {
+		const query = typeof info.Q === 'string' ? info.Q : stringify(info.Q);
+		sqlParts.push(`\n    ├─ Q: ${query}`);
+	}
+	if (info?.P !== undefined) {
+		const params = Array.isArray(info.P) ? stringify(info.P) : stringify(info.P);
+		const truncated = params && params.length > 300 ? `${params.slice(0, 300)}…` : params;
+		sqlParts.push(`\n    └─ P: ${truncated}`);
+	}
+
+	// STANDARD EXTRA FIELDS ---
 	for (const key of ['task', 'mode', 'name', 'sql', 'paramsCount', 'paramsSnippet', 'durationMs', 'rowCount', 'affectedRows', 'insertId', 'changedRows', 'route', 'bodySnippet']) {
 		if (info?.[key] !== undefined) extras[key] = info[key];
 	}
 	const keys: string[] = Object.keys(extras);
-	if (!keys.length) return '';
-	try {
-		// Print as key=value pairs (no JSON braces that look like "extra brackets").
-		const parts: string[] = keys.map(key => {
-			const value: any = sanitize(extras[key]);
-			if (value == null) return `${key}=${String(value)}`;
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return `${key}=${String(value)}`;
-			const raw: string = stringify(value) || '';
-			const compact: string = raw.length > 220 ? `${raw.slice(0, 220)}…` : raw;
-			return `${key}=${compact}`;
-		});
-		return ` ${parts.join(' ')}`;
-	} catch {
-		return '';
+	let result = '';
+	if (keys.length) {
+		try {
+			const parts: string[] = keys.map(key => {
+				const value: any = sanitize(extras[key]);
+				if (value == null) return `${key}=${String(value)}`;
+				if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return `${key}=${String(value)}`;
+				const raw: string = stringify(value) || '';
+				const compact: string = raw.length > 220 ? `${raw.slice(0, 220)}…` : raw;
+				return `${key}=${compact}`;
+			});
+			result = ` ${parts.join(' ')}`;
+		} catch {}
 	}
+	return result + sqlParts.join('');
+}
+
+// ANSI COLOR CODES ---
+const COLORS = { reset: '\x1b[0m', dim: '\x1b[2m', cyan: '\x1b[36m', lightGreen: '\x1b[92m', gray: '\x1b[90m' };
+
+// FORMAT DEBUG VALUE ---
+// Formats a single value for debug output, preserving type visibility.
+// Strings are quoted, numbers/booleans shown as-is, objects get beautified JSON.
+function formatDebugValue(value: any, indent: string = '    ', useColors: boolean = true): string {
+	if (value === undefined) return useColors ? `${COLORS.gray}undefined${COLORS.reset}` : 'undefined';
+	if (value === null) return useColors ? `${COLORS.gray}null${COLORS.reset}` : 'null';
+	if (typeof value === 'string') return JSON.stringify(value);
+	if (typeof value === 'object') {
+		const beautified = JSON.stringify(value, null, 4);
+		return beautified.split('\n').map((line, idx) => (idx === 0 ? line : indent + line)).join('\n');
+	}
+	return String(value);
+}
+
+// FORMAT DEBUG DATA ---
+// Formats the debug payload: objects get vertical key-value layout with beautified nested objects, primitives log as-is.
+function formatDebugData(debugData: any, useColors: boolean = true): string {
+	if (debugData === undefined || debugData === null) return '';
+	const treeColor = useColors ? COLORS.lightGreen : '';
+	const keyColor = useColors ? COLORS.cyan : '';
+	const resetColor = useColors ? COLORS.reset : '';
+
+	if (typeof debugData !== 'object') return `\n    ${treeColor}└─${resetColor} ${formatDebugValue(debugData, '       ', useColors)}`;
+
+	const keys = Object.keys(debugData);
+	if (keys.length === 0) return '';
+
+	const lines: string[] = [];
+	keys.forEach((key, index) => {
+		const isLast = index === keys.length - 1;
+		const prefix = isLast ? '└─' : '├─';
+		const formattedValue = formatDebugValue(debugData[key], '       ', useColors);
+		lines.push(`\n    ${treeColor}${prefix}${resetColor} ${keyColor}${key}${resetColor}: ${formattedValue}`);
+	});
+	return lines.join('');
 }
 
 // CONSOLE FORMAT ---
 // Human-readable line format for console transport. Keeps JSON-only fields out of the hot path.
 // Error stacks are printed on a new line to preserve scanability.
+// DEBUG logs get empty lines before and after for visual separation.
 const consoleFormat = winston.format.printf(info => {
+	const isDebug = info.level === 'debug';
+
 	// Standardize level label and apply colors
-	const label = (info.level === 'debug' ? 'DEBUG' : info.level.toUpperCase()).padEnd(5);
+	const label = (isDebug ? 'DEBUG' : info.level.toUpperCase()).padEnd(5);
 	const colorizedLevel = FEATURES.consoleColors ? winston.format.colorize().colorize(info.level, label) : label;
 
 	// Build the main log line: LEVEL [module] message (prefer module over file:line for cleaner output)
 	const location = (info as any).module ? ` [${(info as any).module}]` : '';
 	let line = `${colorizedLevel}${location} ${info.message}`;
 
-	// Append trace/context identifiers if present
-	const contextParts = [];
-	if (info.requestId) contextParts.push(`req=${info.requestId}`);
-	if (info.userId) contextParts.push(`user=${info.userId}`);
-	if (info.method && info.path) contextParts.push(`${info.method} ${info.path}`);
-	if (info.status) contextParts.push(`status=${info.status}`);
-	if (info.duration) contextParts.push(`${info.duration}ms`);
+	// DEBUG DATA HANDLING ---
+	// For debug level, display _debugData with vertical graphics format
+	if (isDebug && (info as any)._debugData !== undefined) {
+		line += formatDebugData((info as any)._debugData, FEATURES.consoleColors);
+	} else {
+		// Append trace/context identifiers if present
+		const contextParts = [];
+		if (info.requestId) contextParts.push(`req=${info.requestId}`);
+		if (info.userId) contextParts.push(`user=${info.userId}`);
+		if (info.method && info.path) contextParts.push(`${info.method} ${info.path}`);
+		if (info.status) contextParts.push(`status=${info.status}`);
+		if (info.duration) contextParts.push(`${info.duration}ms`);
 
-	if (contextParts.length) line += ` (${contextParts.join(' ')})`;
+		if (contextParts.length) line += ` (${contextParts.join(' ')})`;
 
-	// Add extra metadata (e.g. SQL params, task names)
-	line += formatConsoleExtraMeta(info);
+		// Add extra metadata (e.g. SQL params, task names)
+		line += formatConsoleExtraMeta(info);
+	}
 
 	// Multi-line error handling
 	const err: any = (info as any).error || (info instanceof Error ? info : null);
@@ -291,6 +356,10 @@ const consoleFormat = winston.format.printf(info => {
 		const stack = err.stack || (typeof err === 'object' ? JSON.stringify(err, null, 2) : String(err));
 		line += `\n${stack}`;
 	}
+
+	// DEBUG VISUAL SEPARATION ---
+	// Wrap debug logs with empty lines for terminal readability
+	if (isDebug) line = `\n${line}\n`;
 
 	return line;
 });
@@ -423,7 +492,7 @@ function logWith(target, level, message, meta) {
 export function getLogger(moduleName, baseMeta = {}) {
 	const meta = { module: moduleName, ...baseMeta };
 	return {
-		debug: (msg, logMeta = {}) => logWith(debugLogger, 'debug', msg, { ...meta, ...logMeta }),
+		debug: (msg, debugData?) => logWith(debugLogger, 'debug', msg, { ...meta, _debugData: debugData }),
 		info: (msg, logMeta = {}) => logWith(infoLogger, 'info', msg, { ...meta, ...logMeta }),
 		alert: (msg, logMeta = {}) => logWith(alertLogger, 'alert', msg, { ...meta, ...logMeta }),
 		error: (msg, logMeta = {}) => logWith(errorLogger, 'error', msg instanceof Error ? msg.message : msg, { ...meta, ...logMeta, error: msg instanceof Error ? msg : (logMeta as any)?.error }),

@@ -3,7 +3,7 @@
 // Manages profile views, personality indicators, event attendance previews, and actions.
 import { useState, memo, useRef, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { BASIC_TOPICS, USER_GROUPS } from '../../../shared/constants';
+import { BASIC_TOPICS, USER_TRAITS } from '../../../shared/constants';
 import { humanizeDateTime } from '../../helpers';
 import EventCard from './EventCard';
 import RateAwards from './RateAwards';
@@ -68,7 +68,7 @@ const UserCard = props => {
 	// SHERLOCK MATCHES (PERSONA SIMILARITY) ---------------------------
 	const sherlockMatches = useMemo(() => {
 		if (!sherData) return {};
-		return ['indis', 'groups', 'basics'].reduce((acc, key) => ({ ...acc, [key]: sherData[key].filter(id => obj[key]?.includes(id)) }), {});
+		return ['indis', 'traits', 'basics'].reduce((acc, key) => ({ ...acc, [key]: sherData[key].filter(id => obj[key]?.includes(id)) }), {});
 	}, [sherData]);
 
 	// AUTO SCROLL AND MODE RESET ---------------------------
@@ -327,20 +327,20 @@ const UserCard = props => {
 							{(modes.actions || isProfile || isPast) && (
 								<extras-sec className={`${cardsView === 2 ? 'textAli ' : ''} flexCol   `}>
 									{/* GROUPS ---------------------------------------------------------------- */}
-									<groups-wrapper className='block marBotXxxs w100'>
-										{Array.from(USER_GROUPS).map(([categoryName, categoryMap]) => {
-											const groups = obj.groups?.filter(group => categoryMap.has(String(group))) || [];
-											if (groups.length > 0) {
+									<traits-wrapper className='block marBotXxxs w100'>
+										{Array.from(USER_TRAITS).map(([categoryName, categoryMap]) => {
+											const traits = obj.traits?.filter(trait => categoryMap.has(String(trait))) || [];
+											if (traits.length > 0) {
 												return (
 													<div className={`marRigXs ${textClass} inline`} key={categoryName}>
 														<span className={`bold ${textClass} tDarkBlue textSha marRigXs`}>{categoryName}</span>
 														<span className={`marRigXs ${textClass}`}>
-															{groups.map((group, idx) => {
-																const groupLabel = categoryMap.get(String(group));
+															{traits.map((trait, idx) => {
+																const traitLabel = categoryMap.get(String(trait));
 																return (
-																	<span key={group} className={`${sherlockMatches.groups?.includes(group) ? 'borderRed' : ''} ${textClass}`}>
-																		{groupLabel}
-																		{idx !== groups.length - 1 ? ', ' : ' '}
+																	<span key={trait} className={`${sherlockMatches.traits?.includes(trait) ? 'borderRed' : ''} ${textClass}`}>
+																		{traitLabel}
+																		{idx !== traits.length - 1 ? ', ' : ' '}
 																	</span>
 																);
 															})}
@@ -350,12 +350,12 @@ const UserCard = props => {
 											}
 											return null;
 										})}
-									</groups-wrapper>
+									</traits-wrapper>
 									{/*PROGRESSIVE TOPICS --------------------------------------------------------- */}
 									<span className='block lh1-1 fs7  marBotXs'>
 										<span className={`boldM textSha tGreen ${textClass}  marRigXs`}>Progresivní</span>
 										{obj.basics?.map((topic, idx) => (
-											<span key={topic} className={`${sherlockMatches.basics?.includes(topic) ? 'borderRed' : ''}`}>
+											<span key={topic} className={`${sherlockMatches.basics?.includes(topic) ? 'borderRed' : ''} ${textClass} `}>
 												{BASIC_TOPICS.get(topic)}
 												{idx < obj.basics.length - 1 ? ', ' : ''}
 											</span>
@@ -368,7 +368,7 @@ const UserCard = props => {
 								<theres-more class='block selfEnd marTopAuto  w100'>
 									{obj.shortDesc?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}    bold tBlue   ${textClass}`}>{`Více o mně ↓`}</span>}
 									{obj.note?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}   tDarkBlue boldXs fsA`}>{`+poznámka`}</span>}
-									{obj.groups?.length > 0 && !isProfile && <span className={` miw8  boldS  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.groups.length} skupiny`}</span>}
+									{obj.traits?.length > 0 && !isProfile && <span className={` miw8  boldS  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.traits.length} skupiny`}</span>}
 								</theres-more>
 							)}
 						</texts-wrapper>

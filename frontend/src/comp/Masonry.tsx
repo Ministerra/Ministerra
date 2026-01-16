@@ -60,56 +60,47 @@ const Masonry = props => {
 			return cardHeight;
 		};
 
-		const lastRowCount = !contType.includes('Strips') ? content.length % numOfCols : 0;
 		const [newChunks, heights] = [[], []];
+		const CHUNK_SIZE = 20;
 
 		// PROCESS CONTENT IN CHUNKS -------------------------------------------
-		const CHUNK_SIZE = 20;
-		content.slice(0, lastRowCount ? -lastRowCount : undefined).forEach((card, index) => {
+		content.forEach((card, index) => {
 			const chunkIndex = Math.floor(index / CHUNK_SIZE);
 			if (!newChunks[chunkIndex]) {
-				newChunks[chunkIndex] = Array(Math.floor(Math.min(numOfCols, content.length)))
-					.fill(null)
-					.map(() => []);
+				newChunks[chunkIndex] = Array(numOfCols).fill(null).map(() => []);
 				heights[chunkIndex] = Array(numOfCols).fill(0);
 			}
-			let shortColIdx = 0;
+			let targetColIdx = 0;
 
 			// BALANCING LOGIC ---------------------------
-			if (contType !== 'events') shortColIdx = index % numOfCols;
+			if (contType !== 'events') targetColIdx = index % numOfCols;
 			else {
 				// Find column with minimum total estimated height ---------------------------
 				let minColHeight = heights[chunkIndex][0];
-				for (let i = 1; i < numOfCols; i++) if (heights[chunkIndex][i] < minColHeight) (minColHeight = heights[chunkIndex][i]), (shortColIdx = i);
-				const cardHeight = getHeight(card);
-				heights[chunkIndex][shortColIdx] += cardHeight;
+				for (let i = 1; i < numOfCols; i++) if (heights[chunkIndex][i] < minColHeight) (minColHeight = heights[chunkIndex][i]), (targetColIdx = i);
+				heights[chunkIndex][targetColIdx] += getHeight(card);
 			}
-			newChunks[chunkIndex][shortColIdx].push(card);
+			newChunks[chunkIndex][targetColIdx].push(card);
 		});
 
 		// HANDLE LAST ROW CENTERING -------------------------------------------
-		// Pads the last row with empty elements to maintain column alignment.
-		if (lastRowCount) {
-			const lastRow = content.slice(-lastRowCount).map(card => [card]);
-			const emptyItemsCount = numOfCols - lastRowCount;
-			if (emptyItemsCount && emptyItemsCount % 2 === 0) {
-				const leftEmptyItems = Math.floor(emptyItemsCount / 2);
-				const rightEmptyItems = emptyItemsCount - leftEmptyItems;
-				const filledLastRow = [
-					...Array(leftEmptyItems)
-						.fill(null)
-						.map((_, i) => [<div key={`empty-left-${i}`} />]),
-					...lastRow,
-					...Array(rightEmptyItems)
-						.fill(null)
-						.map((_, i) => [<div key={`empty-right-${i}`} />]),
-				];
-				newChunks.push(filledLastRow);
-			} else newChunks.push(lastRow);
+		// If last chunk is only partial, center it by padding columns
+		if (newChunks.length > 0 && !contType.includes('Strips')) {
+			const lastIdx = newChunks.length - 1;
+			const itemsInLastChunk = newChunks[lastIdx].flat().length;
+			if (itemsInLastChunk < numOfCols) {
+				const emptyCols = numOfCols - itemsInLastChunk;
+				if (emptyCols > 0 && emptyCols % 2 === 0) {
+					const padding = emptyCols / 2;
+					const centered = Array(numOfCols).fill(null).map(() => []);
+					for (let i = 0; i < itemsInLastChunk; i++) centered[padding + i] = newChunks[lastIdx][i];
+					newChunks[lastIdx] = centered;
+				}
+			}
 		}
 
 		setView(contType), setNumCols(numOfCols), setChunks(newChunks);
-	}, [content, numOfCols, contType, chunks.length]);
+	}, [content, numOfCols, contType]);
 
 	// RENDER MASONRY LAYOUT ---------------------------------------------------
 	return (
@@ -120,50 +111,58 @@ const Masonry = props => {
 				class={` ${
 					nowAt !== 'event' && !view.includes('Strips') ? ' block' : nowAt !== 'event' && !isChatSetup && !noPadTop ? 'padTopXs' : ''
 				}  w100 posRel block  posRel   aliCen flexCol fPadHorXxxs  `}>
-				{chunks?.map((chunk, i) => (
-					// CHUNK WRAPPER ---------------------------
-					<single-chunk class={` aliCen ${contType.includes('Strips') ? '' : 'fPadHorXxxs'} block  w100`} key={i}>
-						{/* CHUNK RANGE INDICATOR --------------------------- */}
-						{i > 0 && nowAt !== 'event' && contType !== 'alertStrips' && (
-							<chunks-divider
-								class={`marVerS w100 block mw30 posRel textAli padVerXxs padHorXs marAuto boRadS fsD xBold`}
-								style={{
-									color: 'rgba(20, 60, 120, 0.9)',
-									background: 'linear-gradient(90deg, rgba(30,144,255,0.12), rgba(30,144,255,0.06), rgba(30,144,255,0.12))',
-									borderTop: '2px solid rgba(30,144,255,0.28)',
-									letterSpacing: '0.03em',
-								}}>
-								{`${i * 20 + 1} - ${i * 20 + chunk.flat(2).length}`}
-							</chunks-divider>
-						)}
-						{/* COLUMN GRID --------------------------- */}
-						<cols-wrapper
-							class={`${
-								view === 'alertStrips'
-									? 'gapXxs'
-									: view === 'pastUsers'
-									? 'gapXxs'
-									: ['users', 'eveUsers'].includes(view)
-									? 'gapXs'
-									: view.includes('Strips')
-									? 'gapXxs'
-									: ['gapMiddleL', 'gapMiddleS', 'gapMiddleXs'][numCols > 3 ? 2 : numCols - 2]
-							} flexCen w100 marAuto aliStart  spaceCen padBotXs `}
-							key={i}>
-							{chunk.map((cards, j) => {
-								return (
-									<content-column
-										style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }}
-										class={`flexCol justStart grow ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen   `}
-										key={j}>
-										{/* RENDER ITEMS OR PLACEHOLDERS --------------------------- */}
-										{cards.map((item, idx) => (isValidElement(item) ? item : <Comp {...cardProps} key={item.id} obj={item} isFirstInCol={idx === 0} />))}
-									</content-column>
-								);
-							})}
-						</cols-wrapper>
-					</single-chunk>
-				))}
+				{(() => {
+					let cumulative = 0;
+					return chunks?.map((chunk, i) => {
+						const itemsCount = chunk.flat().filter(item => !isValidElement(item)).length;
+						const start = cumulative + 1;
+						cumulative += itemsCount;
+						const end = cumulative;
+
+						return (
+							<single-chunk class={` aliCen ${contType.includes('Strips') ? '' : 'fPadHorXxxs'} block  w100`} key={i}>
+								{i > 0 && nowAt !== 'event' && contType !== 'alertStrips' && (
+									<chunks-divider
+										class={`marVerS w100 block mw30 posRel textAli padVerXxs padHorXs marAuto boRadS fsD xBold`}
+										style={{
+											color: 'rgba(20, 60, 120, 0.9)',
+											background: 'linear-gradient(90deg, rgba(30,144,255,0.12), rgba(30,144,255,0.06), rgba(30,144,255,0.12))',
+											borderTop: '2px solid rgba(30,144,255,0.28)',
+											letterSpacing: '0.03em',
+										}}>
+										{`${start} - ${end}`}
+									</chunks-divider>
+								)}
+								{/* COLUMN GRID --------------------------- */}
+								<cols-wrapper
+									class={`${
+										view === 'alertStrips'
+											? 'gapXxs'
+											: view === 'pastUsers'
+											? 'gapXxs'
+											: ['users', 'eveUsers'].includes(view)
+											? 'gapXs'
+											: view.includes('Strips')
+											? 'gapXxs'
+											: ['gapMiddleL', 'gapMiddleS', 'gapMiddleXs'][numCols > 3 ? 2 : numCols - 2]
+									} flexCen w100 marAuto aliStart  spaceCen padBotXs `}
+									key={i}>
+									{chunk.map((cards, j) => {
+										return (
+											<content-column
+												style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }}
+												class={`flexCol justStart grow ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen   `}
+												key={j}>
+												{/* RENDER ITEMS OR PLACEHOLDERS --------------------------- */}
+												{cards.map((item, idx) => (isValidElement(item) ? item : <Comp {...cardProps} key={item.id} obj={item} isFirstInCol={idx === 0} />))}
+											</content-column>
+										);
+									})}
+								</cols-wrapper>
+							</single-chunk>
+						);
+					});
+				})()}
 			</content-chunks>
 		</masonry-wrapper>
 	);

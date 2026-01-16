@@ -1,6 +1,6 @@
 import { catsSrc, catTypesStructure, eventTitles } from '../../sources';
 import { delUndef, inflectName, fetchOwnProfile, getTimeFrames } from '../../helpers';
-const extraFieldsSrc = { cz: ['Detail', 'Sraz', 'Kontakt', 'Vstupné', 'S sebou', 'Odkazy', 'Pořadatel'], en: ['Detail', 'Meet', 'Contacts', 'Fee', 'Take', 'Links', 'Organizer'] };
+const extraFieldsSrc = { cz: ['Detail', 'Sraz', 'Kontakt', 'Vstupné', 'S sebou', 'Odkazy', 'Pořadatel'], en: ['detail', 'meet', 'contacts', 'fee', 'takeWith', 'links', 'organizer'] };
 const friendlyMeetingsHeaders = new Map(
 	Object.entries({
 		a1: 'venku',
@@ -74,7 +74,8 @@ function Editor(props: any) {
 		[inviteStatus, setInviteStatus] = useState('idle'),
 		extraFieldsTexts = useRef<any>({}),
 		[inform, setInform] = useState([]),
-		scrollTarget = useRef<any>(null);
+		scrollTarget = useRef<any>(null),
+		titleSectionRef = useRef<any>(null);
 	const shouldShowAttendanceButtons = isQuick || (!event && (data.type?.startsWith('a') || data.title));
 
 	// INITIAL SCROLL--------------------------------------------------
@@ -109,8 +110,17 @@ function Editor(props: any) {
 				else Object.assign(next, { city: null, cityID: null, location: '', lat: null, lng: null, place: null });
 				return next;
 			});
-		else if (inp === 'location') setData(prev => ({ ...prev, ...(data.locaMode === 'city' ? { city: val, cityID: null } : val) }));
-		else if (inp === 'types') setData(prev => ({ ...prev, type: val })), setSnap(prev => ({ ...prev, types: [val] }));
+		else if (inp === 'location') {
+			if (data.locaMode === 'city') setData(prev => ({ ...prev, city: val, cityID: null }));
+			else {
+				// EXTRACT ONLY NEEDED FIELDS FOR EXACT/RADIUS MODES ---
+				// Avoid duplicating country/region/county at top level since they exist in city object
+				const { locaType, place, location, lat, lng, label, part, city, hashID } = val;
+				setData(prev => ({ ...prev, locaType, place, location, lat, lng, label, part, city: city || val, hashID }));
+			}
+			// SCROLL TO TITLE SECTION AFTER LOCATION SELECTION ---
+			setTimeout(() => titleSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+		} else if (inp === 'types') setData(prev => ({ ...prev, type: val })), setSnap(prev => ({ ...prev, types: [val] }));
 		else if (inp === 'cats') setSnap(prev => ({ ...prev, cats: [val] })), setData(prev => ({ ...prev, type: null }));
 		else if (inp === 'extraFields') setSelExtraFields(prev => (prev.includes(val) ? prev.filter(item => item !== val) : [...prev, val]));
 		else if (inp === 'pendingInvite') {
@@ -315,7 +325,7 @@ function Editor(props: any) {
 						<div className={`bgWhite topCen opacityXs shaCon mih1 posAbs w100 zin10`} />
 						<div className={`bgWhite topCen opacityM shaCon mih0-5 posAbs w100 zin20`} />
 						<images-wrapper class={'hvh25 bgTransXs block round'}>
-							<img loading='lazy' className='w100 maskLow hvw30 mh33 zin2 cover' src={`/covers/${quickType}.png`} alt='' />
+							<img loading='lazy' className='w100 maskLow hvw30 mh33 zin2 cover' src={`/covers/friendlyMeetings/${quickType}.png`} alt='' />
 							<img
 								onClick={() => showMan('quick', false)}
 								className='wvw50 posAbs topCen bgTrans   zinMax mw45  padHorL  pointer  boRadM   upExtra  hover padVerS    '
@@ -410,7 +420,7 @@ function Editor(props: any) {
 					{/* LOCATION, CITY, PLACE ---------------------------------- */}
 					{data.starts && (
 						<place-wrapper class={`block   posRel   posRel  padTopXl    marAuto w100`}>
-							<blue-divider class={` hr0-5  block bInsetBlueTopXl borTop bgTrans posAbs topCen   w100 mw60    marAuto   `} />
+							{!isQuick && <blue-divider class={` hr0-3  block bInsetBlueTopXl borTop bgTrans posAbs topCen   w100     marAuto   `} />}
 
 							<blue-divider class='hr8 posAbs topCen zin1 block  bInsetBlueTopXs2  bgTrans w80 mw140 marAuto' />
 							<span className='xBold block textSha marBotXxs marTopXl opacityL fs15 tDarkBlue'>Místo či oblast setkání</span>
@@ -440,8 +450,9 @@ function Editor(props: any) {
 							)}
 						</place-wrapper>
 					)}
+					{/* TITLE AND SHORT DESCRIPTION SECTION --- */}
 					{(data.city || data.cityID) && (
-						<title-descrip class='block w100 marBotL    posRel posRel'>
+						<title-descrip ref={titleSectionRef} class='block w100 marBotL    posRel posRel'>
 							<info-texts class='posRel  marTopXxxl  block'>
 								<span className='xBold block textSha marBotXxs marTopM opacityL fs15 tDarkBlue'>Titulek a úvodní slovo</span>
 								<span className='fs10 inlineBlock marBotXxs textSha opacityL'>
@@ -506,8 +517,8 @@ function Editor(props: any) {
 					{/* EXTRAS-ADD ---------------------------------------------- */}
 					{!isQuick && ((data.type.startsWith('a') && (data.city || data.cityID)) || data.title) && (
 						<extrafields-add class='   posRel  block mw150 marAuto w100'>
-							<info-texts class='posRel padTopM marBotXs block'>
-								<span className='xBold block textSha marBotXxxs  opacityL fs22 marBotXs'>Volitelné informace</span>
+							<info-texts class='posRel padTopS marBotXs block'>
+								<span className='xBold block textSha   opacityL fs16 tDarkBlue marBotXxxs'>Volitelné informace</span>
 								{/* SHORT DESCRIPTION-------------------------------------------- */}
 								<span className='fs10 inlineBlock marBotXxxs textSha opacityL'>
 									<strong>Doporučujeme:</strong> Vyber si, které další informace chceš do popisku své události přidat.
@@ -517,11 +528,11 @@ function Editor(props: any) {
 								{extraFieldsSrc.cz.map((item, i) => (
 									<button
 										key={item}
-										name={extraFieldsSrc.en[i].toLowerCase()}
+										name={extraFieldsSrc.en[i]}
 										className={`${
-											selExtraFields.includes(extraFieldsSrc.en[i].toLowerCase()) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'xBold'
+											selExtraFields.includes(extraFieldsSrc.en[i]) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'xBold'
 										} grow  fs10  shaComment bHover padHorS shaBlue padVerXxs bgTrans  posRel  `}
-										onClick={() => man('extraFields', extraFieldsSrc.en[i].toLowerCase())}>
+										onClick={() => man('extraFields', extraFieldsSrc.en[i])}>
 										{item}
 									</button>
 								))}
@@ -579,7 +590,7 @@ function Editor(props: any) {
 				</event-info>
 			)}
 			{(data.city || data.cityID) && (
-				<other-info class={'marTopXxxl thickBors block'}>
+				<other-info class={`${!isQuick ? 'marTopXxxl' : ''} thickBors block`}>
 					{/* EVENT VISIBILITY (PRIV) --------------------------------------------- */}
 					{data.title && !isQuick && !event && data.type !== null && data.type !== undefined && (
 						<privacy-settings class={'flexCol  w100 '}>
@@ -637,8 +648,8 @@ function Editor(props: any) {
 
 					{/* PENDING INVITATIONS FOR NEW EVENTS */}
 					{!event && (data.city || data.cityID) && data.type !== null && data.type !== undefined && (data.type.startsWith('a') || data.title) && (
-						<pending-invitations class='marTopXxxl block'>
-							<span className='boldM block textSha marBotXxs marTopXxxl opacityL fs20 tDarkBlue'>Rozeslání pozvánek</span>
+						<pending-invitations class=' block'>
+							<span className={`boldM block textSha marBotXxs ${!isQuick ? 'marTopXl' : ''} opacityL fs16 tDarkBlue`}>Rozeslání pozvánek</span>
 							<span className='fs10 inlineBlock marBotS textSha opacityL'>
 								<strong>Doporučujeme:</strong> Vyhledej spojence a nebo důvěrníky a pozvi je na svoji událost.
 							</span>
@@ -696,18 +707,18 @@ function Editor(props: any) {
 					)}
 
 					{/* SUBMIT BUTTON ------------------------------ */}
-					{(data.type.startsWith('a') || data.title || (isQuick && (data.city || data.cityID))) && data.type !== null && data.type !== undefined && (
+					{(data.type?.startsWith('a') || data.title || (isQuick && (data.city || data.cityID))) && data.type !== null && data.type !== undefined && (
 						<button
 							onClick={() => man('submit')}
 							className={`fadingIn ${(isQuick && (data.city || data.cityID)) || fadedIn.includes('EventInfo') ? 'fadedIn' : ''} ${
 								inform.length > 0 ? 'bRed' : 'bDarkGreen'
-							} tWhite bHover xBold fs20 w95 mw80  posRel  marBotXxs marAuto  ${!shouldShowAttendanceButtons ? 'marTopXxxl' : ''} padVerS boRadS`}>
+							} tWhite bHover xBold fs20 w95 mw80  posRel  marBotXxs marAuto  ${!shouldShowAttendanceButtons ? 'marTopXl' : ''} padVerS boRadS`}>
 							{inform.length > 0 ? 'Vyplň povinné údaje!' : !event ? (isQuick ? 'Zveřejnit přátelské setkání' : 'Vytvořit událost!') : 'Uložit změny události'}
 						</button>
 					)}
 				</other-info>
 			)}
-			{!isQuick && <empty-div class='block hvw14 mih20' />}
+			{!isQuick && <empty-div class='block  mih14' />}
 		</create-event>
 	);
 }

@@ -372,14 +372,14 @@ export async function Cacher(redis: any): Promise<void> {
 				if (chatChanges.length) await redis.hset(REDIS_KEYS.lastMembChangeAt, ...chatChanges.flatMap(x => [x.id, new Date(x.changed).getTime()]));
 
 				const [eveUserChanges]: [any[], any] = await con.execute(
-					`SELECT ei.event, MAX(ei.changed) as c FROM eve_inters ei JOIN events e ON ei.event = e.id AND e.type LIKE 'a%' WHERE ei.changed > NOW() - INTERVAL 1 MONTH GROUP BY ei.event`
+					`SELECT ei.event, MAX(ei.changed) as c FROM eve_inters ei JOIN events e ON ei.event = e.id AND e.type LIKE 'a%' AND e.flag != 'del' WHERE ei.changed > NOW() - INTERVAL 1 MONTH GROUP BY ei.event`
 				);
 				if (eveUserChanges.length) await redis.hset(REDIS_KEYS.eveLastAttendChangeAt, ...eveUserChanges.flatMap(x => [x.event, new Date(x.c).getTime()]));
 
-				const [users]: [any[], any] = await con.execute(`SELECT u.id, u.first, u.last, u.imgVers FROM users u JOIN active_users au ON u.id = au.user`);
+				const [users]: [any[], any] = await con.execute(`SELECT u.id, u.first, u.last, u.imgVers FROM users u JOIN active_users au ON u.id = au.user WHERE u.flag NOT IN ('del', 'fro')`);
 				if (users.length) await redis.hset(REDIS_KEYS.userNameImage, ...users.flatMap(u => [u.id, encode([u.first || '', u.last || '', u.imgVers || ''])]));
 
-				const [events]: [any[], any] = await con.execute(`SELECT id, title, owner FROM events`);
+				const [events]: [any[], any] = await con.execute(`SELECT id, title, owner FROM events WHERE flag != 'del'`);
 				if (events.length) await redis.hset(REDIS_KEYS.eveTitleOwner, ...events.flatMap(e => [e.id, encode([e.title?.slice(0, 50) || '', e.owner || ''])]));
 				logger.info(`Cached metadata: ${chatChanges.length} chat changes, ${eveUserChanges.length} event changes, ${users.length} user names, ${events.length} event titles`);
 			})(),

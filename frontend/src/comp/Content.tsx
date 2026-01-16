@@ -95,6 +95,7 @@ function Content(props) {
 					setViewCols={setViewCols}
 					showAllThumbs={showAllThumbs}
 					setCardsToContent={setCardsToContent}
+					contentLength={content?.length || 0}
 				/>
 			)}
 

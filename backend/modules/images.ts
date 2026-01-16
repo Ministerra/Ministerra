@@ -99,7 +99,8 @@ const Images = async (req: ImagesRequest, res: Response, next: NextFunction) => 
 
 		// PASS-THROUGH CHECK --------------------------------------------------
 		// Steps: only intercept when `image` field exists; otherwise let downstream handlers proceed unchanged.
-		if (image === undefined) return next();
+		// Always delete imgVers from body if no image is being processed - prevents spoofed imgVers injection.
+		if (image === undefined) return delete req.body.imgVers, next();
 		// DELETE IMAGE LOGIC --------------------------------------------------
 		// Steps: when image=null, delete user images (if any), zero imgVers, then let downstream handlers persist the cleared state.
 		else if (image === null) {

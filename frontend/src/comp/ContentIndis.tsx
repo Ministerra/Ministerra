@@ -71,7 +71,7 @@ function ContentIndis({ status, obj, isCardOrStrip, modes = {}, isSearch, isInvi
 			)}
 			{/* OPTIONAL INDIS --------------------------------------------- */}
 			{someOptionals && (
-				<optional-indis class='flexInline padVerXxxs aliCen posRel'>
+				<optional-indis class='flexInline padVerXxxs aliCen posRel marRigXs'>
 					{Object.keys(optionals)
 						.filter(indi => optionals[indi].val)
 						.map(indi => (

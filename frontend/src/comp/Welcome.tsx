@@ -71,7 +71,7 @@ function Welcome({ introCredentials, superMan, brain }) {
 			// BACKEND CALL ---
 			// Reuse standard login endpoint for PDK derivation.
 			const response = await axios.post('/entrance', { mode: 'login', email, pass: password, print }, { __skipGlobalErrorBanner: true } as any);
-			const { auth, authEpoch, authExpiry, deviceSalt, deviceKey } = response.data;
+			const { auth, authEpoch, authExpiry, deviceSalt, deviceKey, pdkSalt } = response.data;
 			const [idFromAuth] = auth?.split(':') || [];
 			const userIDtoUse = userID || idFromAuth;
 
@@ -81,7 +81,7 @@ function Welcome({ introCredentials, superMan, brain }) {
 
 			// STORE AUTH DATA IN FORAGE ---
 			// Worker will capture PDK from sessionStorage and persist it encrypted.
-			const authVal = { auth, print, pdk: pdkValue, deviceKey, epoch: authEpoch };
+			const authVal = { auth, print, pdk: pdkValue, pdkSalt, deviceKey, epoch: authEpoch };
 			await forage({ mode: 'set', what: 'auth', val: authVal, id: userIDtoUse });
 			sessionStorage.removeItem('authToken');
 

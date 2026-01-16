@@ -41,7 +41,7 @@ async function enforceRegisterRateLimit(ip) {
 // CHECK IF EMAIL TAKEN --------------------------------------------------------
 // Steps: do a narrow existence query and throw mailTaken; keeps register() sequencing readable and error codes stable.
 async function checkIfMailTaken(email, con) {
-	const [[userExists]] = await con.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+	const [[userExists]] = await con.execute(`SELECT id FROM users WHERE email = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [email]);
 	if (userExists) throw new Error('mailTaken');
 }
 
@@ -93,7 +93,7 @@ async function register({ email, pass, ip }, con) {
 // RESEND VERIFICATION EMAIL ---------------------------------------------------
 // Steps: validate that user exists, optionally confirm password (verifyMail), then send a short-lived token for the requested mail type.
 async function resendMail({ mailType, email, pass }, con) {
-	const [[{ id: userID, pass: storedPass } = {}]] = await con.execute('SELECT id, pass FROM users WHERE email = ?', [email]);
+	const [[{ id: userID, pass: storedPass } = {}]] = await con.execute(`SELECT id, pass FROM users WHERE email = ? AND flag NOT IN ('del', 'fro')`, [email]);
 	if (!storedPass) throw new Error('userNotFound');
 	if (mailType === 'verifyMail' && !(await bcrypt.compare(pass, storedPass))) throw new Error('unauthorized');
 	await sendEmail({

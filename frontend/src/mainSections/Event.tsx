@@ -230,7 +230,7 @@ function Event() {
 				<EveActionsBs {...{ fadedIn: ['BsEvent'], brain, isPast, nowAt, obj, status, setStatus, modes, setModes, thisIs: 'event' }} />
 
 				{modes.map && (
-					<Suspense fallback={<div>Loading Map...</div>}>
+					<Suspense fallback={<map-placeholder class='block w100 hvh50 marTopXs shaTop boRadS bgTrans' />}>
 						<Map singleEvent={obj} brain={brain} map={true} />
 					</Suspense>
 				)}

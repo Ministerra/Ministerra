@@ -5,8 +5,9 @@ import { getGeohash } from '../utilities/helpers/location.ts';
 import { checkRedisAccess } from '../utilities/contentFilters.ts';
 import { encode, decode } from 'cbor-x';
 import { calculateAge, delFalsy } from '../../shared/utilities.ts';
+import type { EventMetaInput, UserMetaPrivs } from '../../shared/types.ts';
 import { LRUCache } from 'lru-cache';
-import { Redis, Pipeline } from 'ioredis';
+import { Redis } from 'ioredis';
 
 // META INDEXES ------------------------------------------
 import { EVENT_META_INDEXES, REDIS_KEYS, EVENT_COLUMNS, EVENT_BASICS_KEYS, EVENT_DETAILS_KEYS } from '../../shared/constants.ts';
@@ -23,21 +24,6 @@ interface EventRequest {
 	getBasiOnly?: boolean;
 	gotSQL?: boolean;
 	lastUsersSync?: number;
-}
-
-interface EventMetaInput {
-	priv: string;
-	owner: number | string;
-	cityID: number | string;
-	type: string;
-	starts: string;
-	geohash: string | null;
-	surely: number;
-	maybe: number;
-	comments: number;
-	score: number;
-	basiVers: string | number;
-	detaVers: string | number;
 }
 
 interface FetchProps {
@@ -72,13 +58,12 @@ const eventCache = new LRUCache<string, any>({
 // SQL QUERIES -----------------------------------------------------------------
 const QUERIES = {
 	rating: `SELECT ei.inter, ei.priv AS interPriv, er.mark, er.awards FROM eve_inters ei LEFT JOIN eve_rating er ON ei.event = er.event AND er.user = ? WHERE ei.event = ? AND ei.user = ?`,
-	pastUsers: `SELECT u.id, ei.priv, u.score, u.imgVers, u.first, u.last, u.birth FROM users u JOIN eve_inters ei ON u.id = ei.user WHERE ei.event = ? AND ei.inter IN ('sur', 'may') ORDER BY CASE ei.inter WHEN 'sur' THEN 1 WHEN 'may' THEN 2 END, u.score DESC`,
+	pastUsers: `SELECT u.id, ei.priv, u.score, u.imgVers, u.first, u.last, u.birth FROM users u JOIN eve_inters ei ON u.id = ei.user WHERE ei.event = ? AND ei.inter IN ('sur', 'may') AND u.flag NOT IN ('del', 'fro') ORDER BY CASE ei.inter WHEN 'sur' THEN 1 WHEN 'may' THEN 2 END, u.score DESC`,
 };
 
 // IS EVENT PAST ----------------------------------------------------------------
 // Steps: read starts from compact meta (base36) and compare with now; avoids parsing full objects for a cheap “past vs future” branch.
-// Rationale: events are considered past only after a 2-hour grace period to ensure ongoing events remain visible in future views.
-const isEventPast = (meta: any[]) => parseInt(meta[eveStartsIdx], 36) < Date.now() - 7200000;
+const isEventPast = (meta: any[]) => parseInt(meta[eveStartsIdx], 36) < Date.now();
 // GET EVENT RATING -------------------------------------------------------------
 // Steps: read user-specific overlay (inter/priv/mark/awards) from SQL; when userID is missing, return empty overlay.
 const getEventRating = async (connection: any, userID: number | string | undefined, eventID: number | string) =>
@@ -89,16 +74,16 @@ const getEventRating = async (connection: any, userID: number | string | undefin
 // CACHE PAST EVENT ------------------------------------------------------------
 // Steps: read event row from SQL, build meta + basi + deta payloads, write them into redis, and clear future caches so past representation becomes the source of truth.
 async function cachePastEvent(eventID: number | string, connection: any) {
-	const [[eventData]]: [any[], any] = await connection.execute(`SELECT ${EVENT_COLUMNS} FROM events e INNER JOIN cities c ON e.cityID = c.id WHERE e.id = ?`, [eventID]);
+	const [[eventData]]: [any[], any] = await connection.execute(`SELECT ${EVENT_COLUMNS} FROM events e INNER JOIN cities c ON e.cityID = c.id WHERE e.id = ? AND e.flag != 'del'`, [eventID]);
 	if (!eventData) throw new Error('notFound');
 
 	geohash ??= getGeohash();
 	const startsBase36 = new Date(eventData.starts).getTime().toString(36);
 	const geohashValue = eventData.lat && eventData.lng && geohash?.encode ? geohash.encode(eventData.lat, eventData.lng, 9) : null;
 	const metaInput: EventMetaInput = {
-		priv: eventData.priv,
-		owner: eventData.owner,
-		cityID: eventData.cityID,
+		priv: eventData.priv as UserMetaPrivs,
+		owner: eventData.owner ? String(eventData.owner) : null,
+		cityID: Number(eventData.cityID),
 		type: eventData.type,
 		starts: startsBase36,
 		geohash: geohashValue,
@@ -106,11 +91,11 @@ async function cachePastEvent(eventID: number | string, connection: any) {
 		maybe: eventData.maybe,
 		comments: eventData.comments,
 		score: eventData.score,
-		basiVers: eventData.basiVers,
-		detaVers: eventData.detaVers,
+		basiVers: Number(eventData.basiVers),
+		detaVers: Number(eventData.detaVers),
 	};
-	const [meta, basicsData, detailsData, pipeline]: [any[], Record<string, any>, Record<string, any>, Pipeline] = [createEveMeta(metaInput), {}, {}, redis.pipeline()];
-	EVENT_BASICS_KEYS.forEach(col => (basicsData[col] = col === 'ends' && eventData[col] ? Number(new Date(eventData[col])) : col === 'starts' ? Number(new Date(eventData[col])) : eventData[col]));
+	const [meta, basicsData, detailsData, pipeline]: [any[], Record<string, any>, Record<string, any>, any] = [createEveMeta(metaInput), {}, {}, redis.pipeline()];
+	EVENT_BASICS_KEYS.forEach(col => (basicsData[col] = col === 'ends' && eventData[col] ? Number(new Date(eventData[col])) : eventData[col]));
 	EVENT_DETAILS_KEYS.forEach(col => (detailsData[col] = col === 'meetWhen' && eventData[col] ? Number(new Date(eventData[col])) : eventData[col]));
 
 	// CACHE UPDATE -----------------------------------------------------------
@@ -285,8 +270,9 @@ export async function Event(req: { body: EventRequest }, res: any) {
 
 		// ROUTE EXECUTION -----------------------------------------------------
 		// Steps: for past events, read past cache + optional users; for future, read hashes + optional attendees list (for friendly events).
-		const [eventData, attendeeSync, pastUsers]: [any, any, any] = isEventPast(meta)
-			? [...(await getPastEvent(fetchProps))]
+		const pastRes = isEventPast(meta) ? await getPastEvent(fetchProps) : null;
+		const [eventData, attendeeSync, pastUsers]: [any, any, any] = pastRes
+			? [pastRes[0], undefined, pastRes[1]]
 			: [await getFutureEvent(fetchProps), isFriendly && !gotUsers && (await getFutureAttendees(fetchProps)), undefined];
 
 		if (!eventData) throw new Error('badRequest');

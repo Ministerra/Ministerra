@@ -17,6 +17,7 @@ interface DeviceCredentials {
 	deviceID: string;
 	salt: string;
 	deviceKey: string;
+	pdkSalt: string;
 	isNew: boolean;
 	wasRevoked?: boolean;
 }
@@ -24,6 +25,7 @@ interface DeviceCredentials {
 interface DeviceSummary {
 	salt: string;
 	deviceKey: string;
+	pdkSalt: string;
 }
 
 interface DeviceInfo {
@@ -46,34 +48,36 @@ export function generateDeviceId(): string {
 export async function registerDevice(con: any, userID: string | number, deviceID: string): Promise<DeviceCredentials> {
 	try {
 		// check if this device already exists; branch into (revoked -> regenerate) vs (active -> reuse/backfill key) vs (new -> insert).
-		const [existing]: [any[], any] = await con.execute(/*sql*/ `SELECT id, salt, device_key, is_revoked FROM user_devices WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
+		const [existing]: [any[], any] = await con.execute(/*sql*/ `SELECT id, salt, device_key, pdk_salt, is_revoked FROM user_devices WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
 
 		if (existing.length > 0) {
 			const device: any = existing[0];
 			// REVOKED -> REGENERATE ---------------------------------------------
-			// generate new salt+deviceKey so previously encrypted cached data stays unrecoverable after revocation.
+			// generate new salt+deviceKey+pdkSalt so previously encrypted cached data stays unrecoverable after revocation.
 
 			if (device.is_revoked) {
 				const newSalt: string = crypto.randomBytes(32).toString('hex'),
-					newDeviceKey: string = crypto.randomBytes(32).toString('hex');
-				await con.execute(/*sql*/ `UPDATE user_devices SET salt = ?, device_key = ?, is_revoked = 0, last_seen = NOW() WHERE id = ?`, [newSalt, newDeviceKey, device.id]);
-				return { deviceID, salt: newSalt, deviceKey: newDeviceKey, isNew: true, wasRevoked: true };
+					newDeviceKey: string = crypto.randomBytes(32).toString('hex'),
+					newPdkSalt: string = crypto.randomBytes(32).toString('hex');
+				await con.execute(/*sql*/ `UPDATE user_devices SET salt = ?, device_key = ?, pdk_salt = ?, is_revoked = 0, last_seen = NOW() WHERE id = ?`, [newSalt, newDeviceKey, newPdkSalt, device.id]);
+				return { deviceID, salt: newSalt, deviceKey: newDeviceKey, pdkSalt: newPdkSalt, isNew: true, wasRevoked: true };
 			}
 
 			// ACTIVE -> REUSE/BACKFILL --------------------------------------------
 			// reuse existing credentials; if device_key is missing (migration), backfill it so encryption is consistent.
 			let deviceKey: string = device.device_key;
 			await con.execute(/*sql*/ `UPDATE user_devices SET last_seen = NOW() WHERE id = ?`, [device.id]);
-			return { deviceID, salt: device.salt, deviceKey, isNew: false };
+			return { deviceID, salt: device.salt, deviceKey, pdkSalt: device.pdk_salt, isNew: false };
 		}
 
 		// NEW DEVICE INSERT -------------------------------------------------------
-		// Steps: generate Snowflake ID, generate salt+deviceKey, insert row, and return credentials to caller.
+		// Steps: generate Snowflake ID, generate salt+deviceKey+pdkSalt, insert row, and return credentials to caller.
 		const rowID: string = generateIDString();
 		const salt: string = crypto.randomBytes(32).toString('hex'),
-			deviceKey: string = crypto.randomBytes(32).toString('hex');
-		await con.execute(/*sql*/ `INSERT INTO user_devices (id, user_id, device_id, salt, device_key) VALUES (?, ?, ?, ?, ?)`, [rowID, userID, deviceID, salt, deviceKey]);
-		return { deviceID, salt, deviceKey, isNew: true };
+			deviceKey: string = crypto.randomBytes(32).toString('hex'),
+			pdkSalt: string = crypto.randomBytes(32).toString('hex');
+		await con.execute(/*sql*/ `INSERT INTO user_devices (id, user_id, device_id, salt, device_key, pdk_salt) VALUES (?, ?, ?, ?, ?, ?)`, [rowID, userID, deviceID, salt, deviceKey, pdkSalt]);
+		return { deviceID, salt, deviceKey, pdkSalt, isNew: true };
 	} catch (error) {
 		console.error('DEVICE REGISTRATION FAILED:', error);
 		throw error;
@@ -83,8 +87,8 @@ export async function registerDevice(con: any, userID: string | number, deviceID
 // GET DEVICE SALT ---------------------------------------------------------------
 // return credentials only for active (non-revoked) devices; null signals client to purge device-bound caches.
 export async function getDeviceSalt(con: any, userID: string | number, deviceID: string): Promise<DeviceSummary | null> {
-	const [rows]: [any[], any] = await con.execute(/*sql*/ `SELECT salt, device_key FROM user_devices WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [userID, deviceID]);
-	return rows.length > 0 ? { salt: rows[0].salt, deviceKey: rows[0].device_key } : null;
+	const [rows]: [any[], any] = await con.execute(/*sql*/ `SELECT salt, device_key, pdk_salt FROM user_devices WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [userID, deviceID]);
+	return rows.length > 0 ? { salt: rows[0].salt, deviceKey: rows[0].device_key, pdkSalt: rows[0].pdk_salt } : null;
 }
 
 // This represents what the UI receives. Note: NO secrets (salt/key) here.

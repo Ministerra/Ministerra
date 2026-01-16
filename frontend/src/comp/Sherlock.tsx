@@ -1,11 +1,11 @@
 // SHERLOCK FILTER SYSTEM ---
 // Drives the advanced event filtering engine: gender/age matching, personality indicators,
-// basic interest matching, and group affiliation logic based on selected modes.
+// basic interest matching, and trait affiliation logic based on selected modes.
 import { sherlockObj } from '../../sources';
 import GenderAge from './GenderAge';
 import Indicators from './Indicators';
 import Basics from './Basics';
-import Groups from './Groups';
+import Traits from './Traits';
 import { useEffect, useRef, memo } from 'react';
 
 function Sherlock(props) {
@@ -36,12 +36,16 @@ function Sherlock(props) {
 
 			{/* NO FRIENDLY MEETINGS SELECTED WARNING -------------------------------- */}
 			{/* Alerts user when no compatible events are selected for advanced matching. */}
-			{inform.includes('noMeetSel') || (map && !sherAvail.basics.length) || !snap.types?.length ? (
+			{inform.includes('noMeetSel') || (map && !sherAvail.basics.length) || !snap.types?.length || (sherAvail && !sherAvail.basics?.length && !map) ? (
 				<warning-wrapper
 					onClick={() => (show.filter ? snapMan('filter', !show.filter) : snapMan('sherlock', !show.sherlock))}
 					className=' textAli inlineBlock pointer  mw100 bInsetRedDark  marAuto   padAllXs w100  shaBot borBotLight padHorXl   '>
 					<span className='fs12 tRed xBold marBotXxxxs lh1-2 inlineBlock '>
-						{map !== true ? 'POZOR: Nemáš zvolen ani jeden typ přátelské události' : 'POZOR: Na mapě není žádné přátelské setkání'}
+						{map !== true
+							? !snap.types?.length || inform.includes('noMeetSel')
+								? 'POZOR: Nemáš zvolen ani jeden typ přátelské události'
+								: 'POZOR: Nejsou dostupné žádné přátelské události'
+							: 'POZOR: Na mapě není žádné přátelské setkání'}
 					</span>
 					<span className='fs8 marBotXxs block'>
 						{map !== true
@@ -84,7 +88,7 @@ function Sherlock(props) {
 					<GenderAge {...sherlockProps} />
 					<Indicators {...sherlockProps} />
 					<Basics {...sherlockProps} />
-					<Groups {...sherlockProps} />
+					<Traits {...sherlockProps} />
 				</>
 			)}
 		</sherlock-comp>
@@ -93,6 +97,12 @@ function Sherlock(props) {
 
 // RENDER OPTIMIZATION ---------------------------
 const areEqual = (prev, next) =>
-	prev.sherData === next.sherData && prev.fadedIn === next.fadedIn && prev.sherAvail === next.sherAvail && prev.inform === next.inform && prev.snap === next.snap && prev.show === next.show;
+	prev.sherData === next.sherData &&
+	prev.fadedIn === next.fadedIn &&
+	prev.sherAvail === next.sherAvail &&
+	prev.inform === next.inform &&
+	prev.snap === next.snap &&
+	prev.show === next.show &&
+	prev.brain.itemsOnMap === next.brain?.itemsOnMap;
 
 export default memo(Sherlock, areEqual);

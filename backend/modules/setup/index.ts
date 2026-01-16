@@ -72,8 +72,6 @@ function sanitizeSetupDevicePrint(value) {
  * --------------------------------------------------------------------------- */
 async function Setup(req, res) {
 	let con, citiesData, authData, pipeline;
-	console.log(req.body, 'REQ BODYYYYYYYYYYYYYYYYYYYY');
-
 	const { userID: rawUserID, is: rawIs, print: rawPrint, ...incoming } = req.body || {};
 	const userID = sanitizeSetupSessionUserID(rawUserID);
 	const is = sanitizeSetupSessionStatus(rawIs);
@@ -132,7 +130,7 @@ async function Setup(req, res) {
 
 		// ARRAY TO STRING CONVERSION ---
 		// Database stores these fields as comma/pipe-separated strings.
-		['basics', 'indis', 'groups'].forEach(k => Array.isArray(restData[k]) && (restData[k] = restData[k].join(',')));
+		['basics', 'indis', 'traits'].forEach(k => Array.isArray(restData[k]) && (restData[k] = restData[k].join(',')));
 		['favs', 'exps'].forEach(k => Array.isArray(restData[k]) && (restData[k] = restData[k].join('|')));
 
 		// SQL UPDATE ----------------------------------------------------------
@@ -140,7 +138,7 @@ async function Setup(req, res) {
 		const [columns, values] = Object.entries(restData).reduce((acc, [key, value]) => (acc[0].push(key), acc[1].push(value), acc), [[], []]);
 		const sqlQuery = `UPDATE users SET ${columns.map(f => `${f} = ?`).join(', ')}${restData.priv ? ', flag = "pri"' : ''} ${
 			is === 'unintroduced' ? ', status = "newUser"' : USER_BASI_KEYS.some(col => columns.includes(col)) ? ', basiVers = basiVers + 1' : ''
-		} WHERE id = ?`.replace('groups', '`groups`');
+		} WHERE id = ?`;
 		await con.execute(sqlQuery, [...values, userID]);
 
 		// NEW USER PATH -------------------------------------------------------
@@ -252,6 +250,7 @@ async function Setup(req, res) {
 		if (deviceData) {
 			response.deviceSalt = deviceData.salt;
 			response.deviceKey = deviceData.deviceKey;
+			response.pdkSalt = deviceData.pdkSalt;
 		}
 		res.status(200).json(delFalsy(response));
 	} catch (error) {

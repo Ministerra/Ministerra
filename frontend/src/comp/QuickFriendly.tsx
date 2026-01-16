@@ -122,8 +122,8 @@ function QuickFriendly(props) {
 					<Editor quickType={quick} showMan={showMan} brain={brain} />
 					<button
 						onClick={() => showMan('quick', false)}
-						className='bgTransXs tRed shaBlue    marBotXxs bGlassSubtle  posRel borderBot     tRed zinMax downLittle  posRel padAllXs boldM fs10   boRadXxs w50 marAuto mw30 marTopXxl '>
-						skrýt formulář
+						className='bgTransXs tRed shaBlue    marBotXxs bGlassSubtle  posRel borderBot     tRed zinMax downLittle  posRel padAllXs boldM fs10   boRadXxs w50 marAuto mw30  '>
+						zavřít formulář
 					</button>
 				</editor-wrapper>
 			)}

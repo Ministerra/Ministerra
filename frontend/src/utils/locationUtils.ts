@@ -22,30 +22,31 @@ export function processLocationItems(items) {
 			.trim();
 		const country = regionalStructure?.find(r => r.type === 'regional.country')?.name;
 		const part = regionalStructure?.find(r => r.type === 'regional.municipality_part')?.name || null;
-		// TYPE MAPPING --------------------------------------------------------
-		// Steps: convert provider types into our internal enum so downstream filters can reason about it without knowing provider strings.
-		const is =
-			type === 'regional.municipality'
-				? 'city'
-				: type === 'regional.municipality_part'
-				? 'part'
-				: type === 'poi'
-				? 'place'
-				: type === 'regional.street'
-				? 'street'
-				: type === 'regional.address'
-				? 'address'
-				: 'location';
+	// TYPE MAPPING --------------------------------------------------------
+	// Steps: convert provider types into our internal enum so downstream filters can reason about it without knowing provider strings.
+	// Named 'locaType' to avoid conflict with JWT 'is' property
+	const locaType =
+		type === 'regional.municipality'
+			? 'city'
+			: type === 'regional.municipality_part'
+			? 'part'
+			: type === 'poi'
+			? 'place'
+			: type === 'regional.street'
+			? 'street'
+			: type === 'regional.address'
+			? 'address'
+			: 'location';
 		// HASH ID -------------------------------------------------------------
 		// Steps: generate hash only when coords exist (or city exists) so we don’t create stable-but-wrong keys for coord-less suggestions.
 		const hasValidPosition = position && (position.lat || position.lon);
-		const hashID = hasValidPosition ? generateLocationHash({ city: is === 'city' ? name : city, part: is === 'part' ? name : part, lat: position.lat, lng: position.lon }) : null;
+		const hashID = hasValidPosition ? generateLocationHash({ city: locaType === 'city' ? name : city, part: locaType === 'part' ? name : part, lat: position.lat, lng: position.lon }) : null;
 
-		return {
-			is,
-			...(is === 'city' ? { city: name, ...(hashID && { hashID }) } : { city }),
-			...((is === 'place' || is === 'street' || is === 'address') && { place: name }), // PLACE FIELD: stores name for POI, street, and address types ----
-			...(is === 'part' ? { part: name, ...(hashID && { hashID }) } : { part }),
+	return {
+		locaType,
+		...(locaType === 'city' ? { city: name, ...(hashID && { hashID }) } : { city }),
+		...((locaType === 'place' || locaType === 'street' || locaType === 'address') && { place: name }), // PLACE FIELD: stores name for POI, street, and address types ----
+		...(locaType === 'part' ? { part: name, ...(hashID && { hashID }) } : { part }),
 			location,
 			country,
 			region,

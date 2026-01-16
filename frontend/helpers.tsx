@@ -35,7 +35,7 @@ function decodeGeohashToLatitudeLongitude(geohashString) {
 
 const { evePrivIdx, eveOwnerIdx, eveCityIDIdx, eveTypeIdx, eveStartsIdx, eveGeohashIdx, eveSurelyIdx, eveMaybeIdx, eveCommentsIdx, eveScoreIdx, eveBasiVersIdx, eveDetailsVersIdx } =
 	EVENT_META_INDEXES;
-const { userPrivIdx, userAgeIdx, userGenderIdx, userIndisIdx, userBasicsIdx, userGroupsIdx, userScoreIdx, userImgVersIdx, userBasiVersIdx, userAttendIdx } = USER_META_INDEXES;
+const { userPrivIdx, userAgeIdx, userGenderIdx, userIndisIdx, userBasicsIdx, userTraitsIdx, userScoreIdx, userImgVersIdx, userBasiVersIdx, userAttendIdx } = USER_META_INDEXES;
 // TODO implement ends of events into metas (big task)
 
 // INFO if users create a friendly meeting, he shouldd be able to chhoose between surely / maybe attendance, AND this attendance should be inicated on the cardd / event as long as there is no user having th surely attenance. otherwise it wouldn´t be apparernt which friendlyMeetings are serius and which ones are "lets see what happens"
@@ -193,13 +193,13 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 
 		// USER METAS PROCESSING -------------------------------------------------------------------------
 		for (const [id, meta] of Object.entries(userMetas)) {
-			const [priv, age, gender, indis, basics, groups, score, imgVers, basiVers, attend] = [
+			const [priv, age, gender, indis, basics, traits, score, imgVers, basiVers, attend] = [
 				meta[userPrivIdx],
 				meta[userAgeIdx],
 				meta[userGenderIdx],
 				meta[userIndisIdx] || '',
 				meta[userBasicsIdx] || '',
-				meta[userGroupsIdx] || '',
+				meta[userTraitsIdx] || '',
 				meta[userScoreIdx],
 				meta[userImgVersIdx],
 				meta[userBasiVersIdx],
@@ -224,7 +224,7 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 				id: id,
 				sync: contSync,
 				state: user && user.state === 'basi' ? user.state : 'meta',
-				groups: groups?.split(',').map(Number) || [],
+				traits: traits?.split(',') || [],
 				sortProps: {},
 				basics: splitNum(basics),
 				indis: splitNum(indis),
@@ -418,7 +418,7 @@ export function splitStrgOrJoinArr(obj, method = 'split') {
 			else if (method === 'join' && Array.isArray(obj[key]) && !obj[key].some(item => typeof item === 'object')) obj[key] = obj[key].join(delimiter);
 		}
 	};
-	['basics', 'indis', 'groups', 'cities'].forEach(key => applyMethod(key, ',', key === 'groups' ? false : true));
+	['basics', 'indis', 'traits', 'cities'].forEach(key => applyMethod(key, ',', key === 'traits' ? false : true));
 	['favs', 'exps'].forEach(key => applyMethod(key, '|'));
 
 	return obj;
@@ -545,7 +545,7 @@ export function delUndef(obj: any, empStr = false, zeros = false, falses = false
 
 // GET CONTENT OR SHERLOCK  -AVAIL -------------------------------------------------------------
 export function getFilteredContent({ what, brain, snap = {}, event = {}, show = {}, avail, sherData, isForMap }: any) {
-	let [curCitiesSet, arrs] = [new Set(snap.cities || brain.user.curCities), ['indis', 'basics', 'groups']];
+	let [curCitiesSet, arrs] = [new Set(snap.cities || brain.user.curCities), ['indis', 'basics', 'traits']];
 	let [items, sherAvail] = [[], { genders: [], minAge: 0, maxAge: 0, ...arrs.reduce((acc, key) => ({ ...acc, [key]: new Set() }), {}) }];
 	const { time = 'anytime', types = [], contView = 'events', sort } = snap || {};
 
@@ -706,8 +706,8 @@ export const getAwards = sum => {
 };
 
 let eventBadges = {};
-const badgeArrs = ['indis', 'basics', 'groups'];
-//todo do different percentage for groups for badges, or maybe even counts
+const badgeArrs = ['indis', 'basics', 'traits'];
+//todo do different percentage for traits for badges, or maybe even counts
 // TODO move the logic for new content into process metas function, keep this only for a single item
 // TODO probably convert all interactions to objects for immediate lookupupdateInteractions
 
@@ -788,7 +788,7 @@ export function setPropsToContent(mode, items, brain, isNewCont = false) {
 				if (isNewCont) {
 					for (const [eveID, inter] of (item.eveInters || []) as any[]) {
 						if (inter === 'sur') {
-							eventBadges[eveID] ??= { indis: {}, basics: {}, groups: {} };
+							eventBadges[eveID] ??= { indis: {}, basics: {}, traits: {} };
 							for (const arr of badgeArrs) for (const i of item[arr]) eventBadges[eveID][arr][i] = (eventBadges[eveID][arr][i] || 0) + 1;
 						}
 					}

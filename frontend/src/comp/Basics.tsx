@@ -77,7 +77,7 @@ function Basics(props) {
 					.filter(id => nowAt === 'setup' || avail?.basics.includes(id))
 					.map(id => (
 						<button
-							style={{ width: '100%', ...(bWidth && { maxWidth: `${bWidth}px` }) }}
+							style={{ width: '100%', ...(bWidth && { maxWidth: `${Math.min(200, bWidth)}px` }) }}
 							key={id}
 							className={`${invertButton === id ? 'xBold' : ''} ${nowAt !== 'setup' && !avail.basics.includes(id) ? 'opaque' : ''}  ${
 								data.basics?.includes(id) ? 'bInter bGlassSubtle  fs7 bInsetBlueTopXs posRel bold shaCon posRel' : 'fs7 borderLight '

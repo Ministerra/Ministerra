@@ -6,7 +6,7 @@ export const PRIVACIES_SET = new Set(Object.values(PRIVACIES));
 
 export const META_INDEXES_SOURCE = {
 	event: { priv: 0, owner: 1, cityID: 2, type: 3, starts: 4, geohash: 5, surely: 6, maybe: 7, comments: 8, score: 9, basiVers: 10, detaVers: 11 },
-	user: { priv: 0, age: 1, gender: 2, indis: 3, basics: 4, groups: 5, score: 6, imgVers: 7, basiVers: 8, attend: 9 },
+	user: { priv: 0, age: 1, gender: 2, indis: 3, basics: 4, traits: 5, score: 6, imgVers: 7, basiVers: 8, attend: 9 },
 } as const;
 export const EVENT_META_INDEXES = Object.fromEntries(Object.entries(META_INDEXES_SOURCE.event).map(([key, value]) => [`eve${capitalize(key)}Idx`, value]));
 export const USER_META_INDEXES = Object.fromEntries(Object.entries(META_INDEXES_SOURCE.user).map(([key, value]) => [`user${capitalize(key)}Idx`, value]));
@@ -128,7 +128,7 @@ export const BASIC_TOPICS = new Map(
 	}).map(([key, value]) => [parseInt(key), value.trim()])
 );
 
-export const USER_GROUPS = new Map(
+export const USER_TRAITS = new Map(
 	Object.entries({
 		Expertise: new Map(
 			Object.entries({
@@ -288,7 +288,7 @@ export const EVENT_COLUMNS: string = ['id', ...EVENT_META_KEYS, ...EVENT_BASICS_
 	.join(',');
 
 export const USER_MINI_KEYS: string[] = ['id', 'first', 'last', 'imgVers'];
-export const USER_META_KEYS: string[] = ['id', 'priv', 'birth', 'gender', 'indis', 'basics', 'groups', 'score', 'imgVers', 'basiVers'];
+export const USER_META_KEYS: string[] = ['id', 'priv', 'birth', 'gender', 'indis', 'basics', 'traits', 'score', 'imgVers', 'basiVers'];
 export const USER_BASI_KEYS: string[] = ['first', 'last', 'shortDesc', 'exps', 'favs'];
 export const USER_GENERIC_KEYS: string[] = [...USER_META_KEYS, ...USER_BASI_KEYS];
 export const USER_UTILITY_KEYS: string[] = ['cities', 'askPriv', 'defPriv'];
@@ -396,7 +396,7 @@ export const MAX_COUNTS = {
 	cities: 4,
 	indis: 5,
 	basics: 8,
-	groups: 10,
+	traits: 10,
 } as const;
 
 export const FOUNDATION_LOADS = { init: 'init', fast: 'fast', auth: 'auth', cities: 'cities', topEvents: 'topEvents' } as const;
@@ -416,7 +416,7 @@ export const INTERVALS = {
 
 export const ALLOWED_IDS = {
 	indis: new Set(Array.from(USER_INDICATORS.keys())),
-	groups: new Set(Array.from(USER_GROUPS.values()).flatMap(group => Array.from(group.keys()))),
+	traits: new Set(Array.from(USER_TRAITS.values()).flatMap(trait => Array.from(trait.keys()))),
 	basics: new Set(Array.from(BASIC_TOPICS.keys())),
 	type: new Set([FRIENDLY_MEETINGS, CULTURAL_EVENTS, PROFESSIONAL_EVENTS, BENEFICIAL_EVENTS].flatMap(event => Array.from(event.keys()))),
 } as const;

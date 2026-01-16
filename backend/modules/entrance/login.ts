@@ -75,14 +75,11 @@ export async function login({ email, pass, print, devID }, con) {
 	if (print?.length < 8 || print?.length > 128) throw new Error('invalidDevicePrint');
 	if (!devID) throw new Error('missingDeviceID');
 
-	let frozen = false;
 	const loginCols = 'id, created, pass, flag, cities, status';
-	const getUserQ = table => `SELECT ${loginCols} FROM ${table} WHERE email = ? LIMIT 1`;
 
 	// USER LOOKUP -------------------------------------------------------------
-	// Steps: try users first, then fro_users; we treat fro_users as recoverable state when user logs back in.
-	let [[u]] = await con.execute(getUserQ('users'), [email]);
-	if (!u && ([[u]] = await con.execute(getUserQ('fro_users'), [email]))) frozen = true;
+	// Steps: query users table directly; frozen users stay in same table with flag='fro'.
+	const [[u]] = await con.execute(`SELECT ${loginCols} FROM users WHERE email = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [email]);
 
 	// CREDENTIAL CHECK --------------------------------------------------------
 	// Steps: fail fast without leaking extra info; bcrypt compare is the canonical guard.
@@ -93,14 +90,12 @@ export async function login({ email, pass, print, devID }, con) {
 	// Steps: return sentinel payloads so the frontend can enter verify/intro flows without full auth issuance.
 	if (u.status === 'verifyMail') return { payload: 'verifyMail' };
 
-	if (frozen) {
-		await con.execute(`UPDATE fro_users SET flag = "unf" WHERE id = ?`, [u.id]);
+	// FROZEN USER UNFREEZE ----------------------------------------------------
+	// Steps: user with flag='fro' is logging back in; mark for unfreezing, task will complete the process.
+	if (u.flag === 'fro') {
+		await con.execute(`UPDATE users SET flag = 'unf' WHERE id = ?`, [u.id]);
 		return { payload: 'unfreezing' };
 	}
-
-	// FROZEN FLAG REPAIR ------------------------------------------------------
-	// Steps: if flag was set but tasks haven’t reconciled yet, clear it so the session can proceed normally.
-	if (u.flag === 'fro') await con.execute(`UPDATE users SET flag = "ok" WHERE id = ?`, [u.id]);
 
 	const isIntroduction = u.status === 'unintroduced';
 	const auth = getAuth(u.id),
@@ -113,6 +108,7 @@ export async function login({ email, pass, print, devID }, con) {
 			authExpiry: auth.expiry,
 			deviceSalt: dev.salt,
 			deviceKey: dev.deviceKey,
+			pdkSalt: dev.pdkSalt,
 			...(isIntroduction ? { status: u.status } : { cities: u.cities }),
 			...(auth.previousAuth && { previousAuth: auth.previousAuth, previousEpoch: auth.previousEpoch }),
 		},
@@ -151,7 +147,7 @@ export async function logoutDevice({ userID, devID }, con) {
 export async function logoutEverywhere({ pass, devID, userID }, con) {
 	// EVERYWHERE LOGOUT --------------------------------------------------------
 	// Steps: confirm password, then revoke all other devices (keep current access token until caller clears cookie).
-	const [[{ pass: h }]] = await con.execute(`SELECT pass FROM users WHERE id = ? LIMIT 1`, [userID]);
+	const [[{ pass: h }]] = await con.execute(`SELECT pass FROM users WHERE id = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [userID]);
 	if (!(await bcrypt.compare(pass, h))) throw new Error('wrongPass');
 	await logoutUserDevices({ userID, devID, excludeCurrentDevice: true, reason: 'logout', con });
 	return { payload: 'loggedOutEverywhere' };

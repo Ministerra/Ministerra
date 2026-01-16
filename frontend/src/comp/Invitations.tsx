@@ -90,7 +90,7 @@ function Invitations({
 	return (
 		<invitations-container
 			onClick={e => e.stopPropagation()}
-			class={`w100 ${tabMode ? 'mw180' : 'mw170'} marAuto zinMaXl posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXxl ' : ''} ${topPadding ? 'marTopS' : ''} `}
+			class={`w100 ${tabMode ? 'mw150' : 'mw150'} marAuto zinMaXl posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXl ' : ''} ${topPadding ? 'marTopS' : ''} `}
 			ref={containerRef}>
 			{!showUsersOnly && (
 				<upper-wrapper class='w100 padBotXxs '>
@@ -113,7 +113,7 @@ function Invitations({
 								onClick={() => setTabMode('')}
 								className={`${
 									tabMode ? 'tRed textSha fs10' : 'tDarkBlue fs10'
-								} posRel  xBold borBot2 bGlassSubtle  padHorL padVerXxs  posAbs topCen  zinMaXl    sideBors marBotXxxs  marAuto `}>
+								} posRel  xBold borBot2 bGlassSubtle   padHorL padVerXxs  posAbs topCen  zinMaXl    sideBors marBotXxxs  marAuto `}>
 								{tabMode ? `Zpět na zdroje ${isUserToEvents ? 'událostí' : 'uživatelů'}` : `${isUserToEvents ? 'Vyber zdroj události' : 'Vyber zdroj uživatelů'}`}
 							</button>
 						)}
@@ -139,7 +139,7 @@ function Invitations({
 												if (m === 'search' && !isUserToEvents) setSearchCat(null);
 												setTabMode(prev => (prev === m ? '' : m));
 											}}
-											className={`   bBor  padAllS imw8   iw80   bInsetBlueTopXs2   borderTop      ${
+											className={` bHover  bBor  padAllS imw8   iw80   bInsetBlueTopXs2   borderTop      ${
 												tabMode === m
 													? 'marAuto boRadM posAbs topCen maskLowXs upTiny bgTransXs  mw40  w100 bInsetBlueTopXs fs7    zinMaXl bgTransXs padHorM      xBold '
 													: 'grow boldXs fs7    posRel   '

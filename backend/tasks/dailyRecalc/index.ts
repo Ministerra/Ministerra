@@ -35,11 +35,11 @@ async function dailyRecalcWorker(con, redis) {
 		// Steps: fetch the primary ID sets (inactive/frozen/deleted/canceled/etc.) serially so failures are surfaced early and log context is clean.
 		const mainQueries = {
 				inaUse: `SELECT user as id FROM logins WHERE last_seen < CURDATE() - INTERVAL 3 MONTH AND inactive = FALSE`,
-				froUse: `SELECT id FROM fro_users WHERE flag = 'fro'`,
-				delFroUse: `SELECT id FROM fro_users WHERE created < CURDATE() - INTERVAL 6 MONTH AND flag != 'unf'`,
-				unfUse: `SELECT id FROM fro_users WHERE flag = 'unf'`,
-				delEve: `SELECT id FROM rem_events WHERE flag = 'del'`,
-				delUse: `SELECT id FROM rem_users WHERE flag = 'del'`,
+				froUse: `SELECT id FROM users WHERE flag = 'fro' AND nextTask = 'dailyRecalc'`,
+				delFroUse: `SELECT id FROM users WHERE flag = 'fro' AND created < CURDATE() - INTERVAL 6 MONTH`,
+				unfUse: `SELECT id FROM users WHERE flag = 'unf'`,
+				delEve: `SELECT id FROM events WHERE flag = 'del' AND nextTask = 'dailyRecalc'`,
+				delUse: `SELECT id FROM users WHERE flag = 'del' AND nextTask = 'dailyRecalc'`,
 				canEve: `SELECT id FROM events WHERE flag = 'can' AND (starts < NOW() OR changed < CURDATE() - INTERVAL 3 MONTH)`,
 				newNameUse: `SELECT user as id FROM changes_tracking WHERE changed_name = TRUE`,
 			},
@@ -66,7 +66,7 @@ async function dailyRecalcWorker(con, redis) {
 			`UPDATE events SET live_until = GREATEST(live_until, ${endsBoundaryExpr}) WHERE flag = 'ok' AND starts < NOW() AND type NOT LIKE 'a%' AND ends IS NOT NULL AND live_until IS NOT NULL AND live_until < ${endsBoundaryExpr} LIMIT 50000`
 		);
 
-		const [pastEve] = await con.query(`SELECT id, cityID, type FROM events WHERE live_until <= NOW() AND flag != 'pas'`),
+		const [pastEve] = await con.query(`SELECT id, cityID, type FROM events WHERE live_until <= NOW() AND flag NOT IN ('pas', 'del')`),
 			pastEveIDs = pastEve.map(e => e.id);
 		const allDelUserIDs = new Set([...delUse, ...delFroUse]),
 			remEventsIDs = new Set([...delEve, ...canEve]);

@@ -36,7 +36,7 @@ function HeaderImage({ fadedIn, isLastVisible = false, thisIs, currentSection, i
 			title: 'Nahraj profilovou fotku',
 			subtitle: 'Přidej svou fotografii, abys vypadal důvěryhodněji a měl větší šanci na úspěšné navázání kontaktů.',
 		},
-		Groups: {
+		Traits: {
 			title: 'Přidej se k zájmovým skupinám',
 			subtitle: 'Připoj se ke skupinám, které odpovídají tvým zájmům. Najdeš v nich lidi se stejnými koníčky a vášněmi.',
 		},

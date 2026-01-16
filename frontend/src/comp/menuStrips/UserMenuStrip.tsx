@@ -111,7 +111,7 @@ const UserMenuStrip = props => {
 
 	// RENDER ------------------------------------------------------------------
 	return (
-		<user-menu class={`zinMaXl posRel  w100`} onClick={e => e.stopPropagation()}>
+		<user-menu class={`zin3000 point posRel  w100`} onClick={e => e.stopPropagation()}>
 			{!hide && <MenuButtons {...{ isCardOrStrip, nowAt, src, thisIs: 'user', selButton, setSelButton, modes, protocol, setMode, isBlocked: status.blocked, galleryMode }} />}
 
 			{/* TRUST CONFIRMATION */}

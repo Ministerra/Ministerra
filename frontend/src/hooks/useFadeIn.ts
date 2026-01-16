@@ -7,7 +7,7 @@ const COMPS = {
 	foundation: ['Foundation'],
 	event: ['Image', 'TitleTexts', 'Content', 'Texts', 'BsEvent', 'RatingBs', 'TextArea', 'Entrance', 'Discussion', 'SortMenu'],
 	home: ['Header', 'HeaderTexts', 'Quicks', 'CatFilter', 'Tools', 'Content'],
-	setup: ['Personals', 'Cities', 'Indis', 'Basics', 'Favex', 'Picture', 'Groups'],
+	setup: ['Personals', 'Cities', 'Indis', 'Basics', 'Favex', 'Picture', 'Traits'],
 	editor: ['Image', 'CatFilter', 'Filter', 'IntroTexts', 'Cropper', 'EventInfo'],
 	quick: ['fadedIn'],
 };
@@ -52,7 +52,7 @@ function useFadeIn({ mode, dontFadeIn = false }) {
 			timeoutIds.current.push(id);
 		});
 	}, [mode, dontFadeIn, reinitKey]);
-	
+
 	return [fadedIn, wrappedSetFadedIn];
 }
 

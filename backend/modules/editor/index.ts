@@ -45,7 +45,6 @@ async function Editor(req, res) {
 		locaMode,
 		place,
 		lat,
-		owner,
 		lng,
 		priv,
 		location,
@@ -73,6 +72,7 @@ async function Editor(req, res) {
 		if (eventID) {
 			const raw = await redis.hgetBuffer(REDIS_KEYS.eveTitleOwner, eventID);
 			const [, ownerVal] = raw ? decode(raw) : [];
+			logger.debug('ownershipGate', { ownerVal, userID });
 			if (ownerVal !== userID) throw new Error('not owner');
 		}
 
@@ -127,7 +127,7 @@ async function Editor(req, res) {
 		// PREPARE VARIABLES ---------------------------------------------------
 		// Steps: build SQL columns/values list from sanitized payload; version counters are computed later from which field groups changed.
 		const [values, cols, versCols] = [[], [], []];
-		const vars = { priv, owner, cityID, title, type, shortDesc, place, part, location, starts, ends, meetHow, meetWhen, detail, contacts, fee, links, takeWith, organizer, imgVers };
+		const vars = { priv, cityID, title, type, shortDesc, place, part, location, starts, ends, meetHow, meetWhen, detail, contacts, fee, links, takeWith, organizer, imgVers };
 
 		// ['starts', 'ends', 'meetWhen'].forEach(k => vars[k] && (vars[k] = new Date(vars[k]).toISOString().slice(0, 19).replace('T', ' ')));
 		for (const [key, value] of Object.entries(vars)) {
@@ -153,9 +153,13 @@ async function Editor(req, res) {
 			// GENERATE SNOWFLAKE ID ---
 			// Steps: generate globally unique ID, insert event, run side effects.
 			try {
-				eventID = generateIDString();
+				// testUser has id 1 and test event as well (this is for API testing purposes only)
+				eventID = userID == '1' && !(await con.execute('SELECT id FROM events WHERE id = 1 LIMIT 1'))[0][0]?.id ? '1' : generateIDString();
 				const placeholders = cols.map(c => (c === 'coords' ? 'Point(?, ?)' : '?'));
-				await con.execute(`INSERT INTO events (id, ${cols.join(', ')}, owner, flag) VALUES (?, ${placeholders.join(',')}, ?, 'new')`, [eventID, ...values, userID]);
+				const Q = `INSERT INTO events (id, ${cols.join(', ')}, owner, flag) VALUES (?, ${placeholders.join(',')}, ?, 'new')`;
+				const P = [eventID, ...values, userID];
+				logger.debug('createEvent', { Q, P });
+				await con.execute(Q, P);
 				createdID = eventID;
 
 				// SIDE EFFECTS ---
@@ -179,13 +183,7 @@ async function Editor(req, res) {
 			const isFriend = ev.type.startsWith('a');
 			// Prevent changing critical fields (type, city) for friendly events or across type boundaries
 			// Guard vars.type checks since type may be undefined when user isn't changing it
-			if (
-				(isFriend
-					? (vars.cityID && vars.cityID != ev.cityID) || (vars.type !== undefined && (vars.type != ev.type || !vars.type.startsWith('a')))
-					: vars.type !== undefined && vars.type.startsWith('a')) ||
-				(vars.priv && ev.priv !== vars.priv)
-			)
-				throw new Error('badRequest');
+			if ((isFriend && vars.cityID && vars.cityID != ev.cityID) || (vars.type !== undefined && vars.type != ev.type) || (vars.priv && ev.priv !== vars.priv)) throw new Error('badRequest');
 
 			async function editEventInSQL() {
 				// VERSION INCREMENTS ----------------------------------------------
@@ -245,19 +243,14 @@ async function Editor(req, res) {
 				const targetCityMetas = `${finPriv === 'pub' ? REDIS_KEYS.cityPubMetas : REDIS_KEYS.cityMetas}:${targetCityID}`;
 				multi.hset(targetCityMetas, eventID, encodedMeta);
 				if (await redis.hexists(REDIS_KEYS.topEvents, eventID)) multi.hset(REDIS_KEYS.topEvents, eventID, encodedMeta);
-				multi.hset(`${REDIS_KEYS.cityFiltering}:${targetCityID}`, eventID, `${finPriv}:${vars.owner || curOwner || ''}`);
+				multi.hset(`${REDIS_KEYS.cityFiltering}:${targetCityID}`, eventID, `${finPriv}:${curOwner || ''}`);
 
-				// Update title/owner lookup ifp changed
-				if (title || owner) {
-					let [curTitle, curOwner] = [null, null];
+				// Update title lookup if changed
+				if (title) {
 					const rawTO = await redis.hgetBuffer(REDIS_KEYS.eveTitleOwner, eventID);
-					if (rawTO) [curTitle, curOwner] = decode(rawTO);
-					else {
-						const [[row]] = await con.execute('SELECT title, owner FROM events WHERE id = ?', [eventID]);
-						if (row) (curTitle = row.title), (curOwner = row.owner);
-					}
-					const [newName, newOwner] = [title || curTitle, owner || curOwner || userID];
-					if (newName && newOwner) multi.hset(REDIS_KEYS.eveTitleOwner, eventID, encode([(newName || '').length > 40 ? newName.slice(0, 39) + '…' : newName, newOwner]));
+					const [, existingOwner] = rawTO ? decode(rawTO) : [null, curOwner];
+					const truncatedTitle = title.length > 40 ? title.slice(0, 39) + '…' : title;
+					multi.hset(REDIS_KEYS.eveTitleOwner, eventID, encode([truncatedTitle, existingOwner || userID]));
 				}
 				await multi.exec();
 

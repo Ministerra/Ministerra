@@ -12,7 +12,9 @@ const logger = getLogger('Task:DailyRecalc:FinalCleanup');
 export async function refreshTop100Events({ con, redis }) {
 	let rows = [];
 	try {
-		rows = (await con.execute(`SELECT id FROM events WHERE starts > CURDATE() AND priv = 'pub' AND type NOT LIKE 'a%' ORDER BY 3 * surely + 2 * maybe + score DESC LIMIT 100`))[0];
+		rows = (
+			await con.execute(`SELECT id FROM events WHERE starts > CURDATE() AND priv = 'pub' AND type NOT LIKE 'a%' AND flag != 'del' ORDER BY 3 * surely + 2 * maybe + score DESC LIMIT 100`)
+		)[0];
 	} catch (e) {
 		logger.error('dailyRecalc.top_events_query_failed', { e });
 		throw e;
@@ -45,9 +47,6 @@ export async function executeFinalQueries({ con, redis, inaUse }) {
 	const queries = [
 		...(inaUse.size ? [`UPDATE logins SET inactive = TRUE WHERE user IN (${getIDsString(inaUse)})`] : []),
 		`UPDATE users SET status = "user" WHERE status = "newUser" AND created < CURDATE() - INTERVAL 3 MONTH`,
-		`UPDATE rem_events SET flag = "don" WHERE flag = "del"`,
-		`UPDATE rem_users SET flag = "don" WHERE flag = "del"`,
-		`UPDATE fro_users SET flag = "don" WHERE flag = "fro"`,
 		`UPDATE changes_tracking SET changed_name = FALSE WHERE changed_name = TRUE`,
 		`DELETE FROM rjwt_tokens WHERE created < NOW() - INTERVAL 3 DAY`,
 		`DELETE FROM user_alerts WHERE created < NOW() - INTERVAL 3 MONTH`,

@@ -1,4 +1,4 @@
-import { BASIC_TOPICS, USER_GROUPS } from '../../../shared/constants';
+import { BASIC_TOPICS, USER_TRAITS } from '../../../shared/constants';
 
 // EVENT BADGES COMPONENT DEFINITION ---
 // Displays summarized demographic and interest indicators based on confirmed event participants
@@ -8,9 +8,9 @@ function EventBadges(props) {
 
 	const hasIndis = obj.badges.indis?.length > 0;
 	const hasBasics = obj.badges.basics?.length > 0;
-	const hasGroups = obj.badges.groups?.length > 0;
+	const hasTraits = obj.badges.traits?.length > 0;
 
-	if (!hasIndis && !hasBasics && !hasGroups) return null;
+	if (!hasIndis && !hasBasics && !hasTraits) return null;
 
 	return (
 		<event-badges class={isEvent ? 'marTopS gapXs marBotXs flexCol justCen w100' : 'flexRow aliCen wrap gapXs'}>
@@ -51,22 +51,22 @@ function EventBadges(props) {
 				)}
 
 				{/* INTEREST GROUPS --- */}
-				{hasGroups && (
-					<groups-wrapper class={`flexRow aliCen ${isEvent ? 'fs8' : 'fs7'} boRadXxs padHorXxs bGlassSubtle`}>
+				{hasTraits && (
+					<traits-wrapper class={`flexRow aliCen ${isEvent ? 'fs8' : 'fs7'} boRadXxs padHorXxs bGlassSubtle`}>
 						<span className='boldM tBlue marRigXxs'>Skupiny:</span>
 						<span className='boldXs tDarkBlue'>
-							{obj.badges.groups
-								.map(group => {
-									// Search in all group categories
-									for (const [, map] of USER_GROUPS) {
-										if (map.has(String(group))) return map.get(String(group));
+							{obj.badges.traits
+								.map(trait => {
+									// Search in all trait categories
+									for (const [, map] of USER_TRAITS) {
+										if (map.has(String(trait))) return map.get(String(trait));
 									}
 									return null;
 								})
 								.filter(Boolean)
 								.join(', ')}
 						</span>
-					</groups-wrapper>
+					</traits-wrapper>
 				)}
 			</div>
 		</event-badges>

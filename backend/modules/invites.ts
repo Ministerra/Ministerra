@@ -61,13 +61,13 @@ async function Invites(req: { body: InviteRequest }, res: Response) {
 				? `SELECT u.id, u.first, u.last, u.imgVers, ei.created, ei.flag, ei.note
 				   FROM eve_invites ei
 				   JOIN users u ON u.id = ei.user
-				   WHERE ei.user2 = ? AND ei.event = ?
+				   WHERE ei.user2 = ? AND ei.event = ? AND u.flag NOT IN ('del', 'fro')
 				   ORDER BY ei.created DESC
 				   LIMIT 20 OFFSET ?`
 				: `SELECT u.id, u.first, u.last, u.imgVers, ei.created, ei.flag, ei.note
 				   FROM eve_invites ei
 				   JOIN users u ON u.id = ei.user2
-				   WHERE ei.user = ? AND ei.event = ?
+				   WHERE ei.user = ? AND ei.event = ? AND u.flag NOT IN ('del', 'fro')
 				   ORDER BY ei.created DESC
 				   LIMIT 20 OFFSET ?`;
 

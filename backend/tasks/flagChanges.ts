@@ -21,9 +21,9 @@ async function processFlagChanges(con, redis) {
 		const [deletionsPipe, metasPipe, basiDetaPipe, attenPipe] = Array.from({ length: 4 }, () => redis.pipeline());
 
 		// FETCH SQL FLAGS -------------------------------------------------------
-		// Steps: read the authoritative “what changed” signals from SQL first so redis work can be driven deterministically from the DB state.
-		const eventsQ = `SELECT ${EVENT_COLUMNS} FROM events e INNER JOIN cities c ON e.cityID = c.id WHERE e.flag IN ('new', 'del')`;
-		const usersQ = `SELECT id, flag, priv FROM users u WHERE u.flag IN ('fro', 'del', 'pri') GROUP BY u.id`;
+		// Steps: read rows where nextTask='flagChanges' - these need immediate redis cache updates.
+		const eventsQ = `SELECT ${EVENT_COLUMNS} FROM events e INNER JOIN cities c ON e.cityID = c.id WHERE e.nextTask = 'flagChanges'`;
+		const usersQ = `SELECT id, flag, priv FROM users u WHERE u.nextTask = 'flagChanges' GROUP BY u.id`;
 
 		let events, users;
 		try {
@@ -34,8 +34,16 @@ async function processFlagChanges(con, redis) {
 		}
 
 		const [froUse, delUse] = [new Set(), new Set()];
-		events.forEach(({ flag, id }, idx) => (flag === 'new' ? newEve.push(events[idx]) : remEve.add(id)));
-		users.forEach(user => (user.flag === 'pri' ? privUse.set(user.id, user.priv) : ((user.flag === 'fro' ? froUse : delUse).add(user.id), remUse.add(user.id))));
+		events.forEach(({ flag, id }, idx) => (flag === 'new' ? newEve.push(events[idx]) : flag === 'del' ? remEve.add(id) : null));
+		users.forEach(user =>
+			user.flag === 'pri'
+				? privUse.set(user.id, user.priv)
+				: user.flag === 'fro'
+				? (froUse.add(user.id), remUse.add(user.id))
+				: user.flag === 'del'
+				? (delUse.add(user.id), remUse.add(user.id))
+				: null
+		);
 
 		if (!remEve.size && !remUse.size && !newEve.length && !privUse.size) {
 			return { message: 'No flag changes to process' };
@@ -162,27 +170,29 @@ async function processFlagChanges(con, redis) {
 		if (affectedEventIDs.length) affectedEventIDs.forEach(id => invalidateEventCache(id));
 		if (affectedUserIDs.length) affectedUserIDs.forEach(id => invalidateUserCache(id));
 
-		// SQL CLEANUP/ARCHIVE ---------------------------------------------------
-		// Steps: build SQL that (1) clears new/pri flags, (2) archives deletions into rem_* tables, (3) deletes rows, and run it in an atomic sequence.
+		// SQL FLAG UPDATES -------------------------------------------------------
+		// Steps: set nextTask='dailyRecalc' for rows needing cleanup, or NULL for rows fully processed here.
 		const queries = [];
-		if (newEveIds.length) queries.push(`UPDATE events SET flag = 'ok' WHERE id IN (${getIDsString(newEveIds)})`);
-		if (remEve.size) {
-			const remEveIds = getIDsString(remEve);
-			// Column names must match rem_events schema exactly
-			// Using SELECT * assumes schemas match, but field list is safer if schemas drifted
-			queries.push(`INSERT INTO rem_events SELECT * FROM events WHERE id IN (${remEveIds})`);
-			queries.push(`DELETE FROM events WHERE id IN (${remEveIds})`);
-		}
 
-		if (remUse.size) {
-			if (delUse.size) queries.push(`INSERT INTO rem_users SELECT * FROM users WHERE id IN (${getIDsString(delUse)})`);
-			if (froUse.size) queries.push(`INSERT INTO fro_users SELECT * FROM users WHERE id IN (${getIDsString(froUse)})`);
-			if (remUse.size) queries.push(`DELETE FROM users WHERE id IN (${getIDsString(remUse)})`);
-		}
+		// NEW EVENTS ---
+		// Mark as ok, clear nextTask (no further processing needed)
+		if (newEveIds.length) queries.push(`UPDATE events SET flag = 'ok', nextTask = NULL WHERE id IN (${getIDsString(newEveIds)})`);
 
-		if (privUse.size) {
-			queries.push(`UPDATE users SET flag = 'ok' WHERE id IN (${getIDsString([...privUse.keys()])})`);
-		}
+		// DELETED EVENTS ---
+		// Keep flag='del', advance to dailyRecalc for junction table cleanup
+		if (remEve.size) queries.push(`UPDATE events SET nextTask = 'dailyRecalc' WHERE id IN (${getIDsString(remEve)})`);
+
+		// FROZEN USERS ---
+		// Keep flag='fro', advance to dailyRecalc for attendance downgrade
+		if (froUse.size) queries.push(`UPDATE users SET nextTask = 'dailyRecalc' WHERE id IN (${getIDsString(froUse)})`);
+
+		// DELETED USERS ---
+		// Keep flag='del', advance to dailyRecalc for full cleanup
+		if (delUse.size) queries.push(`UPDATE users SET nextTask = 'dailyRecalc' WHERE id IN (${getIDsString(delUse)})`);
+
+		// PRIVACY CHANGES ---
+		// Restore flag='ok', clear nextTask (no further processing needed)
+		if (privUse.size) queries.push(`UPDATE users SET flag = 'ok', nextTask = NULL WHERE id IN (${getIDsString([...privUse.keys()])})`);
 
 		if (queries.length > 0) {
 			try {

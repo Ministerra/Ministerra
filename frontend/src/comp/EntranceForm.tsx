@@ -358,7 +358,7 @@ function EntranceForm(props: any) {
 				const rawResponse = (await axios.post('/entrance', delUndef({ mode: what, email, pass, print }), { __skipGlobalErrorBanner: true } as any))?.data;
 				const response = typeof rawResponse === 'string' ? rawResponse : rawResponse || {};
 
-				const { status, cities, auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey } = typeof response === 'object' ? response : {};
+				const { status, cities, auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey, pdkSalt } = typeof response === 'object' ? response : {};
 
 				// REDIRECT TO ONBOARDING IF UNINTRODUCED USER ---
 				// User logged in with password, so derive PDK now (skip Welcome password input).
@@ -366,7 +366,7 @@ function EntranceForm(props: any) {
 					const [userID] = auth?.split(':') || [];
 					const pdkValue = await deriveKeyFromPassword(pass, userID + (deviceSalt || ''));
 					storePDK(pdkValue);
-					const authVal = { auth, print, pdk: pdkValue, deviceKey, epoch: authEpoch };
+					const authVal = { auth, print, pdk: pdkValue, pdkSalt, deviceKey, epoch: authEpoch };
 					await forage({ mode: 'set', what: 'auth', val: authVal, id: userID });
 					if (authExpiry) brain.authExpiry = authExpiry;
 					// STORE PDK DERIVED FLAG ---
@@ -382,7 +382,7 @@ function EntranceForm(props: any) {
 					storePDK(pdkValue);
 					if (previousAuth) setInform(prev => ({ ...prev, reencrypting: true }));
 
-					const authVal = authEpoch !== undefined ? { auth, print, pdk: pdkValue, deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash;
+					const authVal = authEpoch !== undefined ? { auth, print, pdk: pdkValue, pdkSalt, deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash;
 					await forage({ mode: 'set', what: 'auth', val: authVal, id: userID });
 
 					setInform(prev => ({ ...prev, reencrypting: false }));

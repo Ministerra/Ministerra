@@ -75,7 +75,7 @@ function sanitizeTopics(value, { minItems = 0 } = {}) {
 
 // SANITIZE ID LIST (BASICS/INDICATORS/GROUPS) ----------------------------------
 // Validates list items against allowed IDs set, removes duplicates
-// Used for basics, indicators, and groups arrays
+// Used for basics, indicators, and traits arrays
 function sanitizeIDList(value, { minItems = 0, allowedSet = new Set(), maxItems = 50 } = {}) {
 	const list = ensureArray(value);
 	const normalized = [];
@@ -207,9 +207,11 @@ function normalizeSetupPayload(input: any, { isIntroduction }: any) {
 
 	if (input.basics !== undefined) payload.basics = sanitizeIDList(input.basics, { minItems: isIntroduction ? 3 : 0, allowedSet: ALLOWED_IDS.basics, maxItems: MAX_COUNTS.basics });
 	if (input.indis !== undefined) payload.indis = sanitizeIDList(input.indis, { allowedSet: ALLOWED_IDS.indis, maxItems: MAX_COUNTS.indis });
-	if (input.groups !== undefined) payload.groups = sanitizeIDList(input.groups, { allowedSet: ALLOWED_IDS.groups, maxItems: MAX_COUNTS.groups });
+	if (input.traits !== undefined) payload.traits = sanitizeIDList(input.traits, { allowedSet: ALLOWED_IDS.traits, maxItems: MAX_COUNTS.traits });
 	if (input.cities !== undefined) payload.cities = sanitizeCities(input.cities, { minItems: isIntroduction ? 1 : 0, maxItems: MAX_COUNTS.cities });
 
+	// IMGVERS FROM MIDDLEWARE ---
+	// Images middleware sets imgVers; sanitizer validates format. Spoofed values are stripped by middleware.
 	if (input.imgVers !== undefined) {
 		const vImg = Number(input.imgVers);
 		if (!Number.isInteger(vImg) || vImg < 0) throw new Error('badRequest');

@@ -63,7 +63,7 @@ const updateRedis = async (m, u, i) => {
 export async function getProfile({ userID, id, basiOnly, devIsStable }, con) {
 	// If no ID, fetch own profile (includes util columns)
 	if (!id) {
-		const [[user]] = await con.execute(`SELECT ${USER_PROFILE_KEYS.map(col => `u.${col}`).join(', ')} FROM users u WHERE id = ?`, [userID]);
+		const [[user]] = await con.execute(`SELECT ${USER_PROFILE_KEYS.map(col => `u.${col}`).join(', ')} FROM users u WHERE id = ? AND flag NOT IN ('del', 'fro')`, [userID]);
 		if (!user) throw new Error('notFound');
 		user.age = calculateAge(user.birth);
 		return delFalsy(user);
@@ -83,7 +83,7 @@ export async function getProfile({ userID, id, basiOnly, devIsStable }, con) {
 					let c;
 					try {
 						c = await Sql.getConnection();
-						const [[u]] = await c.execute(`SELECT ${USER_GENERIC_KEYS.map(col => `u.${col}`).join(', ')} FROM users u WHERE id=?`, [id]);
+						const [[u]] = await c.execute(`SELECT ${USER_GENERIC_KEYS.map(col => `u.${col}`).join(', ')} FROM users u WHERE id=? AND flag NOT IN ('del', 'fro')`, [id]);
 						if (!u) throw new Error((await redis.hexists(`remUse`, id)) ? 'deleted' : 'notFound');
 						return (u.age = calculateAge(u.birth)), delete u.birth, delFalsy(u), redis.setex(`tempProfile:${id}`, 604800, encode(u)), u;
 					} finally {
