@@ -5,7 +5,7 @@ import { useState, memo, useRef, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { BASIC_TOPICS, USER_TRAITS } from '../../../shared/constants';
 import { humanizeDateTime } from '../../helpers';
-import EventCard from './EventCard';
+import EventCard from './EventCard.tsx';
 import RateAwards from './RateAwards';
 import ContentIndis from './ContentIndis';
 import { Fragment } from 'react';
@@ -60,7 +60,7 @@ const UserCard = props => {
 			[obj.eveInters, brain.events, selTypes, showAllThumbs]
 		),
 		hasMoreEvents = eveThumbsToShow?.length > 1,
-		showTopRedInfoStrip = ['evePreview', 'protocol', 'profile', 'invite'].some(button => modes[button]);
+		showTopRedInfoStrip = ['evePreview', 'protocol', 'profile', 'invites'].some(button => modes[button]);
 
 	// TEXT CLASS DEFINITION ---------------------------
 	const textClass = !cols || cols <= 3 ? 'fs9' : 'fs7';
@@ -74,6 +74,7 @@ const UserCard = props => {
 	// AUTO SCROLL AND MODE RESET ---------------------------
 	// Handles viewport centering and resets modes on excessive scrolling.
 	useEffect(() => {
+		if (isProfile) return;
 		if (![modes.actions, modes.evePreview].some(mode => mode)) return;
 		const scrollTo = el => el.current && window.scrollTo({ top: el.current.getBoundingClientRect().top + window.scrollY - window.innerHeight / 3 - 100, behavior: 'smooth' });
 		scrollPosition.current = window.scrollY;
@@ -83,7 +84,7 @@ const UserCard = props => {
 			ticking = true;
 			requestAnimationFrame(() => {
 				ticking = false;
-				if (window.location.pathname.startsWith('/event') || modes.invite || (modes.evePreview && modes.inviteEvePreview) || showActions) return;
+				if (window.location.pathname.startsWith('/event') || modes.invites || (modes.evePreview && modes.inviteEvePreview) || showActions) return;
 				const dist = Math.abs(window.scrollY - scrollPosition.current);
 				if (dist > (modes.evePreview ? 800 : 500)) setModes(prev => Object.keys(prev).reduce((acc, k) => ({ ...acc, [k]: false }), {}));
 			});
@@ -91,7 +92,7 @@ const UserCard = props => {
 		window.addEventListener('scroll', closeWhenScroll, { passive: true });
 		modes.actions ? scrollTo(actionsRef) : modes.evePreview && scrollTo(eventPreviewRef);
 		return () => window.removeEventListener('scroll', closeWhenScroll);
-	}, [modes.actions, modes.evePreview, modes.protocol, modes.invite, modes.inviteEvePreview, showActions]);
+	}, [modes.actions, modes.evePreview, modes.protocol, modes.invites, modes.inviteEvePreview, showActions]);
 
 	useEffect(() => {
 		if (brain.scrollTo || !isProfile) return;
@@ -103,16 +104,16 @@ const UserCard = props => {
 	const eventsThumb = (
 		<thumbs-wrapper
 			onClick={() => setModes(prev => ({ ...prev, allEveThumbs: false }))}
-			class={`flexRow aliEnd point ${modes.allEveThumbs ? 'w100  bgTransXs padVerXxxs   overAuto' : hasMoreEvents ? `` : cardsView !== 2 ? `miw11 marRigXx ` : ` `} ${
+			class={`flexRow aliEnd point ${modes.allEveThumbs ? 'w100  bgTransXs padBotXs padTopXxs   overAuto' : hasMoreEvents ? `` : cardsView !== 2 ? `miw9 marRigXs ` : ` `} ${
 				modes.evePreview && hasMoreEvents ? 'padBotXs ' : ''
-			}   posRel wrap  boRadXs zinMax w25 `}>
+			}   posRel wrap  boRadXs zinMax  `}>
 			{/* SHOW ALL BUTTON --------------------------- */}
 			{!modes.allEveThumbs && hasMoreEvents && (
 				<show-all
 					onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, allEveThumbs: !prev.allEveThumbs, evePreview: false, actions: false })))}
 					className={`${modes.allEveThumbs ? 'noBackground padHorS posRel zinMaXl' : 'borRedSel'} block flexCol aliCen boldM shaLight boRadXxxs  posRel`}>
 					<img className={`marAuto posRel boRadXs ${cardsView === 2 ? ' mw8' : 'aspect1610 upTiny mw9'}`} src={`/icons/event.png`} alt='' />
-					{!modes.allEveThumbs && <span className='xBold fs8 bgTransXxs posAbs padVerXxxxs padHorXs botRight bgWhite boRadM lh1'>{eveThumbsToShow.length}</span>}
+					{!modes.allEveThumbs && <span className='xBold fs14 bgTransXxs posAbs padVerXxxxs padHorXs botRight bgWhite boRadM lh1'>{eveThumbsToShow.length}</span>}
 				</show-all>
 			)}
 			{/* INDIVIDUAL EVENT THUMBS --------------------------- */}
@@ -134,11 +135,11 @@ const UserCard = props => {
 										? setModes(prev => ({ ...prev, evePreview: false }))
 										: (await previewEveCard({ obj: eventObj, brain }), setModes(prev => ({ ...prev, evePreview: eventObj, protocol: false, invite: false })))
 								)}
-								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue tWhite zinMaXl bsContentGlow' : 'zinMax'} flexCen ${modes.allEveThumbs ? 'grow' : ''} ${
-									cols <= 4 ? 'mh6 ' : ''
-								} ${cardsView === 2 ? 'mw8' : 'padRightXs'} bHover pointer bgTransXs  miw12    posRel boRadXxs`}>
-								<inner-wrapper class='flexCen aliCen padLeftXxs justCen grow'>
-									<img className={`${cols === 3 ? 'mw10' : cols === 4 ? 'mw7' : 'mw8 '} upTiny  posRel  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt='' />
+								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue arrowDown1 tWhite zinMaXl bsContentGlow' : 'zinMax'} flexCen ${modes.allEveThumbs ? '' : ''}  ${
+									cardsView === 2 ? 'mw8' : 'padRightXs'
+								}  pointer bgTransXs  miw12     posRel boRadXxs`}>
+								<inner-wrapper class='flexCen bHover aliCen padLeftXxs justCen grow'>
+									<img className={`${cols === 3 ? 'mw10' : cols === 4 ? 'mw7' : 'mw7 '}   posRel  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt='' />
 									<texts-wraper class='flexCol justCen  fPadHorXxxs    '>
 										<span className={`${flag === 'sur' ? 'tGreen tSha10 xBold' : eventIsPast ? 'tGrey textSha' : 'tBlue bold'} textSha fs18 lh1`}>
 											{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'upper' })}
@@ -197,12 +198,12 @@ const UserCard = props => {
 				allEveThumbs: false,
 				invite: false,
 				protocol: false,
-				actions: modes.invite ? true : modes.evePreview || modes.allEveThumbs ? prev.actions : !prev.actions,
+				actions: modes.invites ? true : modes.evePreview || modes.allEveThumbs ? prev.actions : !prev.actions,
 				evePreview: false,
 			}));
 	};
 
-	console.log('obj', obj.imgVers);
+	console.log('obj', obj);
 
 	// JSX RETURN ----------------------------------------------------------------
 	return (
@@ -211,7 +212,7 @@ const UserCard = props => {
 			id={`card_${obj.id}`}
 			class={`
 				${isProfile ? 'mw65 marTopXs 	posRel  zinMax' : 'mw80 marBotXs'}
-				${status.blocked ? 'bRed' : !status.embeded && (modes.actions || modes.evePreview) ? ' shaMega thickBors ' : !modes.actions ? 'padBotS' : ''}
+				${status.blocked ? 'bRed' : !status.embeded && (modes.actions || modes.evePreview) ? ' shaMega thickBors ' : !modes.actions ? '' : ''}
 			 bHover boRadXxs  shaBotLong   bgWhite  	  flexCol marAuto ${isProfile ? '' : 'marBotXs'}      grow   posRel    w100  `}>
 			{/* IMAGE WRAPPER -------------------------------------------------*/}
 			<image-wrapper onClick={handleClick} class={` maskTopXxs  w100 posRel `}>
@@ -221,7 +222,7 @@ const UserCard = props => {
 				{showTopRedInfoStrip && (
 					<info-strip class='posAbs topCen zinMaXl w100 textAli'>
 						<arrow-down className='arrowDownRed posRel  zinMaXl  textAli   marAuto   inlineBlock   downLittle  s  xBold ' />
-						<span className='  tRed tShaWhiteXl  padHorM padVerXxs marAuto posAbs topCen zinMaXl  textAli   padHorM marAuto  padVerXxxs inlineBlock borTop bInsetBlueTopXs  fs12  xBold '>
+						<span className='  tRed tShaWhiteXl   padHorM padVerXxs marAuto posAbs topCen zinMaXl  textAli   padHorM marAuto  padVerXxs inlineBlock borTop bInsetBlueTopXs  fs18  xBold '>
 							zpět na profil
 						</span>
 					</info-strip>
@@ -239,13 +240,13 @@ const UserCard = props => {
 				/>
 
 				{/* CARDSVIEW 1 - FULL NAME + INDICATORS STRIP -------------------------------------------------*/}
-				{cardsView === 1 && !modes.protocol && !modes.invite && (
-					<bottom-row class={`flexRow w100 spaceBet ${cols === 1 ? 'marBotXs ' : ''} zinMax   hvw3 noPoint posAbs marBotXxs botCen`}>
+				{cardsView === 1 && !modes.protocol && !modes.invites && (
+					<bottom-row class={`flexRow w100 spaceBet zinMax   hvw3 noPoint posAbs marBotXxs botCen`}>
 						{/* COOL-GUY INDICATOR --------------------------------------------------------------- */}
 
-						{!modes.allEveThumbs && obj.indis?.includes(0) && (
+						{!modes.allEveThumbs && obj.indis?.includes(1) && (
 							<cool-guy class={`shaMega w14 flexCol aliCen justCen  boRadXs bgTrans  padTopXs maskTopXs posAbs   upEvenMore zinMax `}>
-								<img className='miw5 mw4   ' src={`/icons/indicators/0.png`} alt='' />
+								<img className='miw5 mw4   ' src={`/icons/indicators/1.png`} alt='' />
 							</cool-guy>
 						)}
 						{nowAt !== 'event' && !isProfile && eveThumbsToShow?.length > 0 && eventsThumb}
@@ -266,7 +267,7 @@ const UserCard = props => {
 						{nowAt !== 'event' && !isProfile && (
 							<top-wrapper class='flexRow aliCen w100  justCen'>
 								{eveThumbsToShow?.length > 0 && eventsThumb}
-								{!modes.allEveThumbs && (
+								{!modes.allEveThumbs && obj.indis?.includes(1) && (
 									<cool-guy class={' w14 miw7  flexCol aliCen justCen padAllXxxs maskLowXs posRel marLefS   bgTrans boRadXs  zinMax '}>
 										<img className='miw5 mw8 w80   ' src={`/icons/indicators/0.png`} alt='' />
 									</cool-guy>
@@ -284,8 +285,8 @@ const UserCard = props => {
 			<actions-scroll-ref ref={actionsRef}></actions-scroll-ref>
 
 			{/* UNDER IMAGE SECTIONS ------------------------------------------------------------- */}
-			{(!isPast || modes.profile) && !modes.invite && (
-				<under-image onClick={handleClick} class={`${cols === 1 ? '' : ''} posRel flexCol   zinMaX h100 wrap pointer posRel textLeft    gapXxxxs`}>
+			{(!isPast || modes.profile) && !modes.invites && !modes.allEveThumbs && (
+				<under-image onClick={handleClick} class={` posRel flexCol   zinMaX h100 wrap pointer posRel textLeft    gapXxxxs`}>
 					{/* TEXTS AND TOPICS WRAPPER ------------------------------------------------------------- */}
 					{!modes.evePreview && !modes.protocol && (
 						<texts-wrapper class={`${cardsView === 2 ? 'textAli marTopXs ' : ''}  ${cols === 1 ? 'fs11' : 'fs7'} lh1 zinMaxXl  fPadHorXxs posRel flexCol grow`}>
@@ -368,7 +369,9 @@ const UserCard = props => {
 								<theres-more class='block selfEnd marTopAuto  w100'>
 									{obj.shortDesc?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}    bold tBlue   ${textClass}`}>{`Více o mně ↓`}</span>}
 									{obj.note?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}   tDarkBlue boldXs fsA`}>{`+poznámka`}</span>}
-									{obj.traits?.length > 0 && !isProfile && <span className={` miw8  boldS  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.traits.length} skupiny`}</span>}
+									{obj.traits?.length > 0 && !isProfile && (
+										<span className={` miw8  boldS marBotXs  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.traits.length} skupiny`}</span>
+									)}
 								</theres-more>
 							)}
 						</texts-wrapper>
@@ -382,15 +385,17 @@ const UserCard = props => {
 				!modes.protocol &&
 				!status.blocked &&
 				!modes.evePreview &&
-				!modes.invite &&
+				!modes.invites &&
 				(!isPast || eveInter === 'sur') &&
 				(!isProfile || (obj.state !== 'stale' && obj.eveInters?.length > 0)) && (
 					<RateAwards {...{ modes, brain, isCardOrStrip: true, thisIs: 'user', status, setStatus, setModes, obj, fadedIn: ['RatingBs'] }} />
 				)}
 
 			{/* IS YOU WARNING --------------------------------------------------------------- */}
-			{modes.actions && obj.id === brain.user.id && (
-				<you-warning className='boldM textAli block bGlass inlineBlock hr3 bInsetBlueXs posRel textSha fs8 tRed  marRigXs'>Tohle jsi ty. Ovládací prvky nejsou dostupné</you-warning>
+			{modes.actions && obj.id === brain.user.id && !modes.evePreview &&  (
+				<you-warning className='boldM textAli block  inlineBlock hr2  posRel textSha fs8 textSha borderRed tRed  marRigXs'>
+					Tohle jsi ty. Ovládací prvky nejsou dostupné
+				</you-warning>
 			)}
 
 			{/* USER MENU STRIP --------------------------------------------------------------- */}
@@ -409,7 +414,7 @@ const UserCard = props => {
 			)}
 			{/* EVENT evePreview userCard ---------------------------------------------------------- */}
 			<event-scroll ref={eventPreviewRef} />
-			{modes.evePreview && nowAt === 'home' && <EventCard key={modes.evePreview.id} obj={modes.evePreview} cols={cols} brain={brain} isPreview={obj.id} setModes={setModes} />}
+			{modes.evePreview && nowAt === 'home' && <EventCard key={modes.evePreview.id} obj={modes.evePreview} cols={cols || 1} brain={brain} isPreview={obj.id} setModes={setModes} />}
 		</user-cards>
 	);
 };

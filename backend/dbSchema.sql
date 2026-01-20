@@ -23,7 +23,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '0c8f88ca-c8d0-11f0-b57d-0242ac120002:1-11075';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '0c8f88ca-c8d0-11f0-b57d-0242ac120002:1-11587';
 
 --
 -- Table structure for table `changes_tracking`
@@ -41,7 +41,8 @@ CREATE TABLE `changes_tracking` (
   `changed_age` tinyint DEFAULT '0',
   `changed_name` tinyint DEFAULT '0',
   PRIMARY KEY (`user`),
-  KEY `idx_changes_tracking_user` (`user`)
+  KEY `idx_changes_tracking_user` (`user`),
+  CONSTRAINT `fk_changes_tracking_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -65,7 +66,10 @@ CREATE TABLE `chat_invites` (
   PRIMARY KEY (`id`),
   KEY `idx_chat_invites_chat` (`chat`),
   KEY `idx_chat_invites_user` (`user`),
-  KEY `idx_chat_invites_user2` (`user2`)
+  KEY `idx_chat_invites_user2` (`user2`),
+  CONSTRAINT `fk_chat_invites_chat` FOREIGN KEY (`chat`) REFERENCES `chats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_invites_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_invites_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -97,7 +101,10 @@ CREATE TABLE `chat_members` (
   `hidden` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`chat`,`id`),
   KEY `idx_chat_members_by_user` (`id`,`flag`,`archived`,`hidden`,`chat`,`seen`),
-  KEY `idx_chat_members_who` (`who`)
+  KEY `fk_chat_members_who` (`who`),
+  CONSTRAINT `fk_chat_members_chat` FOREIGN KEY (`chat`) REFERENCES `chats` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_members_user` FOREIGN KEY (`id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_chat_members_who` FOREIGN KEY (`who`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -143,7 +150,7 @@ CREATE TABLE `cities` (
   `part` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `exterID_UNIQUE` (`hashID`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163,7 +170,9 @@ CREATE TABLE `comm_rating` (
   PRIMARY KEY (`comment`,`user`),
   KEY `comm_rating_changed_idx` (`changed`),
   KEY `comm_rating_comment_idx` (`comment`),
-  KEY `comm_rating_user_idx` (`user`) /*!80000 INVISIBLE */
+  KEY `comm_rating_user_idx` (`user`) /*!80000 INVISIBLE */,
+  CONSTRAINT `fk_comm_rating_comment` FOREIGN KEY (`comment`) REFERENCES `comments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_comm_rating_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -189,7 +198,26 @@ CREATE TABLE `comments` (
   PRIMARY KEY (`id`),
   KEY `comments_event_idx` (`event`) /*!80000 INVISIBLE */,
   KEY `comments_target_idx` (`target`) /*!80000 INVISIBLE */,
-  KEY `comments_user_idx` (`user`)
+  KEY `fk_comments_user` (`user`),
+  CONSTRAINT `fk_comments_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_comments_target` FOREIGN KEY (`target`) REFERENCES `comments` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_comments_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `devices`
+--
+
+DROP TABLE IF EXISTS `devices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `devices` (
+  `device_id` varchar(21) NOT NULL,
+  `device_key` varchar(64) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_revoked` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`device_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -208,7 +236,9 @@ CREATE TABLE `eve_feedback` (
   `reprimands` json DEFAULT NULL,
   `aspects` json DEFAULT NULL,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`event`)
+  PRIMARY KEY (`event`),
+  KEY `idx_eve_feedback_totals_event` (`event`),
+  CONSTRAINT `fk_eve_feedback_totals_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -234,8 +264,12 @@ CREATE TABLE `eve_feedback_user` (
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_event_user` (`event`,`user`),
+  KEY `idx_event` (`event`),
+  KEY `idx_user` (`user`),
   KEY `idx_eve_feedback_user_event` (`event`),
-  KEY `idx_eve_feedback_user_user` (`user`)
+  KEY `idx_eve_feedback_user_user` (`user`),
+  CONSTRAINT `fk_eve_feedback_user_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_eve_feedback_user_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -255,7 +289,9 @@ CREATE TABLE `eve_inters` (
   PRIMARY KEY (`user`,`event`),
   KEY `eve_inters_user_idx` (`user`) /*!80000 INVISIBLE */,
   KEY `eve_inters_changed_idx` (`changed`),
-  KEY `eve_inters_event_idx` (`event`)
+  KEY `fk_eve_inters_event` (`event`),
+  CONSTRAINT `fk_eve_inters_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_eve_inters_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -275,9 +311,12 @@ CREATE TABLE `eve_invites` (
   `flag` enum('ok','acc','ref','del') NOT NULL DEFAULT 'ok',
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user2`,`user`,`event`),
-  KEY `eve_invites_user_idx` (`user`),
-  KEY `eve_invites_user2_idx` (`user2`),
-  KEY `eve_invites_event_idx` (`event`)
+  KEY `eve_invites_event_idx` (`user`),
+  KEY `eve_invites_user_idx` (`user2`),
+  KEY `fk_eve_invites_event` (`event`),
+  CONSTRAINT `fk_eve_invites_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_eve_invites_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_eve_invites_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -298,7 +337,9 @@ CREATE TABLE `eve_rating` (
   PRIMARY KEY (`event`,`user`),
   KEY `eve_rating_changed_idx` (`changed`),
   KEY `eve_rating_event_idx` (`event`) /*!80000 INVISIBLE */,
-  KEY `eve_rating_user_idx` (`user`)
+  KEY `eve_rating_user_idx` (`user`),
+  CONSTRAINT `fk_eve_rating_event` FOREIGN KEY (`event`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_eve_rating_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -313,16 +354,16 @@ CREATE TABLE `events` (
   `id` bigint unsigned NOT NULL,
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `owner` bigint unsigned DEFAULT NULL,
-  `title` varchar(300) DEFAULT NULL,
+  `title` varchar(150) DEFAULT NULL,
   `starts` datetime DEFAULT NULL,
   `ends` datetime DEFAULT NULL,
-  `shortDesc` varchar(1000) DEFAULT NULL,
+  `shortDesc` varchar(300) DEFAULT NULL,
   `detail` text,
   `place` varchar(100) DEFAULT NULL,
   `location` varchar(100) DEFAULT NULL,
   `part` varchar(100) DEFAULT NULL,
   `cityID` int DEFAULT NULL,
-  `meetHow` varchar(1000) DEFAULT NULL,
+  `meetHow` varchar(300) DEFAULT NULL,
   `meetWhen` datetime DEFAULT NULL,
   `fee` varchar(1000) DEFAULT NULL,
   `takeWith` varchar(1000) DEFAULT NULL,
@@ -351,7 +392,9 @@ CREATE TABLE `events` (
   KEY `events_flag_idx` (`flag`),
   KEY `events_live_until_idx` (`live_until`),
   KEY `idx_events_city` (`cityID`),
-  FULLTEXT KEY `events_title_fulltext` (`title`)
+  FULLTEXT KEY `events_title_fulltext` (`title`),
+  CONSTRAINT `fk_events_city` FOREIGN KEY (`cityID`) REFERENCES `cities` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_events_owner` FOREIGN KEY (`owner`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -366,7 +409,9 @@ CREATE TABLE `last_seen` (
   `user` bigint unsigned NOT NULL,
   `mess` bigint DEFAULT NULL,
   `alert` bigint DEFAULT NULL,
-  PRIMARY KEY (`user`)
+  PRIMARY KEY (`user`),
+  KEY `idx_last_seen_user` (`user`),
+  CONSTRAINT `fk_last_seen_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -404,7 +449,8 @@ CREATE TABLE `logins` (
   `ip_addresses` json DEFAULT NULL,
   `inactive` tinyint DEFAULT NULL,
   PRIMARY KEY (`user`),
-  KEY `logins_inactive_idx` (`inactive`)
+  KEY `logins_inactive_idx` (`inactive`),
+  CONSTRAINT `fk_logins_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -424,7 +470,9 @@ CREATE TABLE `mess_rating` (
   PRIMARY KEY (`message`,`user`),
   KEY `m_rating_message_idx` (`message`) /*!80000 INVISIBLE */,
   KEY `m_rating_changed_idx` (`changed`),
-  KEY `mess_rating_user_idx` (`user`)
+  KEY `fk_mess_rating_user` (`user`),
+  CONSTRAINT `fk_mess_rating_message` FOREIGN KEY (`message`) REFERENCES `messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_mess_rating_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -447,7 +495,9 @@ CREATE TABLE `messages` (
   `flag` enum('ok','del') DEFAULT 'ok',
   PRIMARY KEY (`id`),
   KEY `idx_messages_chat_pagination` (`chat`,`flag`,`id` DESC),
-  KEY `idx_messages_user` (`user`)
+  KEY `idx_messages_user` (`user`),
+  CONSTRAINT `fk_messages_chat` FOREIGN KEY (`chat`) REFERENCES `chats` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_messages_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -483,7 +533,8 @@ CREATE TABLE `reports` (
   `severity` int DEFAULT NULL,
   `message` text,
   PRIMARY KEY (`id`),
-  KEY `reports_user_idx` (`user`)
+  KEY `fk_reports_user` (`user`),
+  CONSTRAINT `fk_reports_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -500,23 +551,8 @@ CREATE TABLE `rjwt_tokens` (
   `token` varchar(250) DEFAULT NULL,
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `print` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`user`,`device`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `testing`
---
-
-DROP TABLE IF EXISTS `testing`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `testing` (
-  `user` bigint unsigned DEFAULT NULL,
-  `body` text,
-  `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `path` varchar(255) DEFAULT NULL,
-  `agent` varchar(255) DEFAULT NULL
+  PRIMARY KEY (`user`,`device`),
+  CONSTRAINT `fk_rjwt_tokens_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -536,7 +572,9 @@ CREATE TABLE `user_alerts` (
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `flag` enum('acc','ref','ok') DEFAULT 'ok',
   PRIMARY KEY (`id`),
-  KEY `idx_user_alerts_user` (`user`)
+  KEY `user_alerts_user_idx` (`user`) /*!80000 INVISIBLE */,
+  KEY `idx_user_alerts_user` (`user`),
+  CONSTRAINT `fk_user_alerts_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -553,7 +591,9 @@ CREATE TABLE `user_blocks` (
   `who` tinyint NOT NULL,
   `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user`,`user2`),
-  KEY `user_blocks_user2_idx` (`user2`)
+  KEY `fk_user_blocks_user2` (`user2`),
+  CONSTRAINT `fk_user_blocks_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_blocks_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -569,14 +609,14 @@ CREATE TABLE `user_devices` (
   `user_id` bigint unsigned NOT NULL,
   `device_id` varchar(21) NOT NULL,
   `salt` varchar(64) NOT NULL,
-  `device_key` varchar(64) DEFAULT NULL,
   `pdk_salt` varchar(64) DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `last_seen` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `is_revoked` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_user_device` (`user_id`,`device_id`)
+  UNIQUE KEY `unique_user_device` (`user_id`,`device_id`),
+  CONSTRAINT `fk_user_devices_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -598,8 +638,11 @@ CREATE TABLE `user_links` (
   `message` varchar(200) DEFAULT NULL,
   `changed` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user`,`user2`),
+  KEY `user_links_user_idx` (`user`),
   KEY `user_links_user2_idx` (`user2`),
-  KEY `user_links_changed_idx` (`changed`)
+  KEY `user_links_changed_idx` (`changed`),
+  CONSTRAINT `fk_user_links_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_links_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -618,8 +661,11 @@ CREATE TABLE `user_rating` (
   `awards` int DEFAULT NULL,
   `score` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`user`,`user2`),
+  KEY `user_rating user_idx` (`user`),
   KEY `user_rating_changed_idx` (`changed`),
-  KEY `user_rating_user2_idx` (`user2`)
+  KEY `fk_user_rating_user2` (`user2`),
+  CONSTRAINT `fk_user_rating_user` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_rating_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -632,9 +678,6 @@ DROP TABLE IF EXISTS `users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL,
-  `flag` enum('ok','pri','fro','unf','del') DEFAULT 'ok',
-  `nextTask` enum('flagChanges','dailyRecalc') DEFAULT NULL,
-  `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `email` varchar(60) NOT NULL,
   `pass` varchar(65) NOT NULL,
   `first` varchar(45) DEFAULT NULL,
@@ -648,14 +691,16 @@ CREATE TABLE `users` (
   `traits` varchar(250) DEFAULT '',
   `favs` varchar(215) DEFAULT NULL,
   `exps` varchar(215) DEFAULT NULL,
-  `status` enum('verifyMail','user','newUser','unintroduced') DEFAULT 'verifyMail',
-  `imgVers` int DEFAULT '0',
-  `basiVers` int NOT NULL DEFAULT '0',
-  `changed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `shortDesc` varchar(500) DEFAULT NULL,
   `priv` enum('pub','lin','tru','own','ind') DEFAULT 'pub',
   `defPriv` enum('pub','lin','tru','own','ind') DEFAULT 'pub',
   `askPriv` tinyint DEFAULT '0',
+  `created` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `imgVers` int DEFAULT '0',
+  `basiVers` int NOT NULL DEFAULT '0',
+  `status` enum('verifyMail','user','newUser','unintroduced') DEFAULT 'verifyMail',
+  `flag` enum('ok','pri','fro','unf','del') DEFAULT 'ok',
+  `nextTask` enum('flagChanges','dailyRecalc') DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_users_email` (`email`),
   KEY `user_flag_idx` (`flag`),
@@ -674,4 +719,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-14 11:52:59
+-- Dump completed on 2026-01-20 22:12:45

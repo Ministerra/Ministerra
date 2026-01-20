@@ -39,7 +39,7 @@ export async function eventLoader(brain, params) {
 		if (needsFetch) {
 			const citySync = brain.citiesContSync?.[cityID],
 				hasRecentCitySync = typeof citySync === 'number' && now - citySync < fiveMinutes;
-			const gotUsers = type.startsWith('a') && (!isPast ? (Boolean(brain.citiesTypesInTimes?.[cityID]) && hasRecentCitySync) || now - lastUsersSync < fiveMinutes : pastUsers);
+			const gotUsers = type.startsWith('a') && (!isPast ? (Boolean(brain.citiesEveTypesInTimes?.[cityID]) && hasRecentCitySync) || now - lastUsersSync < fiveMinutes : pastUsers);
 			const body = {
 				eventID,
 				...(state === 'stale' ? { basiVers, detaVers } : { state }),

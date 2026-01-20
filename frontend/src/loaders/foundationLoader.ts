@@ -1,12 +1,14 @@
 import { redirect } from 'react-router-dom';
 import axios from 'axios';
 import localforage from 'localforage';
-import { forage, updateInteractions, delUndef, setPropsToContent, processMetas, logoutAndCleanUp, getDeviceFingerprint, getPDK } from '../../helpers';
+import { forage, updateInteractions, delUndef, setPropsToContent, processMetas, splitStrgOrJoinArr, getDeviceFingerprint, getPDK } from '../../helpers';
 import { emptyBrain } from '../../sources';
 import { notifyGlobalError } from '../hooks/useErrorsMan';
 import { FOUNDATION_LOADS } from '../../../shared/constants';
 
 // TODO could probably implement filter for non-user-cities events/users with sync thats not recent enough, to free up some space in the handleStaleContent
+// TODO store citiesContSync individualy for each user
+// TODO need to think through what happens if multiple users are logged in at the same time
 
 let brain;
 // SMALL HELPERS (BRAIN/URL/CITY) ----------------------------------------------
@@ -27,8 +29,12 @@ const ensureBrainRef = brainParam => ((brain = brainParam || brain || { ...empty
 // HYDRATE BRAIN FROM DEVICE ----------------------------------------------------
 // Steps: load “miscel” from forage, prune stale city sync stamps, then assign into brainRef so the loader can decide incremental fetches; on failure, ensure initLoadData exists so later code doesn’t crash.
 const hydrateFromDevice = async (brainRef, flags) => {
+	// PRUNE STALE CITY SYNC ALWAYS ---
+	// Steps: prune citiesContSync on every load to ensure stale timestamps don't prevent re-fetching content after extended idle periods.
+	if (brainRef.citiesContSync) pruneCitySync(brainRef);
+
 	if (brainRef.initLoadData) return;
-	flags.gotKey = Boolean(brainRef.user.cities.length);
+	flags.gotAuth = Boolean(brainRef.user.cities.length);
 	try {
 		const rawMiscel = await forage({ mode: 'get', what: 'miscel' });
 		const miscel = pruneCitySync(rawMiscel || { initLoadData: {} });
@@ -56,7 +62,7 @@ const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 		plan.axiosPayload = { load: Date.now() - brainRef.user.initedAt > 60000 ? FOUNDATION_LOADS.fast : FOUNDATION_LOADS.auth, lastDevSync, lastLinksSync, clientEpoch };
 	else if (path !== '/') plan.axiosPayload = { load: FOUNDATION_LOADS.auth, clientEpoch };
 	else {
-		delete brainRef.fastLoaded;
+		delete brainRef.fastLoaded, delete brainRef.isAfterLoginInit;
 		plan.citiesGetCityData = cities?.filter(city => !findCity(city));
 		plan.citiesGetContentMetas = cities?.filter(city => !brainRef.citiesContSync[city.cityID || city]).map(city => city.cityID || city) || [];
 		plan.axiosPayload = plan.citiesGetContentMetas.length
@@ -66,7 +72,7 @@ const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 					lastDevSync,
 					lastLinksSync,
 					load: newCities ? FOUNDATION_LOADS.cities : FOUNDATION_LOADS.init,
-					gotKey: flags.gotKey,
+					gotAuth: flags.gotAuth,
 					clientEpoch,
 			  })
 			: { load: FOUNDATION_LOADS.auth, clientEpoch };
@@ -125,8 +131,8 @@ const handleUnstableDev = (brainRef, { unstableDev, devSync, linksSync }) => {
 const applyAuthAndUser = async (ctx, data) => {
 	const { brainRef, meta } = ctx;
 	const { auth, authEpoch, authExpiry, previousAuth, deviceSalt, deviceKey, pdkSalt, user, notifDots, devSync, linksSync, interactions, delInteractions, unstableDev = null } = data;
-	if (!(auth || brainRef.isAfterLoginInit)) return false;
 
+	// AUTH ROTATION / LOGIN HANDLING ---
 	if (auth) {
 		const [userID, authHash] = auth.split(':');
 		brainRef.user.id = userID;
@@ -141,11 +147,12 @@ const applyAuthAndUser = async (ctx, data) => {
 				val: authEpoch !== undefined ? { auth, print, ...(pdk && { pdk }), ...(pdkSalt && { pdkSalt }), ...(deviceSalt && { deviceSalt }), deviceKey, epoch: authEpoch, prevAuth: previousAuth } : authHash,
 				id: userID,
 			});
-		} catch (e) {
-			if (e.message === 'noPDK' || e.message === 'noPdkSalt') {
-				console.warn('PDK/pdkSalt missing - session expired, redirecting to login');
-				return 'session_expired';
+		} catch (e: any) {
+			if (e.message === 'fingerprintChanged') {
+				window.__showRekeyModal?.();
+				return 'awaiting_rekey';
 			}
+			if (e.message === 'noPDK' || e.message === 'noPdkSalt') return 'session_expired';
 			throw e;
 		}
 
@@ -164,14 +171,20 @@ const applyAuthAndUser = async (ctx, data) => {
 		delete brainRef.isAfterLoginInit;
 	}
 
+	// APPLY USER DATA AND WATERMARKS ---
+	const forageUser = (await forage({ mode: 'get', what: 'user' })) || {};
+	const forageAlerts = (await forage({ mode: 'get', what: 'alerts' })) || {};
+	const incomingUser = splitStrgOrJoinArr(user || {}, 'split');
+
 	Object.assign(brainRef, {
 		initLoadData: { cities: user?.cities || meta.cities, lastDevSync: devSync ?? meta.lastDevSync, lastLinksSync: linksSync ?? meta.lastLinksSync },
-		user: Object.assign(brainRef.user, (await forage({ mode: 'get', what: 'user' })) || {}, user || {}, {
-			alerts: { ...((await forage({ mode: 'get', what: 'alerts' })) || {}), ...(notifDots && { notifDots }) },
+		user: Object.assign(brainRef.user, forageUser, incomingUser, {
+			alerts: { ...forageAlerts, ...(notifDots && { notifDots }) },
 			lastSeenAlert: notifDots?.lastSeenAlert || 0,
 		}),
 	});
 
+	// RESET THROTTLES AND INTERACTION DELTAS ---
 	resetGalleryNoMore(brainRef, meta.now), resetChatsNoMore(brainRef, meta.now), await resetTempData(brainRef, meta.now), handleUnstableDev(brainRef, { unstableDev, devSync, linksSync });
 	updateInteractions({ brain: brainRef, add: interactions, del: delInteractions });
 	return true;
@@ -182,12 +195,15 @@ const applyAuthAndUser = async (ctx, data) => {
 const hydratePrevContent = async (ctx, data) => {
 	const { brainRef, plan, meta, isFastLoad } = ctx;
 	const { contentMetas } = data;
+
 	if (isFastLoad || !brainRef.user.prevLoadedContIDs || (contentMetas && meta.cities?.length === plan.citiesGetContentMetas?.length)) return;
 	if (contentMetas && plan.citiesGetContentMetas.length) plan.citiesGetContentMetas.forEach(city => delete brainRef.user.prevLoadedContIDs[city]);
+
 	// If contentMetas is undefined (auth-only response), load ALL stored cities; otherwise load only unfetched ones ---------------------------
 	const citiesToLoad = !contentMetas
 		? Object.keys(brainRef.user.prevLoadedContIDs).filter(k => k !== 'topEvents') // Load all stored cities when no content from backend
 		: meta.cities?.filter(city => !plan.citiesGetContentMetas?.includes(city)) || []; // Load only cities not fetched this request
+		
 	const freshAndNotFetched = [...citiesToLoad, ...(meta.homeView !== 'topEvents' && brainRef.user.prevLoadedContIDs.topEvents ? ['topEvents'] : [])];
 	for (const city of freshAndNotFetched.filter(city => Boolean(brainRef.user.prevLoadedContIDs[city]))) {
 		const prevIDs = brainRef.user.prevLoadedContIDs[city];
@@ -198,6 +214,7 @@ const hydratePrevContent = async (ctx, data) => {
 			eveIDs.length ? forage({ mode: 'get', what: 'events', id: eveIDs }) : [],
 			...(meta.homeView !== 'topEvents' && useIDs.length ? [forage({ mode: 'get', what: 'users', id: useIDs })] : []),
 		]);
+
 		for (const event of eventsToLoad || []) brainRef.events[event.id] = Object.assign(brainRef.events[event.id] || {}, event);
 		for (const user of usersToLoad || []) brainRef.users[user.id] = Object.assign(brainRef.users[user.id] || {}, user);
 	}
@@ -235,7 +252,7 @@ const storeCitiesAndContent = async (ctx, data) => {
 	const receivedUserIDs = new Set();
 	if (meta.homeView !== 'topEvents') {
 		const contentCityIDs = plan.citiesGetContentMetas.map(city => findCity(city)?.cityID);
-		for (const city of contentCityIDs) delete brainRef.meetStats[city], delete brainRef.citiesTypesInTimes[city], delete brainRef.user.prevLoadedContIDs[city];
+		for (const city of contentCityIDs) delete brainRef.meetStats[city], delete brainRef.citiesEveTypesInTimes[city], delete brainRef.user.prevLoadedContIDs[city];
 		await Promise.allSettled(
 			(contentMetas || []).map(async city => {
 				const eveMetas = { cityID: city.cityID };
@@ -373,7 +390,7 @@ const persistToDevice = async (ctx, data) => {
 	const miscelVal = {};
 	if (interactions || delInteractions || user || contentMetas) keys.push('user');
 	if (flags.isInitOrRefreshLoad || meta.homeView === 'topEvents' || citiesData)
-		keys.push('miscel'), ['cities', 'initLoadData', 'bestOfIDs', 'meetStats', 'citiesTypesInTimes', 'citiesContSync'].forEach(key => brainRef[key] && (miscelVal[key] = brainRef[key]));
+		keys.push('miscel'), ['cities', 'initLoadData', 'bestOfIDs', 'meetStats', 'citiesEveTypesInTimes', 'citiesContSync'].forEach(key => brainRef[key] && (miscelVal[key] = brainRef[key]));
 	await Promise.all(keys.map(async key => forage({ mode: 'set', what: key, val: key === 'miscel' ? miscelVal : brainRef[key] })));
 };
 
@@ -400,10 +417,8 @@ export async function foundationLoader({ url, isFastLoad = false, brain: brainPa
 		const foundationData = await fetchFoundationData((ctx.plan as any).axiosPayload);
 
 		const authResult = await applyAuthAndUser(ctx, foundationData);
-		if (authResult === 'session_expired') {
-			const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-			return redirect(`/entrance?mess=sessionExpired&returnTo=${returnTo}`);
-		}
+		if (authResult === 'session_expired') return redirect(`/entrance?mess=sessionExpired&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+		if (authResult === 'awaiting_rekey') return brainRef;
 		if (authResult) await hydratePrevContent(ctx, foundationData);
 		await ensureLocationIfNeeded(brainRef);
 		await storeCitiesAndContent(ctx, foundationData);
@@ -411,8 +426,6 @@ export async function foundationLoader({ url, isFastLoad = false, brain: brainPa
 		await handleStaleContent(ctx, foundationData);
 		setPropsToContent('events', brainRef.events, brainRef, true), setPropsToContent('users', brainRef.users, brainRef, true);
 		await persistToDevice(ctx, foundationData);
-
-		console.log('🚀 ~ foundationLoader ~ brainRef -----------------------------:', brainRef);
 		return brainRef;
 		} catch (error: any) {
 			notifyGlobalError(error, 'Nepodařilo se načíst data aplikace.');

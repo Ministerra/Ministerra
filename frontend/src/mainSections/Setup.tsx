@@ -7,7 +7,7 @@ import ProfileSetup from './ProfileSetup';
 import AdvancedSetup from './AdvancedSetup';
 import useFadeIn from '../hooks/useFadeIn';
 import { notifyGlobalError } from '../hooks/useErrorsMan';
-import { checkFavouriteExpertTopicsQuality } from '../../../shared/utilities.ts';
+import { checkFavouriteExpertTopicsQuality, calculateAge } from '../../../shared/utilities.ts';
 
 // JWT PAYLOAD DECODER ---
 // Extracts payload from JWT without verification (verification happens server-side).
@@ -217,19 +217,38 @@ const Setup = () => {
 			const response = (await axios.post('/setup', Object.assign(payload, brain.user.isUnintroduced && { print: getDeviceFingerprint() }))).data;
 
 			const { citiesData, imgVers } = response;
-			const miscel = (await forage({ mode: 'get', what: 'miscel' })) || {};
 			if (imgVers) payload.imgVers = imgVers;
 
 			if (payload.cities) {
-				if (citiesData) citiesData.forEach(city => brain.cities.push({ ...city, cityID: Number(city.cityID) }));
+				// BUILD HASHID-TO-CITYID MAP ---
+				// Server regenerates canonical hashID; map originalHashID (client's version) to cityID for resolution.
+				const hashToCityID = new Map<string, number>();
+				if (citiesData)
+					citiesData.forEach(city => {
+						const cityID = Number(city.cityID);
+						if (city.originalHashID) hashToCityID.set(city.originalHashID, cityID);
+						if (city.hashID) hashToCityID.set(city.hashID, cityID);
+						// PUSH CITIES TO BRAIN ---
+						// Strip originalHashID before storing (only canonical hashID is needed).
+						const { originalHashID, ...cleanCity } = city;
+						brain.cities.push({ ...cleanCity, cityID });
+					});
 				// RESOLVE CITY IDS ---
-				// Match by hashID; filter out any unresolved cities.
+				// Match by hashID using the mapping; filter out any unresolved cities.
 				const cities = payload.cities as any[];
 				payload.cities = cities
-					.map(city => (typeof city === 'object' ? brain.cities.find(c => c.hashID === city.hashID)?.cityID : city))
+					.map(city => {
+						if (typeof city !== 'object') return city;
+						return hashToCityID.get(city.hashID) ?? brain.cities.find(c => c.hashID === city.hashID)?.cityID;
+					})
 					.filter(id => id != null)
 					.map(Number);
-				(miscel.initLoadData = { ...(miscel.initLoadData || {}), cities: payload.cities }), await forage({ mode: 'set', what: 'miscel', val: miscel });
+				// STORE CITIES IN MISCEL (EXISTING USERS ONLY) ---
+				// Skip for introduction - DEK encryption may not be ready; foundationLoader handles cities on init.
+				if (!isIntroduction) {
+					const miscel = (await forage({ mode: 'get', what: 'miscel' })) || {};
+					(miscel.initLoadData = { ...(miscel.initLoadData || {}), cities: payload.cities }), await forage({ mode: 'set', what: 'miscel', val: miscel });
+				}
 			}
 
 			// NEW USER REGISTRATION COMPLETE ---
@@ -240,13 +259,13 @@ const Setup = () => {
 				const userID = introCredentials?.userID;
 				// SET USER DATA ---
 				const cityIDs = ((payload.cities || []) as any[]).map(Number);
-				Object.assign(brain.user, { id: userID, cities: cityIDs, ...payload });
-				delete brain.user.isUnintroduced, (brain.isAfterLoginInit = true);
+				// CLEAN UP INTRODUCTION-ONLY FIELDS ---
+				// Calculate age from birth, then remove birth/image/print from payload before assigning to user.
+				if (payload.birth) payload.age = calculateAge(payload.birth as string);
+				delete payload.birth, delete payload.image, delete payload.print, delete payload.cities;
+				Object.assign(brain.user, { id: userID, cities: cityIDs, curCities: cityIDs, ...payload });
+				delete brain.user.isUnintroduced, delete brain.fastLoaded, (brain.isAfterLoginInit = true);
 				await forage({ mode: 'set', what: 'user', val: brain.user });
-				// STORE CITIES IN MISCEL ---
-				const miscelData = (await forage({ mode: 'get', what: 'miscel' })) || {};
-				miscelData.initLoadData = { ...(miscelData.initLoadData || {}), cities: cityIDs };
-				await forage({ mode: 'set', what: 'miscel', val: miscelData });
 
 				return navigate('/');
 			}
@@ -258,7 +277,10 @@ const Setup = () => {
 			// Show success state in the button, disable it, and navigate away after 2 seconds.
 			setSaveButtonState('success');
 			saveButtonTimeout.current && clearTimeout(saveButtonTimeout.current);
-			saveButtonTimeout.current = setTimeout(() => (isIntroduction || brain.fastLoaded ? (window.history.replaceState({}, '', '/'), loader.load('/')) : navigate(-1)), 2000);
+			saveButtonTimeout.current = setTimeout(
+				() => (isIntroduction || brain.fastLoaded ? (delete brain.fastLoaded, window.history.replaceState({}, '', '/'), loader.load('/')) : navigate(-1)),
+				2000
+			);
 		} catch (err) {
 			const errorData = err.response?.data;
 			const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
@@ -276,7 +298,7 @@ const Setup = () => {
 
 	// RENDER SETUP COMPONENT ----------------------------------------------
 	return (
-		<setup-comp class={`mihvh100 block  posRel   textAli w100 ${isIntroduction ? 'mhvh100' : ''}`}>
+		<setup-comp class={`mihvh100 block  posRel padBotXs  textAli w100 ${isIntroduction ? 'mhvh100' : ''}`}>
 			{/* MAIN SETUP CATEGORIES BUTTONS ------------------------------------------------- */}
 			{!isIntroduction && (
 				<cat-bs class={` flexCen marAuto posRel bInsetBlue thickBors  padTopXl  w100`}>

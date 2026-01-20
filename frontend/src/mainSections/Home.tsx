@@ -63,11 +63,18 @@ function Home(props) {
 			[]
 		),
 		[avail, { cats, types = [], time, sort }, { quick, filter, map, tools, times, sorts, sherlock, history }] = [snapAvail.current, snap || {}, show],
+		// AVAILABLE EVENTS FLAG ------------------------------------------------------
+		// Used to disable time/sort toggles when no events are available.
+		noEventsAvailable = !avail.types?.length,
 		// EFFECTIVE TYPE SELECTION ------------------------------------------------------
 		// Raw `snap.types` can contain types that are not available for current cats/time/cities. Treat those as unselected.
-		effectiveSelectedTypes = useMemo(() => types.filter(type => avail.types?.includes(type)), [types, avail.types]),
+		effectiveSelectedTypes = useMemo(() => (types || []).filter(type => avail.types?.includes(type)), [types, avail.types]),
 		hasEffectiveTypeSelection = avail.types?.length > 0 && effectiveSelectedTypes.length > 0,
-		noMeetSel = avail.types?.length > 0 && !avail.types.filter(type => type.startsWith('a')).some(type => types.includes(type)),
+		noMeetSel = useMemo(() => {
+			const availableFriendlyTypes = (avail.types || []).filter(type => type.startsWith('a'));
+			if (availableFriendlyTypes.length === 0) return false;
+			return !availableFriendlyTypes.some(type => (types || []).includes(type));
+		}, [avail.types, types]),
 		[sherData, setSherData] = useState({ ...sherlockObj }),
 		sherAvail = useMemo(() => {
 			if (!show.sherlock) return;
@@ -76,6 +83,7 @@ function Home(props) {
 		[inform, setInform] = useState([]),
 		[fadedIn, setFadedIn] = useFadeIn(fadeInOpts),
 		catsWrapperRef = useRef(null),
+		quickRef = useRef(null),
 		mapWrapperRef = useRef(null),
 		toolsRef = useRef(null),
 		[mapLoaded, setMapLoaded] = useState(false);
@@ -131,8 +139,8 @@ function Home(props) {
 			const times = ['anytime', 'recent', 'today', 'tomorrow', 'weekend', 'week', 'nextWeek', 'month', 'twoMonths'];
 
 			const citiesAvail = cities.reduce((acc, city) => {
-				Object.keys(brain.citiesTypesInTimes[city] || {}).forEach(t => {
-					acc[t] = [...new Set([...(acc[t] || []), ...brain.citiesTypesInTimes[city][t]])].sort((a, b) => a - b);
+				Object.keys(brain.citiesEveTypesInTimes[city] || {}).forEach(t => {
+					acc[t] = [...new Set([...(acc[t] || []), ...brain.citiesEveTypesInTimes[city][t]])].sort((a, b) => a - b);
 				});
 				return acc;
 			}, {});
@@ -162,7 +170,7 @@ function Home(props) {
 
 			if (returnSnap) return inpSnap;
 		},
-		[brain.citiesTypesInTimes, brain.user.curCities, snap]
+		[brain.citiesEveTypesInTimes, brain.user.curCities, snap]
 	);
 
 	//  IS SHERLOCK ACTIVE? ---------------------------------------
@@ -231,6 +239,14 @@ function Home(props) {
 		modify('sherlock', false);
 	}, [sherlock, cats, modify]);
 
+	// CLEAR NO FRIENDLY MEETINGS WARNING WHEN SELECTION CHANGES ---
+	// Ensures 'noMeetSel' warning disappears immediately once the user selects valid types.
+	useEffect(() => {
+		if (inform.includes('noMeetSel') && cats.includes('Přátelské') && !noMeetSel) {
+			setInform(prev => prev.filter(i => i !== 'noMeetSel'));
+		}
+	}, [cats, noMeetSel, inform, setInform]);
+
 	// SHOW MANAGER FUNCTION --------------------------------------
 	const showMan = useCallback(
 		(inp, val) => {
@@ -268,13 +284,16 @@ function Home(props) {
 			};
 
 			const scrollToTop = inp === 'tools', // CLOSING COMPS SCROLLS TO CENTER NOW ---------------------------
-				scrollToCenter = ['times', 'sorts', 'resetView'].includes(inp) || (comps.includes(inp) && show[inp] === true);
+				scrollToCenter = ['times', 'sorts', 'resetView'].includes(inp) || (comps.includes(inp) && show[inp] === true),
+				scrollToQuick = inp === 'quick' && val === false;
 
 			(actions[inp] || actions.default)(),
-				!isMobile &&
+				(scrollToQuick || !isMobile) &&
 					(scrollToTop
 						? requestAnimationFrame(() => window.scrollTo({ top: catsWrapperRef.current.offsetTop - 170, behavior: 'smooth' }))
-						: scrollToCenter && requestAnimationFrame(() => setTimeout(() => toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)));
+						: scrollToCenter
+						? requestAnimationFrame(() => setTimeout(() => toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50))
+						: scrollToQuick && requestAnimationFrame(() => setTimeout(() => quickRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)));
 		},
 		[snap, show, tools, map, initialize, sherlock, inform, cats, noMeetSel, history, types, hasEffectiveTypeSelection, brain, modify, loader, setSnap, setInitialize, isMobile]
 	);
@@ -364,7 +383,7 @@ function Home(props) {
 				<cities-view class={`fPadHorXxs textAli marAuto  block w100 posRel `}>
 					{/* QUICK FRIENDLY ------------------------------------------------- */}
 
-					<QuickFriendly {...jsxProps} />
+					<QuickFriendly {...jsxProps} ref={quickRef} />
 					<empty-div class={`block ${quick === false ? 'hvh2' : 'hvh11'}`} />
 
 					{/* CAT FILTER --------------------------------------------- */}
@@ -403,10 +422,11 @@ function Home(props) {
 										const noEventsInTime = !avail.times?.includes(time);
 										return (
 											<button
-												className={`   grow  allOff  mw45   bHover h100     textSha ${noEventsInTime && avail.types.length ? 'bRed tWhite' : ''}`}
-												onClick={() => showMan('times')}>
+												className={`   grow  allOff  mw45   bHover h100     textSha ${noEventsAvailable || (noEventsInTime && avail.types.length) ? 'bRed tWhite xBold' : ''}`}
+												onClick={() => showMan('times')}
+												disabled={noEventsAvailable}>
 												<img src={`/icons/gallery/pastSurMay.png`} className='aspect1612  w20 miw3 mw4' alt='' />
-												<span className='fs12 bold '>{timeLabel[time]}</span>
+												<span className='fs12 bold '>{noEventsAvailable ? 'období' : timeLabel[time]}</span>
 											</button>
 										);
 									})()}
@@ -414,11 +434,11 @@ function Home(props) {
 									{/* EXPERT TOOLS TOGGLES ------------------------------------------------- */}
 									<expert-toggles class='flexCen     aliStretch gapXxxs      w60 mw65 grow   zinMaXl posRel   marAuto h100  '>
 										{comps
-											.filter(comp => comp === 'filter' || show[comp] || (hasEffectiveTypeSelection && (comp !== 'sherlock' || (!noMeetSel && snap.cats.includes('Přátelské')))))
+											.filter(comp => comp === 'filter' || show[comp] && avail.types?.some(type => types.includes(type)) || (hasEffectiveTypeSelection && (comp !== 'sherlock' || snap.cats.includes('Přátelské'))))
 											.map(key => {
 												const availCount = avail.types.length;
 												const numOfAvailNotSel = avail.types?.filter(type => !types.includes(type)).length;
-												const notAllTypesSelected = snap.types.length > 0 && availCount - numOfAvailNotSel !== availCount;
+												const notAllTypesSelected = availCount - numOfAvailNotSel !== availCount;
 												const isSel = show[key] === true || (notAllTypesSelected && key === 'filter');
 
 												return (
@@ -428,10 +448,10 @@ function Home(props) {
 															if (!avail.types.length) setInform(['noEvents']), setTimeout(() => setInform(prev => prev.filter(inform => inform !== 'noEvents')), 3000);
 															else if (key !== 'sherlock' || !inform.includes('noMeetSel')) showMan(key);
 														}}
-														className={`${isSel && !inform.length && hasEffectiveTypeSelection ? 'fs12 arrowDown1 posRel xBold   ' : ' fs8   bHover  '}
+														className={`${!types.length && availCount > 0 ? 'fs12 bsContentGlow tRed' : ''} ${isSel && !inform.length && hasEffectiveTypeSelection ? 'fs12 arrowDown1 posRel xBold   ' : ' fs8   bHover  '}
 													${!hasEffectiveTypeSelection ? 'tRed xBold fs15' : ''}
 											          grow     bgTransXs posRel   lh1         `}>
-														<img src={`/icons/${key}.png`} className={`aspect1612 ${isSel ? 'mw6 w45' : 'mw5 w30'}  miw4  `} alt='' />
+														<img src={`/icons/${key}.png`} className={`aspect1612 mw7 w50  miw4  `} alt='' />
 														{key === 'filter' ? (notAllTypesSelected ? `${availCount - numOfAvailNotSel}/${availCount}` : 'filter') : key}
 														{isSel && !inform.length && hasEffectiveTypeSelection && (
 															<blue-divider
@@ -445,10 +465,13 @@ function Home(props) {
 									</expert-toggles>
 
 									{/* TOGGLE SORTING --------------------------------------- */}
-									<button className={`  posRel allOff  bHover grow mw45 h100  textSha`} onClick={() => showMan('sorts')}>
+									<button
+										className={`  posRel allOff  bHover grow mw45 h100  textSha ${noEventsAvailable ? 'bRed tWhite xBold' : ''}`}
+										onClick={() => showMan('sorts')}
+										disabled={noEventsAvailable}>
 										<img src={`/icons/sort.png`} className='aspect1610 w20 miw3 mw4' alt='' />
 										<span className='fs12 bold '>
-											{sort === 'popular' ? 'oblíbené' : sort === 'earliest' ? 'brzké' : sort === 'nearest' ? 'blízké' : sort === 'intimate' ? 'intimní' : 'rušné'}
+											{noEventsAvailable ? 'řazení' : sort === 'popular' ? 'oblíbené' : sort === 'earliest' ? 'brzké' : sort === 'nearest' ? 'blízké' : sort === 'intimate' ? 'intimní' : 'rušné'}
 										</span>
 									</button>
 
@@ -478,7 +501,11 @@ function Home(props) {
 							)}
 						</tools-strip>
 						{!hasEffectiveTypeSelection && (
-							<span className='tWhite padAllXxs w30 bRed posAbs botCen downLittle zin2500 posRel inlineBlock boldS'>{`Ve zvolených kategoriích nemáš vybrané události. `}</span>
+						<red-warning class={`  block  w100 block  posAbs botCen ${filter ? 'arrowDownRed' : ''} downLittle zin2500 posRel  boldS`}>
+							<span className={`tWhite padAllXxs fs7 w100 mw45 inlineBlock bInsetBlueTopXl bDarkRed  
+							  boldS`}>{`${!filter ? 'Není zvolen žádný typ událostí v aktuálním filtru.' : 'Vyber alespoň jeden typ událostí z aktuálního filtru.'}`}</span>
+						</red-warning>
+
 						)}
 					</filtering-system>
 

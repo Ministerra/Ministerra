@@ -37,7 +37,7 @@ function ContentControls({ brain, snap, avail, contView, numOfCols, maxCols, vie
 					{`${numOfCols} ${numOfCols === 1 ? 'sloupec' : numOfCols > 4 ? 'sloupců' : 'sloupce'}`}
 				</button>
 			)}
-			{contView === 'users' && snap.types.length !== avail.types.length && (
+			{contView === 'users' && snap.types.length !== avail.types.length && contentLength > 1 && (
 				<button
 					onClick={async () => {
 						brain.user.settings.showAllThumbs = !brain.user.settings.showAllThumbs;

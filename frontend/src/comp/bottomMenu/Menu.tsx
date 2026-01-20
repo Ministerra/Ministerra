@@ -37,7 +37,7 @@ function Menu(props) {
 				<button
 					className='   fs6 w20 miw8 mw14 hvw10 mh8 padVerXxs flexCol aliCen bold justCen  borderLight  bHover'
 					onClick={() => {
-						setMenuView(false), nowAt !== 'setup' && navigate('setup');
+						nowAt !== 'setup' && navigate('setup');
 					}}>
 					<img src='/icons/settings.png' alt='' className='aspect1612 w35 mh3-5' />
 					Nastavit

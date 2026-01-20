@@ -181,6 +181,8 @@ const SimpleProtocol = props => {
 							: 'Abys v budoucnu věděl o koho se jedná. Napiš si odkud se znáte, co tě zaujalo, o čem jste mluvili, co ti slíbil'
 					}`}</p>
 					<textarea
+						title='Nepovinná zpráva'
+						placeholder='Zpráva...'
 						onChange={e => man('message', e.target.value)}
 						maxLength={type === 'link' ? 200 : 500}
 						className='growAll textAli  shaBot   textArea shaCon bBor2  mw140  fsB padAllXs w100'
@@ -195,7 +197,14 @@ const SimpleProtocol = props => {
 					<span className='fs11 marBotXxs xBold  tDarkBlue   inlineBlock textAli'>Nepovinná poznámka</span>
 					<p className='fs8 lh1-1 textAli mw120 marBotXxs'>Abys v budoucnu věděl o koho se jedná. Napiš si odkud se znáte, co tě zaujalo, o čem jste mluvili, co ti slíbil</p>
 					<area-wrapper class='padTopXxs   block   w100'>
-						<textarea onChange={e => man('note', e.target.value)} maxLength={200} className='growAll textAli shaBot textArea shaCon bBor2 mw140 fsB padAllXs w100' rows={4} />
+						<textarea
+							title='Nepovinná poznámka'
+							placeholder='Poznámka...'
+							onChange={e => man('note', e.target.value)}
+							maxLength={200}
+							className='growAll textAli shaBot textArea shaCon bBor2 mw140 fsB padAllXs w100'
+							rows={4}
+						/>
 					</area-wrapper>
 				</link-note>
 			)}
@@ -203,6 +212,8 @@ const SimpleProtocol = props => {
 				<link-note class='flexCol aliCen w100 marAuto block'>
 					<area-wrapper class='padTopXxs bInsetBlueTopS marBotS block borTop4  w100'>
 						<textarea
+							title='Poznámka'
+							placeholder='Poznámka...'
 							autoFocus={!isMobile}
 							onChange={e => man('note', e.target.value)}
 							value={note}

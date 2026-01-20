@@ -148,7 +148,7 @@ function IntersPrivsButtons(props) {
 
 	// INTERESTS BUTTONS ---
 	const intersButtons = (
-		<inters-bs class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''} flexCen  aliStretch zinMax gapXxxs w100`}>
+		<inters-bs class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''}  flexCen  aliStretch zinMax gapXxxs w100`}>
 			{intersSrc.map((btn, i) => {
 				const isSelected = status.inter === btn.short;
 				return (
@@ -163,13 +163,13 @@ function IntersPrivsButtons(props) {
 						}
 						className={`${
 							isSelected && !modes.privs
-								? `bgTrans ${nowAt === 'event' ? 'imw10' : 'imw8'} ${!modes.privs ? 'bInsetBlueTopS' : 'bInsetRedTopXl'} thickBors`
+								? `bgTrans ${nowAt === 'event' ? 'imw10' : 'imw8'} ${!modes.privs ? 'bInsetBlueTopS' : 'bInsetRedTopXl'} `
 								: `noBackground  ${nowAt === 'event' ? 'imw10' : 'imw8'}`
 						} ${disableInters && !isSelected ? 'tDis opaque' : ''}  ${nowAt === 'event' ? 'padTopXxs padBotXxs ' : 'padBotXxs padTopXxs'} textSha posRel   zin10 ${
 							i === 1 ? 'w50' : 'w25'
 						} bHover flexCol aliCen`}>
-						{isSelected && <blue-divider class={`hr0-3  zin1 block posAbs topCen w80 ${!modes.privs ? 'bInsetBlueTopXl' : 'bInsetRedTopXl'}  bgTrans w40 marAuto`} />}
-						<img className=' aspect169 posRel downTinyBit maskLowXs  w80' src={`/icons/${modes.privs && isSelected ? 'error' : btn.key === 'interested' ? 'eye' : btn.key}.png`} alt='' />
+						{isSelected && <blue-divider class={`hr0-5  zin1 block posAbs topCen w80 ${!modes.privs ? 'bInsetBlueTopXl' : 'bInsetRedTopXl'}  bgTrans w40 marAuto`} />}
+						<img className=' aspect169 posRel downTiny maskLowXs  w80' src={`/icons/${modes.privs && isSelected ? 'error' : btn.key === 'interested' ? 'eye' : btn.key}.png`} alt='' />
 						<span className={`textSha fs5 marTopXxxxs ${isSelected ? 'bold fs5' : 'fs5'}`}>{isSelected && modes.privs ? 'zrušit zájem' : btn.label}</span>
 					</button>
 				);

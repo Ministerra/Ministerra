@@ -44,7 +44,7 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
 import EventHeaderImage from '../comp/EventHeaderImage';
 
 function Editor(props: any) {
-	const { quickType = null, showMan, nowAt, brain } = ((useOutletContext() as any) || props) as any;
+	const { quickType = null, showMan, setShowMore, nowAt, brain } = ((useOutletContext() as any) || props) as any;
 	const loaderEvent = useLoaderData() as any,
 		navigate = useNavigate(),
 		event = quickType === null ? loaderEvent : null,
@@ -75,7 +75,8 @@ function Editor(props: any) {
 		extraFieldsTexts = useRef<any>({}),
 		[inform, setInform] = useState([]),
 		scrollTarget = useRef<any>(null),
-		titleSectionRef = useRef<any>(null);
+		titleSectionRef = useRef<any>(null),
+		placeSectionRef = useRef<any>(null);
 	const shouldShowAttendanceButtons = isQuick || (!event && (data.type?.startsWith('a') || data.title));
 
 	// INITIAL SCROLL--------------------------------------------------
@@ -95,6 +96,7 @@ function Editor(props: any) {
 	// TODO before user confirms creatino of quick meeting, give him the option to choose from peopel or friendlyMeetings in the given radius
 	// BUG check whether there is no date time shift after saving and drestoring dates from session storage
 	// todo when editing event. need to show also the invited users for some  management. Or maybe just show the count and fetch data on some button click
+	//BUG - this is very important, not a bug - we need to figure out how to synchronize event.priv and inter  priv for the events owner (the user). should the inter priv of the useer be always the same as the event, or should the owner have the option to change it? how? what are the implications? what to allow an what not? what should be sanitized ono backend and frontend?
 
 	// MANAGER -------------------------------------------------------
 	async function man(inp, val = null) {
@@ -274,7 +276,7 @@ function Editor(props: any) {
 							brain.user.history.forEach(snap => {
 								if (snap.init || (snap.types.includes(data.type) && snap.cities.includes(axiData.cityID) && belongsInto.includes(snap.time))) {
 									if (!snap.types.includes(data.type)) snap.types.push(data.type);
-									const availObj = brain.citiesTypesInTimes[axiData.cityID];
+									const availObj = brain.citiesEveTypesInTimes[axiData.cityID];
 									if (availObj) belongsInto.forEach(timeframe => !availObj[timeframe].includes(data.type) && availObj[timeframe].push(data.type));
 								}
 							});
@@ -324,11 +326,14 @@ function Editor(props: any) {
 					<header-div class={`  w100 block   posAbs topCen zin1 flexCol aliCen  marAuto`}>
 						<div className={`bgWhite topCen opacityXs shaCon mih1 posAbs w100 zin10`} />
 						<div className={`bgWhite topCen opacityM shaCon mih0-5 posAbs w100 zin20`} />
-						<images-wrapper class={'hvh25 bgTransXs block round'}>
+						<images-wrapper class={'hvh20 bgTransXs block round'}>
 							<img loading='lazy' className='w100 maskLow hvw30 mh33 zin2 cover' src={`/covers/friendlyMeetings/${quickType}.png`} alt='' />
 							<img
-								onClick={() => showMan('quick', false)}
-								className='wvw50 posAbs topCen bgTrans   zinMax mw45  padHorL  pointer  boRadM   upExtra  hover padVerS    '
+								onClick={() => {
+									showMan('quick', false);
+									setShowMore(false);
+								}}
+								className='wvw50 posAbs topCen bgTrans   zinMax mw35  padHorL  pointer  boRadM  upEvenMore  hover padVerS    '
 								src={`/icons/types/${quickType}.png`}
 								alt=''
 							/>
@@ -391,9 +396,9 @@ function Editor(props: any) {
 										<strong className={'marLefS tShaWhite   fs42 xBold'}>{`${details?.title}`}</strong>
 									</span>
 									<span className='fs12 inlineBlock '>
-										Toto je <strong className='xBold'>zkrácený formulář</strong>, pro plnou verzi
-										<button onClick={() => ((brain.editorData = data), navigate('editor'))} className='borRed inline xBold padHorS borTopLight tGreen'>
-											vytvoř událost.
+										Toto je <strong className='xBold'>zkrácený formulář</strong> pro vytvoření události.
+										<button onClick={() => ((brain.editorData = data), navigate('editor'))} className='bInsetBlueTopXs posRel bBor2 fs14 inline xBold padHorXs marLefS  tGreen'>
+											Přejít na plný formulář.
 										</button>
 									</span>
 								</quickmeet-title>
@@ -413,13 +418,13 @@ function Editor(props: any) {
 								</info-texts>
 							)}
 							{!data.starts && !isQuick && <blue-divider class='hr0-3  zin1 block borRed bInsetBlueTopXl borTop bgTrans w80 marAuto' />}
-							<DateTimePicker {...{ superMan: man, starts, ends, nowAt, meetWhen: data.meetWhen, type: data.type, ...(isQuick && { mode: 'week', noAutoHide: true }) }} />
+							<DateTimePicker {...{ superMan: man, starts, ends, nowAt, meetWhen: data.meetWhen, type: data.type, isEditing: Boolean(event), ...(isQuick && { mode: 'week', noAutoHide: true }) }} />
 						</times-wrapper>
 					)}
 
 					{/* LOCATION, CITY, PLACE ---------------------------------- */}
 					{data.starts && (
-						<place-wrapper class={`block   posRel   posRel  padTopXl    marAuto w100`}>
+						<place-wrapper ref={placeSectionRef} class={`block   posRel   posRel  padTopXl    marAuto w100`}>
 							{!isQuick && <blue-divider class={` hr0-3  block bInsetBlueTopXl borTop bgTrans posAbs topCen   w100     marAuto   `} />}
 
 							<blue-divider class='hr8 posAbs topCen zin1 block  bInsetBlueTopXs2  bgTrans w80 mw140 marAuto' />
@@ -505,14 +510,7 @@ function Editor(props: any) {
 						</title-descrip>
 					)}
 
-					{/* COPY DATA AND GO TO EDITOR ------------------------------------------------- */}
-					{isQuick && (data.hashID || data.cityID) && (
-						<button
-							onClick={() => ((brain.editorData = data), showMan('quick', false), navigate('/editor'))}
-							className='bgTransXs bGlass shaBlue borderRed downLittle  borderBot bInsetGreenBot    tBlue zinMax  posRel padAllXs bold fs14  boRadXxs w80 marAuto mw60'>
-							Přejí na plný formulář
-						</button>
-					)}
+				
 
 					{/* EXTRAS-ADD ---------------------------------------------- */}
 					{!isQuick && ((data.type.startsWith('a') && (data.city || data.cityID)) || data.title) && (
@@ -627,7 +625,7 @@ function Editor(props: any) {
 												style={isDisabled ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
 												className={`${data.inter === button.inter ? `${button.class} xBold tWhite boldM` : 'boldM'} ${
 													isDisabled ? 'opacityL' : ''
-												} noBackground fs11 boRadXs  zin1`}
+												} noBackground fs11 mw30 boRadXxs  zin1`}
 												onClick={() => {
 													if (isDisabled) return;
 													man('inter', button.inter);
@@ -657,6 +655,7 @@ function Editor(props: any) {
 								{...({
 									brain,
 									obj: null,
+									nowAt: 'editor',
 									mode: 'eventToUsers',
 									isPreparation: true,
 									selectedItems: pendingInvitations,
@@ -680,6 +679,9 @@ function Editor(props: any) {
 							})}
 						</pending-invitations>
 					)}
+					{!isQuick && <button onClick={() => ((brain.editorData = data), navigate('editor'))} className='bInsetBlueTopXs posRel bBor2 fs14 inline xBold w100 mw30 marBotXs marLefS  tGreen'>
+						Přejít na plný formulář.
+					</button>}
 
 					{/* EXISTING EVENT INVITATIONS */}
 					{event && <Invitations {...({ brain, obj: event, onSuccess: () => setModes(prev => ({ ...prev, invite: false, menu: false })), downMargin: true, setModes } as any)} />}

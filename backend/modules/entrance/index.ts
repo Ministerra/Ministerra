@@ -4,7 +4,7 @@ import { generateDeviceId } from '../../utilities/helpers/device.ts';
 
 // SUBMODULE IMPORTS -----------------------------------------------------------
 import { register, resendMail, setRedis as setRegisterRedis } from './register.ts';
-import { login, logoutDevice, logoutEverywhere, updateLoginsTable, setRedis as setLoginRedis, setSocketIO as setLoginSocketIO } from './login.ts';
+import { login, logoutDevice, logoutEverywhere, rekeyDevice, updateLoginsTable, setRedis as setLoginRedis, setSocketIO as setLoginSocketIO } from './login.ts';
 import { forgotPass, changeCredentials, revertEmailChange } from './credentials.ts';
 import { verifyMail, verifyNewMail, setRedis as setVerificationRedis } from './verification.ts';
 import { delFreezeUser, setRedis as setAccountRedis } from './accountActions.ts';
@@ -31,6 +31,7 @@ const processors = {
 	login,
 	logoutDevice,
 	logoutEverywhere,
+	rekeyDevice,
 	verifyMail,
 	verifyNewMail,
 	freezeUser: delFreezeUser,
@@ -54,6 +55,7 @@ const propsAreInvalid = {
 	register: ({ pass, email }) => !pass || !email,
 	logoutEverywhere: ({ pass, userID, devID }) => !pass || !userID || !devID,
 	logoutDevice: ({ userID, devID }) => !userID || !devID,
+	rekeyDevice: ({ pass, userID, devID }) => !pass || !userID || !devID,
 	freezeUser: ({ is, pass }) => (is ? false : !pass),
 	deleteUser: ({ pass, is }) => (is ? false : !pass),
 	resendMail: ({ mailType, email, pass }) => !email || (mailType === 'verifyMail' && !pass),

@@ -2,9 +2,9 @@
  * FORAGE SET WORKER - Local Storage with Multi-Layer Encryption (AES-GCM)
  *
  * Security layers:
- * 1. Device print - binds data to specific device hardware
- * 2. PDK (password-derived key) with per-device salt - requires password + device registration
- * 3. DEK (device encryption key) - backend-controlled, GDPR-compliant device-bound encryption
+ * 1. Device print - binds data to specific device hardware (12 stable signals)
+ * 2. PDK (password-derived key) - Argon2id with 64MB memory, per-device salt
+ * 3. DEK (device encryption key) - backend-controlled, GDPR-compliant, 24h TTL heartbeat
  * 4. Auth rotation - limits exposure window to 30 days
  * 5. AES-GCM authenticated encryption - detects tampering
  *
@@ -12,6 +12,10 @@
  * - DEK is generated/stored ONLY on backend - frontend NEVER sees key derivation
  * - Remote revocation: backend nullifies DEK → all device-bound data becomes unrecoverable
  * - Device change (fingerprint drift): backend returns null DEK → automatic data prune
+ *
+ * OFFLINE ATTACK MITIGATION:
+ * - DEK expires after 24h without server validation (heartbeat)
+ * - Stolen device going offline can only access device-bound data for max 24h
  */
 
 import localforage from 'localforage';
@@ -19,8 +23,8 @@ import localforage from 'localforage';
 const delEveProps = ['own', 'inter', 'mark', 'awards', 'commsData', 'commsSyncedAt', 'cursors', 'userIDs', 'invited', 'invites', 'distance'],
 	delUserProps = ['mark', 'awards', 'linked', 'trusts', 'note', 'message', 'unavail', 'distance'],
 	needEncryption = new Set(['user', 'chat', 'comms', 'alerts', 'past']), // PDK-encrypted (user-bound)
-	deviceBoundItems = new Set(['events', 'eve', 'users', 'use', 'miscel']), // DEK-encrypted (device-bound) - includes aliases
-	unencryptedItems = new Set(['token']), // Stored unencrypted (token is already a signed JWT)
+	deviceBoundItems = new Set(['events', 'eve', 'users', 'use']), // DEK-encrypted (device-bound) - includes aliases
+	unencryptedItems = new Set(['token', 'miscel']), // Stored unencrypted (token is signed JWT, miscel is public metadata)
 	isNotJSON = new Set(['token', 'auth']),
 	itemKeys = { events: 'eve', users: 'use', chats: 'chat' };
 
@@ -71,8 +75,8 @@ const encryptGCM = async (keyString, plaintext) => {
 		combined = new Uint8Array(iv.length + ciphertext.byteLength);
 
 	combined.set(iv), combined.set(new Uint8Array(ciphertext), iv.length);
-	const chunks = [];
-	for (let offset = 0; offset < combined.length; offset += 8192) chunks.push(String.fromCharCode.apply(null, combined.subarray(offset, offset + 8192)));
+	const chunks: string[] = [];
+	for (let offset = 0; offset < combined.length; offset += 8192) chunks.push(String.fromCharCode.apply(null, Array.from(combined.subarray(offset, offset + 8192))));
 	return btoa(chunks.join(''));
 };
 
@@ -95,50 +99,74 @@ const decryptGCM = async (keyString, ciphertextB64) => {
 	return decoder.decode(plaintext);
 };
 
-// PDK STORAGE - encrypted with server-issued pdkSalt in IndexedDB ---------------------------
-// Security: pdkSalt from server prevents offline brute-force and allows server-side revocation
+// PDK STORAGE - encrypted with print + pdkSalt for device-binding ---------------------------
+// Security: print binds to device hardware, pdkSalt from server prevents offline brute-force.
+// Print change triggers rekey modal where user re-enters password to re-derive PDK.
 const PDK_KEY = '_encPDK';
-const storePDKEncrypted = async (pdkValue, salt) => {
-	if (!pdkValue || !salt) return;
-	await localforage.setItem(PDK_KEY, await encryptGCM(salt, pdkValue));
+const getPdkEncKey = (print, salt) => `${print}:${salt}`;
+const storePDKEncrypted = async (pdkValue, print, salt) => {
+	if (!pdkValue || !print || !salt) return;
+	await localforage.setItem(PDK_KEY, await encryptGCM(getPdkEncKey(print, salt), pdkValue));
 };
-const loadPDKEncrypted = async salt => {
-	if (!salt) return null;
+const loadPDKEncrypted = async (print, salt) => {
+	if (!print || !salt) return null;
 	const encrypted = await localforage.getItem(PDK_KEY);
 	if (!encrypted) return null;
 	try {
-		return await decryptGCM(salt, encrypted);
-	} catch (e) {
-		console.warn('PDK decryption failed - likely wrong pdkSalt or tampered storage');
-		return null;
+		return await decryptGCM(getPdkEncKey(print, salt), encrypted);
+	} catch {
+		throw new Error('fingerprintChanged');
 	}
 };
 const clearPDKEncrypted = () => localforage.removeItem(PDK_KEY);
 
 // DEK STORAGE - backend-controlled device encryption key, encrypted with device print ---------------------------
-// GDPR: DEK never derived on frontend - backend generates/stores/revokes it
+// GDPR: DEK never derived on frontend - backend generates/stores/revokes it.
+// Print change: DEK can't be decrypted locally, backend sends fresh DEK on next foundation call.
+// HEARTBEAT: DEK expires after 24h without server validation to limit offline attack window.
 const DEK_KEY = '_encDEK';
+const DEK_TS_KEY = '_dekTimestamp';
+const DEK_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 const storeDEKEncrypted = async (dekValue, print) => {
 	if (!dekValue || !print) return;
 	await localforage.setItem(DEK_KEY, await encryptGCM(print, dekValue));
+	await localforage.setItem(DEK_TS_KEY, Date.now());
 };
-const loadDEKEncrypted = async print => {
+
+const loadDEKEncrypted = async (print): Promise<string | null> => {
 	if (!print) return null;
 	const encrypted = await localforage.getItem(DEK_KEY);
 	if (!encrypted) return null;
+
+	// DEK HEARTBEAT CHECK - require server refresh after TTL expires ---
+	const timestamp = (await localforage.getItem(DEK_TS_KEY)) as number | null;
+	if (!timestamp || Date.now() - timestamp > DEK_TTL_MS) {
+		console.warn('DEK expired (heartbeat timeout) - requires server refresh');
+		return null;
+	}
+
 	try {
 		return await decryptGCM(print, encrypted);
-	} catch (e) {
-		console.warn('DEK decryption failed - likely wrong device print or tampered storage');
+	} catch {
+		console.warn('DEK decryption failed - fingerprint changed, will get fresh DEK from backend');
 		return null;
 	}
 };
-const clearDEKEncrypted = () => localforage.removeItem(DEK_KEY);
+
+const refreshDEKTimestamp = async () => {
+	await localforage.setItem(DEK_TS_KEY, Date.now());
+};
+
+const clearDEKEncrypted = async () => {
+	await localforage.removeItem(DEK_KEY);
+	await localforage.removeItem(DEK_TS_KEY);
+};
 
 // PRUNE ALL DEVICE-BOUND DATA - called when DEK is null (device revoked or deviceID changed) ---------------------------
 const pruneDeviceBoundData = async () => {
 	const keys = await localforage.keys();
-	const deviceBoundPrefixes = ['eve_', 'use_', 'miscel', 'token', DEK_KEY];
+	const deviceBoundPrefixes = ['eve_', 'use_', 'miscel', 'token', DEK_KEY, DEK_TS_KEY];
 	for (const key of keys) {
 		if (deviceBoundPrefixes.some(prefix => key.startsWith(prefix))) {
 			await localforage.removeItem(key);
@@ -147,7 +175,7 @@ const pruneDeviceBoundData = async () => {
 	dek = null;
 };
 
-// COMBINE KEYS - print + pdk for stronger encryption
+// COMBINE KEYS - print + pdk for stronger encryption ---------------------------
 // Steps: require both print and PDK, then concatenate to derive a combined key used to decrypt the auth hash used for user-bound storage.
 const getCombinedKey = () => {
 	if (!devicePrint || !pdk) return null;
@@ -271,10 +299,9 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 				},
 			});
 		}
-
 		// KEY AVAILABILITY GUARDS ---
 		if (needEncryption.has(what) && !auth) return respond({ data: null });
-		if (deviceBoundItems.has(what) && !dek && what !== 'auth') return respond({ data: null });
+		if (deviceBoundItems.has(what) && !dek) return respond({ data: null });
 
 		let data;
 		// GET DATA ----------------------------------------------------------------------
@@ -317,20 +344,34 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 				if (newPdkSalt) pdkSalt = newPdkSalt;
 				else if (!pdkSalt) return respond({ error: 'noPdkSalt' });
 
-				// PDK/DEK LIFECYCLE MANAGEMENT ---
-				if (newPdk) (pdk = newPdk), await storePDKEncrypted(newPdk, pdkSalt);
-				else if (!(pdk = await loadPDKEncrypted(pdkSalt))) return respond({ error: 'noPDK' });
+				// PDK LIFECYCLE - encrypted with print + pdkSalt for device-binding ---
+				if (newPdk) (pdk = newPdk), await storePDKEncrypted(newPdk, print, pdkSalt);
+				else {
+					try {
+						pdk = await loadPDKEncrypted(print, pdkSalt);
+					} catch {
+						return respond({ error: 'fingerprintChanged' });
+					}
+					if (!pdk) return respond({ error: 'noPDK' });
+				}
 
+				// DEK LIFECYCLE - encrypted with print, shared across all users on device ---
+				// Print change: DEK can't be decrypted locally, backend sends fresh DEK on next foundation call.
+				// HEARTBEAT: newDek from server refreshes TTL; expired local DEK requires server refresh.
 				if (newDek) (dek = newDek), await storeDEKEncrypted(newDek, print);
 				else if (newDek === null) {
 					console.warn('DEK revoked, pruning device-bound data'), await pruneDeviceBoundData();
 					return respond({ status: 'device_revoked' });
-				} else dek = await loadDEKEncrypted(print);
+				} else {
+					dek = await loadDEKEncrypted(print);
+					// DEK loaded from cache successfully - refresh heartbeat timestamp (server validated session) ---
+					if (dek) await refreshDEKTimestamp();
+				}
 
 				const combinedKey = getCombinedKey();
 				if (!combinedKey) return respond({ error: 'noCombinedKey' });
 
-				// AUTH ROTATION & RE-ENCRYPTION ---
+				// AUTH ROTATION & USER-BOUND RE-ENCRYPTION ---
 				if (prevAuth) {
 					const oldAuthHash = prevAuth.split(':')[1],
 						userKeys = (await localforage.keys()).filter(k => k.startsWith(`${id}_`) && needEncryption.has(k.split('_')[1]));
@@ -339,7 +380,8 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 						try {
 							await reEncryptStores(oldAuthHash, newAuthHash), respond({ status: 'reencrypted' });
 						} catch (e) {
-							console.warn('Re-encryption failed, clearing stale data'), userKeys.forEach(async key => await localforage.removeItem(key));
+							console.warn('Re-encryption failed, clearing stale data');
+							await Promise.all(userKeys.map(key => localforage.removeItem(key)));
 							respond({ status: 'cleared_stale' });
 						}
 					}

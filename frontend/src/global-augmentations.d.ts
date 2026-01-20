@@ -19,6 +19,8 @@ declare global {
 		__dynamicScalingHandler?: ((event?: Event) => void) | null;
 		__axiosInterceptorsInstalled?: { reqId: number; resId: number } | null;
 		__showGlobalError?: any;
+		__showRekeyModal?: () => Promise<boolean>;
+		__logOut?: () => Promise<void>;
 	}
 
 	// DOM RELAXED EVENT TARGETS ---------------------------------------------------

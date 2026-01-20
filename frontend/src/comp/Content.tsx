@@ -3,7 +3,7 @@
 import { useState, useRef, memo } from 'react';
 import Masonry from './Masonry';
 import useMasonResize from '../hooks/useMasonResize';
-import EventCard from './EventCard';
+import EventCard from './EventCard.tsx';
 import UserCard from './UserCard';
 import { useContentFetch } from '../hooks/useContentFetch';
 import ContentControls from './content/ContentControls';

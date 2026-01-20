@@ -11,10 +11,14 @@ const isSameDate = (date1, date2) => date1?.toDateString() === date2?.toDateStri
 // DATE TIME PICKER COMPONENT ---
 // Provides a comprehensive interface for selecting dates, times, and ranges
 const DateTimePicker = props => {
-	const [nowDate, { mode, starts, ends, superMan, prop, maxDate, noAutoHide, type }] = [new Date(), props],
-		[dateMode, setDateMode] = useState(starts ? null : prop ? null : 'starts'),
+	const [nowDate, { mode, starts, ends, superMan, prop, maxDate, noAutoHide, type, isEditing }] = [new Date(), props],
+		[dateMode, setDateMode] = useState(starts ? null : prop || 'starts'),
 		[hoursMode, setHoursMode] = useState(nowDate.getHours() >= 12 ? 'odpoledne' : 'dopoledne'),
 		[scrollTarget, fullDate, startOnly, noTime, noAmPm] = [useRef(), ['birth'].includes(prop), ['meetWhen'].includes(prop), ['birth'].includes(prop), ['meetWhen'].includes(prop)],
+		// ORIGINAL DATE STORAGE FOR EDIT MODE REVERT ---
+		// When editing, store original values to revert to if user clicks button with incomplete date
+		originalStartsRef = useRef(starts),
+		originalEndsRef = useRef(ends),
 		// INPUT NORMALIZATION ------------------------------------------------
 		// Accept Date OR ms timestamps from app state (numbers only).
 		startsDate = starts instanceof Date ? starts : typeof starts === 'number' ? new Date(starts) : null,
@@ -34,7 +38,7 @@ const DateTimePicker = props => {
 	// Manages individual components of the date and time selection
 	// For meetWhen, don't pre-select day - user must explicitly choose
 	const [timePortions, setTimePortions] = useState({
-			year: !fullDate && (maxDateDate || nowDate).getFullYear(),
+			year: fullDate ? null : (maxDateDate || nowDate).getFullYear(),
 			month: mode === 'week' ? (maxDateDate || nowDate).getMonth() : null,
 			day: mode === 'week' && prop !== 'meetWhen' ? (maxDateDate || nowDate).getDate() : null,
 			...(!noTime && {
@@ -118,7 +122,7 @@ const DateTimePicker = props => {
 	function cascadeInvalidatePortions(proposed: Record<string, number | null>, changedKey: string): Record<string, number | null> {
 		const order = noTime ? ['year', 'month', 'day'] : ['year', 'month', 'day', 'hour', 'min'],
 			changedIndex = order.indexOf(changedKey);
-		let shouldClear = false;
+		let shouldClear = proposed[changedKey] === null;
 
 		for (let i = changedIndex + 1; i < order.length; i++) {
 			const key = order[i];
@@ -293,14 +297,29 @@ const DateTimePicker = props => {
 		return [...Array.from({ length: days.length ? (first === 0 ? 6 : first - 1) : 0 }, () => ({ day: null })), ...days];
 	})();
 
+	// EDIT MODE REVERT HANDLER ---
+	// When editing and user clicks starts/ends button while date is incomplete, revert to original
+	const handleButtonClick = field => {
+		const isIncomplete = field === 'starts' ? !starts : !ends;
+		const originalValue = field === 'starts' ? originalStartsRef.current : originalEndsRef.current;
+		if (isEditing && isIncomplete && originalValue) {
+			superMan(field, originalValue);
+			setDateMode(null);
+			return;
+		}
+		setDateMode(prop ? (dateMode === prop ? null : prop) : dateMode === field ? null : field);
+		setHoursMode(hour >= 12 ? 'odpoledne' : 'dopoledne');
+	};
+
 	return (
 		<date-time ref={scrollTarget} class={` flexCen  w100 mw180  textAli zinMaXl  posRel marAuto wrap`}>
 			{/* DATE MODE CONTROLS --- */}
 			{/* Provides toggles between selecting start and end times for events */}
-			{(starts || prop === 'meetWhen') && (mode !== 'week' || (prop === 'meetWhen' && dateMode !== prop)) && !noAutoHide && (
-				<starts-ends class={`flexCen aliStretch w100 boRadXs textAli  posRel        marAuto  `}>
+			{/* In edit mode (isEditing), always show buttons even if starts is null */}
+			{(starts || isEditing || prop === 'meetWhen') && (mode !== 'week' || (prop === 'meetWhen' && dateMode !== prop)) && !noAutoHide && (
+				<starts-ends class={`flexCen aliStretch w100 boRadXs textAli  posRel   ${dateMode ? 'marBotM' : ''}     marAuto  `}>
 					{['starts', 'ends']
-						.filter(field => field === 'starts' || (starts && !startOnly))
+						.filter(field => field === 'starts' || ((starts || isEditing) && !startOnly))
 						.map(field => {
 							const startsInPast = !maxDate && field === 'starts' && starts < nowDate;
 							const endsBeforeStart = !dateMode && field === 'ends' && ends && new Date(ends) < new Date(starts);
@@ -310,7 +329,7 @@ const DateTimePicker = props => {
 									className={`${mode === 'week' ? ' mw80 borBot2 sideBors  ' : ''} ${
 										prop === 'meetWhen' ? 'padTopS padBotS bw50' : mode !== 'week' ? ' padTopM padBotM bw50' : 'padVerS padTopM padBotS bw100'
 									} h100 ${field === dateMode ? 'arrowDown ' : ''}  textSha posRel bHover   posRel grow padHorS`}
-									onClick={() => (setDateMode(prop ? (dateMode === prop ? null : prop) : dateMode === field ? null : field), setHoursMode(hour >= 12 ? 'odpoledne' : 'dopoledne'))}>
+									onClick={() => handleButtonClick(field)}>
 									{/* SELECTION STATUS LABEL --- */}
 									{/* Displays humanized date or validation warnings for the current field */}
 									{field === dateMode && <blue-divider class='hr1   block  bInsetBlueTopXl  posAbs botCen bgTrans w100 marAuto' />}
@@ -423,13 +442,13 @@ const DateTimePicker = props => {
 							{/* YEAR SELECTION GRID --- */}
 							{/* Displays individual years within a decade or near future */}
 							{((selDecade && (showAllDecades || (!dateSrc && !year))) || !fullDate) && (
-								<year-picker class='flexCen marAuto posRel borderBot bPadVerM  bInsetBlueTopXs posRel    aliStretch w100'>
+								<year-picker class='flexCen marAuto posRel borderBot bPadVerM   posRel    aliStretch w100'>
 									{(fullDate && selDecade ? Array.from({ length: 10 }, (_, i) => selDecade + i) : Array.from({ length: 3 }, (_, i) => nowDate.getFullYear() + i))
 										.filter(yearsFilter)
 										.map(b => (
 											<button
 												key={b}
-												className={` grow bHover ${b === year ? ' bBor2  tDarkBlue  fs22 boRadXxs posRel bgTrans xBold' : 'shaBlueLight fs16 boldXs noBackground'}`}
+												className={` grow bHover ${b === year ? ' bBor2  tDarkBlue  fs28 mw50 boRadXxs posRel bgTrans xBold' : 'shaBlueLight fs16 boldXs noBackground'}`}
 												onClick={() => handlePickerChange('year', b)}>
 												{b}
 											</button>
@@ -480,8 +499,8 @@ const DateTimePicker = props => {
 										key={`${month}_${i}`}
 										style={{ width: '100%', maxWidth: `${daysWidth - 1}px` }}
 										className={` ${
-											b === null ? 'bGlasSubtle' : b === day ? 'tDarkBlue fs12 borRed thickBors boRadXs bInsetBlueTop posRel xBold' : 'shaBlue boldXs fs8 bgWhite'
-										} borBotLight mih3 bHover`}
+											b === null ? 'bGlasSubtle' : b === day ? 'tDarkBlue fs22  thickBors boRadXs bInsetBlueTop posRel xBold' : 'shaBlue boldXs fs8 bgWhite'
+										} borBotLight padVerXxs mih3 bHover`}
 										onClick={() => b !== null && handlePickerChange('day', b)}>
 										{b ?? ''}
 										{b && b === day ? '.' : ''}
@@ -544,8 +563,7 @@ const DateTimePicker = props => {
 															hoursMode === period ? 'bInsetBlueBotXl borderBot  tWhite tSha10 posRel fs14 bInsetBlueBot xBold' : 'boldS fs14'
 														} padVerXxxs w50 xBold`}
 														onClick={() => {
-															const adjustedHour = hour != null ? (hoursMode === 'odpoledne' && hour < 12 ? hour + 12 : hour) : null;
-															if (adjustedHour != null) handlePickerChange('hour', adjustedHour);
+															if (period !== hoursMode) handlePickerChange('hour', null);
 															setHoursMode(period);
 														}}>
 														{period}
@@ -572,7 +590,7 @@ const DateTimePicker = props => {
 												key={b}
 												style={{ width: '100%', ...(hoursWidth && { maxWidth: `${Math.min(400, hoursWidth)}px` }) }}
 												className={`flexRow grow bHover ${
-													adjustedHour === hour ? 'tDarkBlue fs25   boRadXs  bInsetBlueTopXs bBor2 posRel xBold' : 'shaBlueLight  fs18'
+													adjustedHour === hour ? 'tDarkBlue fs22   boRadXs  bInsetBlueTopXs bBor2 posRel xBold' : 'shaBlueLight  fs18'
 												} padVerXs `}
 												onClick={() => handlePickerChange('hour', adjustedHour)}>
 												<div className='flexRow '>
@@ -593,7 +611,7 @@ const DateTimePicker = props => {
 										.map((b, i) => (
 											<button
 												key={b}
-												style={{ width: '100%', ...(minutesWidth && { maxWidth: `${Math.min(minutesWidth, minutesWidth)}px` }) }}
+												style={{ width: '100%', ...(minutesWidth && { maxWidth: `${minutesWidth}px` }) }}
 												className={`bHover ${b === min ? 'tDarkBlue fs22 borRed  boRadXs   posRel xBold' : `${!min ? 'fs18' : 'fs14'}  boldM shaBlueLight`} padVerXxs`}
 												onClick={() => handlePickerChange('min', b)}>
 												<div className='flexRow'>
@@ -614,6 +632,7 @@ const DateTimePicker = props => {
 
 function areEqual(prev, next) {
 	return (
+		prev.isEditing === next.isEditing &&
 		prev.starts === next.starts &&
 		prev.ends === next.ends &&
 		prev.type === next.type &&

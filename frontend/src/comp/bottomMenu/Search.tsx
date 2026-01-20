@@ -185,7 +185,7 @@ export function Search(props) {
 					? 'Vyhledej název proběhlé události...'
 					: 'Vyhledej název události...'
 			}
-			className={`w100 h100 fPadHorXxs posRel zin100 mh5 hvw10 aliCen flexCol justCen marAuto ${isChatSetup ? ' noBackground bold ' : 'phXbold bgTransXs xBold '} ${
+			className={`w100 h100 fPadHorXxs posRel  mh6 h100 shaBlue hvw10 aliCen flexCol justCen marAuto ${isChatSetup ? ' noBackground bold ' : 'phXbold bgTransXs xBold '} ${
 				cat === 'chats' ? 'fs14' : 'fs16'
 			}`}
 			ref={searchInput}
@@ -231,20 +231,20 @@ export function Search(props) {
 
 	const catsToShow = !isInvitations ? ['users', 'events', 'pastEvents', 'links'] : isInvitations === 'userToEvents' ? ['events'] : ['links', 'users'];
 	const SearchCats = () => (
-		<search-cat class={` bgTrans  aliStretch zinMenu block posRel ${!isInvitations ? 'posAbs botCen' : 'padTopS'} w100 textAli `}>
+		<search-cat class={` bgTrans  aliStretch zinMenu block posRel ${!isInvitations ? 'posAbs botCen' : 'padTopXs'} w100 textAli `}>
 			{/* DIVIDER --- */}
 			{cat !== 'chats' && <blue-divider style={{ filter: 'saturate(1) brightness(1)' }} class={` hr0-2 block bInsetBlueTopXl bgTrans w100 mw160 zin1 marAuto `} />}
 			{isInvitations && cat && <blue-divider class={` hr1 maskLowXs    block bInsetBlueTopXs  zinMax bgTrans  w100     marAuto   `} />}
 
 			{!showCats && (
-				<input-wrapper class={` posRel aliStretch bgWhite sideBors   h100 hvw3 mh5 w100 flexRow`}>
+				<input-wrapper class={` posRel aliStretch bgWhite thickBors   h100 hvw3 mh5 w100 flexRow`}>
 					{/* BACK BUTTON --- */}
 					<button
 						onClick={() => {
 							if (isInvitations === 'userToEvents') return searchInput.current.focus({ preventScroll: true });
 							cat !== 'chats' ? setShowCats(true) : setModes(prev => ({ ...prev, searchChats: !prev.searchChats }));
 						}}
-						className={` w20 posRel borTop flexCol bHover iw70 imw5 bInsetBlueTopXs bBor  bold`}>
+						className={` w20 posRel  flexCol bHover iw70 imw5 bInsetBlueTopXs bBor  bold`}>
 						<img
 							className={'zinMenu posRel downTinyBit maskLowXs'}
 							src={`/icons/${
@@ -266,9 +266,7 @@ export function Search(props) {
 								setTimeout(() => setInform([]), 2000);
 							} else if (!content) performSearch(searchQ, true);
 						}}
-						className={` w20 miw5 borTop posRel flexCol bHover iw70 imw5-5 bInsetBlueTopXs bBor bold ${
-							inform.includes('shortSearch') ? 'bRed tWhite xBold' : ''
-						}`}>
+						className={` w20 miw5  posRel flexCol bHover iw70 imw5-5 bInsetBlueTopXs bBor bold ${inform.includes('shortSearch') ? 'bRed tWhite xBold' : ''}`}>
 						<img
 							style={{ transform: 'rotate(-10deg)' }}
 							src='/icons/search.png'
@@ -380,7 +378,7 @@ export function Search(props) {
 
 			{/* NO RESULTS --- */}
 			{!content?.length && brain.user.noMore.search[cat]?.includes(searchQ) && (
-				<no-results className={`${!isChatSetup && !isInvitations ? 'marBotXxl' : ''} bRed   posRel zinMaXl textAli selfEnd tWhite block padAllXxs w100 boldS borTopRed  w100 fs10`}>
+				<no-results className={`${!isChatSetup && !isInvitations ? 'marBotXxl' : ''} bRed downTiny   posRel zin2000 textAli selfEnd tWhite block padAllXxs w98 marAuto boldS borTopRed  w100 fs10`}>
 					Žádné výsledky
 				</no-results>
 			)}

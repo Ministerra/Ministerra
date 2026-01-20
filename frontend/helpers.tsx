@@ -245,7 +245,7 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 
 		// CONVERT SETS TO ARRAYS ----------------------------------------------------------------------
 		if (bestOfIDsSet) brain.bestOfIDs = [...bestOfIDsSet];
-		if (isNewContent) !bestOfIDsSet && (brain.citiesTypesInTimes[thisCity] = Object.fromEntries(Object.entries(typesInTimes).map(([frame, types]: any[]) => [frame, Array.from(types as any)])));
+		if (isNewContent) !bestOfIDsSet && (brain.citiesEveTypesInTimes[thisCity] = Object.fromEntries(Object.entries(typesInTimes).map(([frame, types]: any[]) => [frame, Array.from(types as any)])));
 	} catch (error) {
 		console.error('PROCESS METAS ERROR', error);
 		throw error;
@@ -308,22 +308,31 @@ export function updateInteractions({ brain, add, del }: { brain: any; add?: any;
 }
 
 // GET DEVICE FINGER PRINT --------------------------------------------------------------------
+// Uses only highly stable signals that rarely change. Avoids: userAgent (browser updates), screen dimensions (external monitors),
+// devicePixelRatio (display settings), timezoneOffset (DST changes twice/year).
 export function getDeviceFingerprint() {
+	const nav = navigator as any, screen = window.screen;
 	const data = [
-		navigator.userAgent || '',
-		[window.screen.width, window.screen.height].join('x') || '',
-		window.devicePixelRatio || 1,
-		window.screen.colorDepth || 24,
-		window.screen.pixelDepth || 24,
-		Intl.DateTimeFormat().resolvedOptions().timeZone || '',
-		new Date().getTimezoneOffset(),
-		navigator.language || '',
-		navigator.hardwareConcurrency || '',
-		(navigator as any).deviceMemory || '',
-		navigator.maxTouchPoints || 0,
-	].join(' | ');
+		// HARDWARE SIGNALS 
+		nav.hardwareConcurrency || 4,             // CPU cores
+		nav.deviceMemory || 8,                    // RAM in GB (Chrome/Edge only, falls back)
+		nav.maxTouchPoints || 0,                  // Touch hardware capability
+		nav.platform || '',                       // OS platform (Win32, MacIntel, Linux x86_64)
+		// DISPLAY SIGNALS
+		screen.colorDepth || 24,                  // Display color depth
+		// LOCALE SIGNALS
+		Intl.DateTimeFormat().resolvedOptions().timeZone || '',  // Timezone name (not offset)
+		nav.language || '',                       // Primary browser language
+		nav.languages?.join(',') || '',           // All preferred languages
+		// BROWSER CAPABILITY SIGNALS 
+		typeof nav.pdfViewerEnabled !== 'undefined' ? nav.pdfViewerEnabled : '', // PDF viewer built-in
+		typeof nav.cookieEnabled !== 'undefined' ? nav.cookieEnabled : '',       // Cookies enabled
+		typeof nav.webdriver !== 'undefined' ? nav.webdriver : '',               // Automation detection
+		// AUDIO/VIDEO CAPABILITY (hardware-tied) ---
+		typeof AudioContext !== 'undefined' ? new AudioContext().destination.maxChannelCount : '', // Audio channels
+	].join('|');
 	return hashGenerate(data);
-}
+} 
 
 // PASSWORD-DERIVED KEY (PDK) -----------------------------------------------------------------
 // PBKDF2 with 100k iterations for slow brute-force resistance
@@ -433,7 +442,7 @@ export async function fetchOwnProfile(brain) {
 let forageInited = false;
 // PERSISTENT WORKERS - receive auth/DEK broadcasts, stay alive for session ---------------------------
 const encryptedModes = new Set(['user', 'chat', 'comms', 'past', 'alerts']); // PDK-encrypted (user-bound)
-const deviceBoundModes = new Set(['events', 'users', 'miscel']); // DEK-encrypted (device-bound, primary names)
+const deviceBoundModes = new Set(['events', 'users', 'miscel']); // Device-scoped persistent workers (events/users DEK-encrypted, miscel unencrypted)
 const allPersistentModes = new Set([...encryptedModes, ...deviceBoundModes]);
 const workerAliases = { eve: 'events', use: 'users' }; // Alternate names map to primary workers
 const encryptionWorkers = [...allPersistentModes].reduce((acc, what) => {

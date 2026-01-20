@@ -46,8 +46,9 @@ html {
 }
 body {
 	min-height: 100vh;
-	min-height: 100dvh;
 	min-height: -webkit-fill-available;
+	min-height: 100dvh;
+
 }
 #root {
 	min-height: inherit;
@@ -66,7 +67,7 @@ button:disabled img {
 	cursor: pointer;
 }
 ::-webkit-scrollbar {
-	width: 10px;
+	width: 15px;
 	margin-left: 19px;
 	background-color: #f5f5f5;
 }
@@ -86,8 +87,8 @@ button:disabled img {
 }
 
 ::-webkit-scrollbar-thumb {
-	background-color: rgb(19, 138, 241);
-	border-radius: 10px;
+	background-color: rgb(0, 86, 136);
+	border-radius: 5px;
 	border: 1px solid #62c3ff;
 	background-image: -webkit-linear-gradient(
 		45deg,
@@ -596,7 +597,7 @@ action-divs::before {
 	border-right: 30px solid transparent;
 	border-top: 15px solid rgb(104, 0, 0); /* Adjust the color as needed */
 	position: absolute;
-	bottom: -20px; /* Adjust the position as needed */
+	bottom: -17px; /* Adjust the position as needed */
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 1000;
@@ -1484,4 +1485,123 @@ action-divs::before {
 	100% {
 		transform: scaleX(1);
 	}
+}
+
+/* CHIP STYLES - UNIFIED BADGE/TAG APPEARANCE ---------------------------*/
+/* Open Color palette (level 6) with subtle gloss - https://yeun.github.io/open-color/ */
+.chipGray {
+	background: linear-gradient(180deg, #adb5bd 0%, #868e96 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipRed {
+	background: linear-gradient(180deg, #ff6b6b 0%, #fa5252 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipPink {
+	background: linear-gradient(180deg, #f06595 0%, #e64980 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipGrape {
+	background: linear-gradient(180deg, #cc5de8 0%, #be4bdb 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipViolet {
+	background: linear-gradient(180deg, #845ef7 0%, #7950f2 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipIndigo {
+	background: linear-gradient(180deg, #5c7cfa 0%, #4c6ef5 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipBlue {
+	background: linear-gradient(180deg, #339af0 0%, #228be6 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipCyan {
+	background: linear-gradient(180deg, #22b8cf 0%, #15aabf 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipTeal {
+	background: linear-gradient(180deg, #20c997 0%, #12b886 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipGreen {
+	background: linear-gradient(180deg, #51cf66 0%, #40c057 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipLime {
+	background: linear-gradient(180deg, #94d82d 0%, #82c91e 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipYellow {
+	background: linear-gradient(180deg, #fcc419 0%, #fab005 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+	color: rgba(0, 0, 0, 0.8) !important;
+}
+.chipOrange {
+	background: linear-gradient(180deg, #ff922b 0%, #fd7e14 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+/* DARKER CHIP VARIANTS (level 8) ---------------------------*/
+.chipDarkGray {
+	background: linear-gradient(180deg, #495057 0%, #343a40 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkRed {
+	background: linear-gradient(180deg, #e03131 0%, #c92a2a 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkPink {
+	background: linear-gradient(180deg, #d6336c 0%, #c2255c 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkGrape {
+	background: linear-gradient(180deg, #ae3ec9 0%, #9c36b5 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkViolet {
+	background: linear-gradient(180deg, #7048e8 0%, #6741d9 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkIndigo {
+	background: linear-gradient(180deg, #4263eb 0%, #3b5bdb 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkBlue {
+	background: linear-gradient(180deg, #1c7ed6 0%, #1971c2 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkCyan {
+	background: linear-gradient(180deg, #1098ad 0%, #0c8599 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkTeal {
+	background: linear-gradient(180deg, #0ca678 0%, #099268 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkGreen {
+	background: linear-gradient(180deg, #37b24d 0%, #2f9e44 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkLime {
+	background: linear-gradient(180deg, #74b816 0%, #66a80f 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.chipDarkYellow {
+	background: linear-gradient(180deg, #f59f00 0%, #f08c00 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+	color: rgba(0, 0, 0, 0.8) !important;
+}
+.chipDarkOrange {
+	background: linear-gradient(180deg, #f76707 0%, #e8590c 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+/* LEGACY ALIASES ---------------------------*/
+.chipPurple {
+	background: linear-gradient(180deg, #845ef7 0%, #7950f2 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.chipDarkPurple {
+	background: linear-gradient(180deg, #7048e8 0%, #6741d9 100%);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
 }

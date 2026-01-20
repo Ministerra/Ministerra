@@ -1,18 +1,27 @@
 // DEVICE MANAGEMENT ============================================================
-// Per-device encryption for cached content (events, users, misc), frontend never sees key derivation.
+// Two-tier device encryption: device-scoped DEK (shared cache) + user-device-scoped salts (PDK derivation).
+//
+// Architecture:
+// - `devices` table: device_id → device_key (DEK), shared by ALL users on that device
+// - `user_devices` table: user_id + device_id → salt, pdk_salt (per-user encryption salts)
 //
 // Steps:
 // 1) generateDeviceId(): generates a random 21-char device ID for new devices
-// 2) registerDevice(): called on login, registers deviceID for user, creates/refreshes salt+deviceKey, bumps last_seen
-// 3) getDeviceSalt(): called on token refresh, returns active device credentials or null (revoked/missing)
-// 4) listDevices(): returns device list without secrets for settings UI
-// 5) revokeDevice(): revokes device and clears device_key so cached blobs become unreadable
-// 6) renameDevice(): updates user-visible label for device identification
+// 2) ensureDevice(): creates device row if missing, returns shared DEK
+// 3) registerUserDevice(): called on login, registers user's salts for this device
+// 4) getDeviceKey(): returns device's DEK or null if revoked
+// 5) getUserDeviceSalts(): returns user's salt + pdkSalt for PDK derivation
+// 6) listUserDevices(): returns device list without secrets for settings UI
+// 7) revokeUserDevice(): revokes user's session on device (clears user-device row)
+// 8) revokeDevice(): revokes entire device (clears DEK, affects all users)
+// 9) renameDevice(): updates user-visible label for device identification
 // =============================================================================
 
 import crypto from 'crypto';
 import { generateIDString } from '../idGenerator.ts';
 
+// DEVICE CREDENTIALS ---
+// Returned on login: combines device-scoped DEK with user-scoped salts.
 interface DeviceCredentials {
 	deviceID: string;
 	salt: string;
@@ -22,6 +31,15 @@ interface DeviceCredentials {
 	wasRevoked?: boolean;
 }
 
+// USER DEVICE SALTS ---
+// User-specific encryption salts for PDK derivation.
+interface UserDeviceSalts {
+	salt: string;
+	pdkSalt: string;
+}
+
+// FULL DEVICE SUMMARY ---
+// Combines device DEK with user salts for foundation responses.
 interface DeviceSummary {
 	salt: string;
 	deviceKey: string;
@@ -42,53 +60,82 @@ export function generateDeviceId(): string {
 	return crypto.randomBytes(16).toString('hex').slice(0, 21);
 }
 
-// REGISTER DEVICE -------------------------------------------------------
-// Steps: deviceID is passed in (from cookie or newly generated). Each user gets their own row in user_devices with unique salt/deviceKey.
-
-export async function registerDevice(con: any, userID: string | number, deviceID: string): Promise<DeviceCredentials> {
-	try {
-		// check if this device already exists; branch into (revoked -> regenerate) vs (active -> reuse/backfill key) vs (new -> insert).
-		const [existing]: [any[], any] = await con.execute(/*sql*/ `SELECT id, salt, device_key, pdk_salt, is_revoked FROM user_devices WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
-
-		if (existing.length > 0) {
-			const device: any = existing[0];
-			// REVOKED -> REGENERATE ---------------------------------------------
-			// generate new salt+deviceKey+pdkSalt so previously encrypted cached data stays unrecoverable after revocation.
-
-			if (device.is_revoked) {
-				const newSalt: string = crypto.randomBytes(32).toString('hex'),
-					newDeviceKey: string = crypto.randomBytes(32).toString('hex'),
-					newPdkSalt: string = crypto.randomBytes(32).toString('hex');
-				await con.execute(/*sql*/ `UPDATE user_devices SET salt = ?, device_key = ?, pdk_salt = ?, is_revoked = 0, last_seen = NOW() WHERE id = ?`, [newSalt, newDeviceKey, newPdkSalt, device.id]);
-				return { deviceID, salt: newSalt, deviceKey: newDeviceKey, pdkSalt: newPdkSalt, isNew: true, wasRevoked: true };
-			}
-
-			// ACTIVE -> REUSE/BACKFILL --------------------------------------------
-			// reuse existing credentials; if device_key is missing (migration), backfill it so encryption is consistent.
-			let deviceKey: string = device.device_key;
-			await con.execute(/*sql*/ `UPDATE user_devices SET last_seen = NOW() WHERE id = ?`, [device.id]);
-			return { deviceID, salt: device.salt, deviceKey, pdkSalt: device.pdk_salt, isNew: false };
+// ENSURE DEVICE EXISTS -------------------------------------------------------
+// Steps: check if device exists in `devices` table; if not, create with new DEK. Returns shared DEK.
+export async function ensureDevice(con: any, deviceID: string): Promise<{ deviceKey: string; isNew: boolean }> {
+	const [existing]: [any[], any] = await con.execute(/*sql*/ `SELECT device_key, is_revoked FROM devices WHERE device_id = ?`, [deviceID]);
+	if (existing.length > 0) {
+		const device = existing[0];
+		// REVOKED -> REGENERATE DEK ---
+		if (device.is_revoked) {
+			const newDeviceKey = crypto.randomBytes(32).toString('hex');
+			await con.execute(/*sql*/ `UPDATE devices SET device_key = ?, is_revoked = 0 WHERE device_id = ?`, [newDeviceKey, deviceID]);
+			return { deviceKey: newDeviceKey, isNew: true };
 		}
+		return { deviceKey: device.device_key, isNew: false };
+	}
+	// NEW DEVICE ---
+	const deviceKey = crypto.randomBytes(32).toString('hex');
+	await con.execute(/*sql*/ `INSERT INTO devices (device_id, device_key) VALUES (?, ?)`, [deviceID, deviceKey]);
+	return { deviceKey, isNew: true };
+}
 
-		// NEW DEVICE INSERT -------------------------------------------------------
-		// Steps: generate Snowflake ID, generate salt+deviceKey+pdkSalt, insert row, and return credentials to caller.
-		const rowID: string = generateIDString();
-		const salt: string = crypto.randomBytes(32).toString('hex'),
-			deviceKey: string = crypto.randomBytes(32).toString('hex'),
-			pdkSalt: string = crypto.randomBytes(32).toString('hex');
-		await con.execute(/*sql*/ `INSERT INTO user_devices (id, user_id, device_id, salt, device_key, pdk_salt) VALUES (?, ?, ?, ?, ?, ?)`, [rowID, userID, deviceID, salt, deviceKey, pdkSalt]);
+// REGISTER USER DEVICE -------------------------------------------------------
+// Steps: ensure user has salts for this device. Device DEK is separate (handled by ensureDevice).
+export async function registerUserDevice(con: any, userID: string | number, deviceID: string, deviceKey: string): Promise<DeviceCredentials> {
+	try {
+		const [existing]: [any[], any] = await con.execute(/*sql*/ `SELECT id, salt, pdk_salt, is_revoked FROM user_devices WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
+		if (existing.length > 0) {
+			const userDevice = existing[0];
+			// USER-DEVICE REVOKED -> REGENERATE SALTS ---
+			if (userDevice.is_revoked) {
+				const newSalt = crypto.randomBytes(32).toString('hex'), newPdkSalt = crypto.randomBytes(32).toString('hex');
+				await con.execute(/*sql*/ `UPDATE user_devices SET salt = ?, pdk_salt = ?, is_revoked = 0, last_seen = NOW() WHERE id = ?`, [newSalt, newPdkSalt, userDevice.id]);
+				return { deviceID, salt: newSalt, deviceKey, pdkSalt: newPdkSalt, isNew: true, wasRevoked: true };
+			}
+			// ACTIVE -> REUSE SALTS ---
+			await con.execute(/*sql*/ `UPDATE user_devices SET last_seen = NOW() WHERE id = ?`, [userDevice.id]);
+			return { deviceID, salt: userDevice.salt, deviceKey, pdkSalt: userDevice.pdk_salt, isNew: false };
+		}
+		// NEW USER-DEVICE ROW ---
+		const rowID = generateIDString(), salt = crypto.randomBytes(32).toString('hex'), pdkSalt = crypto.randomBytes(32).toString('hex');
+		await con.execute(/*sql*/ `INSERT INTO user_devices (id, user_id, device_id, salt, pdk_salt) VALUES (?, ?, ?, ?, ?)`, [rowID, userID, deviceID, salt, pdkSalt]);
 		return { deviceID, salt, deviceKey, pdkSalt, isNew: true };
 	} catch (error) {
-		console.error('DEVICE REGISTRATION FAILED:', error);
+		console.error('USER DEVICE REGISTRATION FAILED:', error);
 		throw error;
 	}
 }
 
-// GET DEVICE SALT ---------------------------------------------------------------
-// return credentials only for active (non-revoked) devices; null signals client to purge device-bound caches.
+// REGISTER DEVICE (COMBINED) -------------------------------------------------------
+// Steps: wrapper that ensures device exists then registers user-device. Backward-compatible signature.
+export async function registerDevice(con: any, userID: string | number, deviceID: string): Promise<DeviceCredentials> {
+	const { deviceKey } = await ensureDevice(con, deviceID);
+	return await registerUserDevice(con, userID, deviceID, deviceKey);
+}
+
+// GET DEVICE KEY ---------------------------------------------------------------
+// Steps: return device's DEK if not revoked; null signals client to purge all device-bound caches.
+export async function getDeviceKey(con: any, deviceID: string): Promise<string | null> {
+	const [rows]: [any[], any] = await con.execute(/*sql*/ `SELECT device_key FROM devices WHERE device_id = ? AND is_revoked = 0`, [deviceID]);
+	return rows.length > 0 ? rows[0].device_key : null;
+}
+
+// GET USER DEVICE SALTS ---------------------------------------------------------------
+// Steps: return user's salt + pdkSalt for PDK derivation; null if user-device revoked.
+export async function getUserDeviceSalts(con: any, userID: string | number, deviceID: string): Promise<UserDeviceSalts | null> {
+	const [rows]: [any[], any] = await con.execute(/*sql*/ `SELECT salt, pdk_salt FROM user_devices WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [userID, deviceID]);
+	return rows.length > 0 ? { salt: rows[0].salt, pdkSalt: rows[0].pdk_salt } : null;
+}
+
+// GET DEVICE SALT (COMBINED) ---------------------------------------------------------------
+// Steps: backward-compatible function that combines device DEK with user salts.
 export async function getDeviceSalt(con: any, userID: string | number, deviceID: string): Promise<DeviceSummary | null> {
-	const [rows]: [any[], any] = await con.execute(/*sql*/ `SELECT salt, device_key, pdk_salt FROM user_devices WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [userID, deviceID]);
-	return rows.length > 0 ? { salt: rows[0].salt, deviceKey: rows[0].device_key, pdkSalt: rows[0].pdk_salt } : null;
+	const deviceKey = await getDeviceKey(con, deviceID);
+	if (!deviceKey) return null;
+	const userSalts = await getUserDeviceSalts(con, userID, deviceID);
+	if (!userSalts) return null;
+	return { salt: userSalts.salt, deviceKey, pdkSalt: userSalts.pdkSalt };
 }
 
 // This represents what the UI receives. Note: NO secrets (salt/key) here.
@@ -100,10 +147,22 @@ export async function listDevices(con: any, userID: string | number): Promise<De
 	return rows;
 }
 
-// REVOKE ---------------------------------------------------------
-// Steps: mark revoked and clear device_key so device-bound encrypted blobs become unrecoverable immediately.
-export async function revokeDevice(con: any, userID: string | number, deviceID: string): Promise<void> {
-	await con.execute(/*sql*/ `UPDATE user_devices SET is_revoked = 1, device_key = NULL WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
+// REVOKE USER DEVICE ---------------------------------------------------------
+// Steps: revoke user's session on this device; user-bound data (PDK-encrypted) becomes inaccessible.
+export async function revokeUserDevice(con: any, userID: string | number, deviceID: string): Promise<void> {
+	await con.execute(/*sql*/ `UPDATE user_devices SET is_revoked = 1 WHERE user_id = ? AND device_id = ?`, [userID, deviceID]);
+}
+
+// REVOKE DEVICE (ENTIRE) ---------------------------------------------------------
+// Steps: revoke device's DEK; affects ALL users on this device, device-bound cache becomes unrecoverable.
+export async function revokeDevice(con: any, deviceID: string): Promise<void> {
+	await con.execute(/*sql*/ `UPDATE devices SET is_revoked = 1, device_key = NULL WHERE device_id = ?`, [deviceID]);
+}
+
+// REVOKE ALL USER DEVICES ---------------------------------------------------------
+// Steps: revoke all devices for a user (logout everywhere).
+export async function revokeAllUserDevices(con: any, userID: string | number): Promise<void> {
+	await con.execute(/*sql*/ `UPDATE user_devices SET is_revoked = 1 WHERE user_id = ?`, [userID]);
 }
 
 // RENAME ----------------------------------------------------------

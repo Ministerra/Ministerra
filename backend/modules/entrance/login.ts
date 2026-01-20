@@ -152,3 +152,15 @@ export async function logoutEverywhere({ pass, devID, userID }, con) {
 	await logoutUserDevices({ userID, devID, excludeCurrentDevice: true, reason: 'logout', con });
 	return { payload: 'loggedOutEverywhere' };
 }
+
+// REKEY DEVICE - regenerate pdkSalt when fingerprint changes ---------------------------
+// Steps: verify password, generate new pdkSalt, update DB, return salt + deviceSalt so frontend can re-derive and re-encrypt PDK.
+export async function rekeyDevice({ pass, userID, devID }, con) {
+	const [[user]] = await con.execute(`SELECT pass FROM users WHERE id = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [userID]);
+	if (!user || !(await bcrypt.compare(pass, user.pass))) throw new Error('wrongPass');
+	const crypto = await import('crypto');
+	const newPdkSalt = crypto.randomBytes(32).toString('hex');
+	await con.execute(`UPDATE user_devices SET pdk_salt = ? WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [newPdkSalt, userID, devID]);
+	const [[device]] = await con.execute(`SELECT salt FROM user_devices WHERE user_id = ? AND device_id = ? AND is_revoked = 0`, [userID, devID]);
+	return { payload: { pdkSalt: newPdkSalt, deviceSalt: device?.salt, userID } };
+}

@@ -132,14 +132,22 @@ function LogoAndMenu(props) {
 		}
 		if (menuView && !nextBackIsHome.current) return setMenuView('');
 		if (nowAt === 'home') return window.scrollY > 50 ? window.scrollTo({ top: 0, behavior: 'smooth' }) : setInitialize('cityEvents');
-		if (nowAt !== 'home') return setMenuView(''), brain.fastLoaded ? (window.history.replaceState({}, '', '/'), loader.load()) : navigate('/');
+		if (nowAt !== 'home') {
+			if (prevMenuView) {
+				if (galleryCat) brain.showGalleryCat = galleryCat;
+				if (stripMenuId) brain.restoreStripMenu = stripMenuId;
+				setMenuView(prevMenuView), sessionStorage.removeItem('menuView');
+				return;
+			} else setMenuView('');
+			return brain.fastLoaded ? (window.history.replaceState({}, '', '/'), loader.load()) : navigate('/');
+		}
 	}
 
 	// FILTER MANAGEMENT ---------------------------
 	async function changeCities(inp) {
 		setFadedIn([]);
 		const [user, cities] = [brain.user, inp];
-		const needCities = cities.filter(city => typeof city === 'object' || !brain.citiesTypesInTimes[city]);
+		const needCities = cities.filter(city => typeof city === 'object' || !brain.citiesEveTypesInTimes[city]);
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 		if (needCities.length) loader.load(`/?homeView=cityEvents&newCities=${encodeURIComponent(JSON.stringify(cities))}`);
 		else (user.curCities = inp), setInitialize('cityEvents');
@@ -153,10 +161,10 @@ function LogoAndMenu(props) {
 			{toast}
 			{/* LOGO HEADER --------------------------- */}
 			<top-logo onClick={() => logoClick()} class='marAuto posFix zinMenu topCen w100  textAli '>
-				<div className={`w90 mw150  trapezoid-logo-background hvh1 ${menuView ? 'bDarkBlue' : 'bBlue'}   marAuto `} />
-				<div className={`w80 mw70 flexCol aliCen ${menuView ? 'bBlue' : ''} pointer padTopXxxs upLittle trapezoid-logo-background marAuto posRel`} style={{ overflow: 'hidden' }}>
+				<div className={`w90 mw150  trapezoid-logo-background hvh1 bBlue marAuto `} />
+				<div className={`w80 mw70 flexCol aliCen pointer  upLittle trapezoid-logo-background marAuto posRel`} style={{ overflow: 'hidden' }}>
 					{pulseKey > 0 && <span key={pulseKey} className='logo-pulse-active posAbs block' style={{ inset: 0, zIndex: 0 }} />}
-					<h1 className={`fsD lh1 boldM inlineBlock  marTopXxxs posRel tWhite`} style={{ zIndex: 1 }}>
+					<h1 className={`fsD lh1 boldM inlineBlock  marBotXxxxs posRel tWhite`} style={{ zIndex: 1 }}>
 						Ministerra
 					</h1>
 					{logoSubtext && <span className='wordBreak  padVerXxs  w100 bGreen padHorL tWhite boldXs  textAli fsA'>{logoSubtext}</span>}

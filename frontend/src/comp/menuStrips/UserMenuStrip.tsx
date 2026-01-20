@@ -93,7 +93,7 @@ const UserMenuStrip = props => {
 					: null,
 			důvěřovat: !trusts && (galleryMode === 'requests' ? linked === true : galleryMode === 'links' ? linked !== false : false) ? () => setMode('trust', modes.trust ? false : true) : null,
 			oddůvěřit: ['links', 'trusts'].includes(galleryMode) && trusts ? () => linksHandler({ mode: 'untrust', ...propss }) : null,
-			pozvat: !status.blocked && obj.id !== brain.user.id && (galleryMode !== 'requests' || (obj.linked === true && obj.id !== brain.user.id)) ? () => setMode('invite') : null,
+			pozvat: !status.blocked && obj.id !== brain.user.id && (galleryMode !== 'requests' || (obj.linked === true && obj.id !== brain.user.id)) ? () => setMode('invites') : null,
 			blokovat: !isSearch && !isChatMember && !status.blocked && obj.id !== brain.user.id ? () => blocksHandler({ ...propss, mode: blocked ? 'unblock' : 'block' }) : null,
 			odblokovat: status.blocked ? () => blocksHandler({ ...propss, mode: 'unblock' }) : null,
 			zpráva: !obj.blocked && (!chatObj.type || chatObj.type !== 'private') ? e => (e.stopPropagation(), setupNewChat()) : null,
@@ -107,7 +107,7 @@ const UserMenuStrip = props => {
 		}).filter(([, v]) => v)
 	);
 
-	const hide = ['protocol', 'profile', 'invite'].some(b => modes[b]);
+	const hide = ['protocol', 'profile', 'invites'].some(b => modes[b]);
 
 	// RENDER ------------------------------------------------------------------
 	return (
@@ -139,7 +139,7 @@ const UserMenuStrip = props => {
 					setModes={setModes}
 				/>
 			)}
-			{modes.invite && <Invitations mode='userToEvents' brain={brain} obj={obj} onSuccess={() => setModes(p => ({ ...p, menu: false, invite: false }))} setModes={setModes} />}
+			{modes.invites && <Invitations mode='userToEvents' brain={brain} obj={obj} onSuccess={() => setModes(p => ({ ...p, menu: false, invite: false }))} setModes={setModes} />}
 			{modes.protocol && (
 				<SimpleProtocol
 					setModes={setModes}

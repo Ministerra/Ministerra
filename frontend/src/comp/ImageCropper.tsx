@@ -131,7 +131,7 @@ const ImageCropper = props => {
 		}
 	};
 
-	// READ FILE -------------------------------------------------------------
+	// READ FILE ---
 	const readFile = file =>
 		new Promise(resolve => {
 			const reader = new FileReader();
@@ -139,7 +139,7 @@ const ImageCropper = props => {
 			reader.readAsDataURL(file);
 		});
 
-	// ON FILE CHANGE --------------------------------------------------------
+	// ON FILE CHANGE ---
 	const onFileChange = async e => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -217,15 +217,23 @@ const ImageCropper = props => {
 		if (imageRef.current) fitImageToCanvas(), setFinalImage();
 	}, [canvasDimensions]);
 
-	// FIT IMAGE TO CANVAS -----------------------------------------------------
+	// FIT IMAGE TO CANVAS ---
+	// Calculates initial zoom and position to ensure the crop area is fully covered.
 	const fitImageToCanvas = () => {
-		const { width: imgW, height: imgH } = imageRef.current;
-		const [aspectRatio, scaleW, scaleH] = [imgW / imgH, (width * CROP_WIDTH_COEF) / imgW, (height * CROP_HEIGHT_COEF) / imgH];
-		sliderProps.current.zoom.min = Math.min(scaleW, scaleH) * 1.02;
-		// CLEAR DEBOUNCE TO PREVENT OVERRIDE OF isAreaCovered -------------------
+		if (!width || !height || !imageRef.current) return;
+		const { width: imgW, height: imgH } = imageRef.current, nextAspect = nowAt === 'editor' ? imgW / imgH : 1.6;
+
+		// CALCULATE ACTUAL CROP DIMS TO FIND REQUIRED ZOOM ---
+		const cropWidth = Math.min(width * CROP_WIDTH_COEF, height * CROP_HEIGHT_COEF * nextAspect),
+			cropHeight = cropWidth / nextAspect;
+
+		// ZOOM TO COVER BOTH DIMS WITH MARGIN ---
+		const zoomToCover = Math.max(cropWidth / imgW, cropHeight / imgH) * 1.01;
+		sliderProps.current.zoom.min = zoomToCover;
+
+		// RESET STATE ---
 		if (deboCalcCoverage.current) clearTimeout(deboCalcCoverage.current);
-		setAspect(nowAt === 'editor' ? aspectRatio : 1.6);
-		setZoom(sliderProps.current.zoom.min), setCrop({ x: 0, y: 0 }), setRotation(0), setIsAreaCovered(true);
+		setAspect(nextAspect), setZoom(zoomToCover), setCrop({ x: 0, y: 0 }), setRotation(0), setIsAreaCovered(true);
 	};
 
 	// DRAW CANVAS -------------------------------------------------------------

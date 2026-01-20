@@ -4,7 +4,7 @@ import { useState, memo, useLayoutEffect } from 'react';
 import { FRIENDLY_MEETINGS } from '../../../../shared/constants';
 import ContentIndis from '../ContentIndis';
 import EveMenuStrip from '../menuStrips/EveMenuStrip';
-import EventCard from '../EventCard';
+import EventCard from '../EventCard.tsx';
 
 function EventStrip(props) {
 	const { obj = {}, brain, galleryMode, isMobile, stripMenu, setStripMenu, isSearch, isPastEvent, isInvitations, superMan, isSelected, setGalleryContent, numOfCols } = props;

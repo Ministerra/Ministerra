@@ -37,7 +37,7 @@ function EveMenuStrip({
 }: any) {
 	const navigate = useNavigate();
 	const { id: eventID } = eventObj;
-	const { menuView } = useContext(globalContext);
+	const { menuView, setMenuView } = useContext(globalContext);
 
 	// STATE MANAGEMENT ----------------------------------------------------------
 	const [selectedButton, setSelectedButton] = useState(null);
@@ -244,11 +244,13 @@ function EveMenuStrip({
 				  }
 				: null,
 		účast: !galleryMode.includes('past') && !isInactive && (!own || (own && !status.isMeeting)) && isCardOrStrip ? async () => toggleMode('inter') : null,
-		smazat: !undeletable && !status.deleted && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.state !== 'del' ? () => toggleMode('delete') : null,
-		zrušit: !isInactive && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.starts > Date.now() && !eventObj.canceled ? () => toggleMode('cancel') : null,
+		smazat: nowAt !== 'event' && !undeletable && !status.deleted && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.state !== 'del' ? () => toggleMode('delete') : null,
+		zrušit: nowAt !== 'event' && 	!isInactive && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.starts > Date.now() && !eventObj.canceled ? () => toggleMode('cancel') : null,
 		editovat:
 			!galleryMode.includes('past') && !isInactive && (galleryMode || nowAt === 'event') && own
-				? () => navigate(`/editor/${eventID}!${eventObj.title ? encodeURIComponent(eventObj.title.slice(0, 50)).replace(/\./g, '-').replace(/%20/g, '_') : ''}`)
+				? () => {
+						navigate(`/editor/${eventID}!${eventObj.title ? encodeURIComponent(eventObj.title.slice(0, 50)).replace(/\./g, '-').replace(/%20/g, '_') : ''}`);
+				  }
 				: null,
 		sdílet: () => toggleMode('share'),
 		'zpětná vazba': allowFeedback && !isInactive ? () => toggleMode('feedback') : null,
@@ -260,7 +262,7 @@ function EveMenuStrip({
 						if (nowAt === 'editor') {
 							window.scrollTo({ top: document.querySelector('invitations-container').getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
 						} else {
-							toggleMode('invite');
+							toggleMode('invites');
 							userCardSetModes && userCardSetModes(prev => ({ ...prev, inviteEvePreview: !prev.inviteEvePreview, protocol: false }));
 						}
 				  }
@@ -268,8 +270,10 @@ function EveMenuStrip({
 		nahlásit: !status.embeded && !isSearch && !own ? () => toggleMode('protocol', modes.protocol ? false : 'report') : null,
 	};
 
-	const hideMenu = modes.report || modes.evePreview;
 
+
+
+	const hideMenu = modes.report || modes.evePreview || modes.invites;
 	const confirmTexts = {
 		del: 'Událost přestane být dostupná a její data budou smazána',
 		del2: 'Událost bude PERMANENTNĚ ODSTRANĚNA. Toto je nevratné!',
@@ -359,10 +363,12 @@ function EveMenuStrip({
 			)}
 
 			{/* INVITATION MANAGER */}
-			{(modes.invite || modes.invitees || modes.invitors) && (
+			{(modes.invites || modes.invitees || modes.invitors) && (
+				<invitations-container>
 				<Invitations
 					{...{
 						brain,
+						nowAt,
 						obj: eventObj,
 						onSuccess: () => {
 							setModes(prev => ({ ...prev, invite: false }));
@@ -374,12 +380,13 @@ function EveMenuStrip({
 						invitesHandler: handleInviteAction,
 						galleryMode,
 						showUsersOnly: modes.invitees || modes.invitors,
-						downMargin: !isCardOrStrip,
 						setModes,
 						topPadding: true,
 						mode: 'eventToUsers',
 					}}
 				/>
+			
+				</invitations-container>
 			)}
 
 			{/* BULK INVITE ACTIONS */}

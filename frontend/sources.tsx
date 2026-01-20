@@ -40,7 +40,7 @@ export const emptyBrain = {
 
 	homeView: 'cityEvents',
 	meetStats: {},
-	citiesTypesInTimes: {},
+	citiesEveTypesInTimes: {},
 	citiesContSync: {},
 	events: {},
 	bestOfIDs: [],

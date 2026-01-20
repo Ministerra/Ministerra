@@ -46,7 +46,7 @@ function CatFilter(props) {
 	// COMPONENT RENDERING ---
 	// Renders category icons and labels with state-driven visual feedback
 	return (
-		<cat-filter ref={wrapperRef} class={`fadingIn ${fadedIn.includes('CatFilter') ? 'fadedIn' : ''}  shaTop   posRel aliStretch flexCen w100 ${nowAt !== 'editor' ? 'marBotXs' : ''} wrap `}>
+		<cat-filter ref={wrapperRef} class={`fadingIn ${fadedIn.includes('CatFilter') ? 'fadedIn' : ''}  shaTop   posRel aliStretch flexCen w100 ${nowAt !== 'editor' ? '' : ''} wrap `}>
 			{/* BACKGROUND OVERLAY --- */}
 			{/* Semi-transparent background for better text legibility */}
 			<div className={`bgWhite topCen opacityXs shaCon hr2 posAbs w100 zinMaXl`} />
@@ -59,7 +59,7 @@ function CatFilter(props) {
 					<img-wrapper
 						key={cat}
 						style={{ width: '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }}
-						class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 mih20'} ${
+						class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 hvw22 mh18'} ${
 							nowAt === 'editor' && isSel ? 'bsContentGlow' : ''
 						} noBackground  flexCol  posRel  grow bHover  marBotXxxxs  `}
 						onClick={() => handleCategorySelection(cat)}>
@@ -79,17 +79,17 @@ function CatFilter(props) {
 						{/* Contains the category name and status indicators (availability, counts) */}
 						<span-wrapper
 							style={{ bottom: '-0px' }}
-							class={` 	 posAbs   marAuto  ${nowAt === 'editor' && isSel ? 'padVerS' : 'padVerXs'} bgTrans  textAli  zinMaXl   hvw10 mh2  flexCol aliCen justCen              botCen ${
+							class={` 	 posAbs   marAuto  ${nowAt === 'editor' && isSel ? 'padVerS' : 'padVerXxxxs'} bgTrans  textAli  zinMaXl   hvw10 mh1-5  flexCol aliCen justCen              botCen ${
 								nowAt === 'editor' ? 'w100' : 'mw16  '
 							}`}>
 							<span
 								className={`inlineBlock ${
 									nowAt !== 'editor'
 										? isInTime
-											? 'fs20 xBold     tShaWhiteXl    '
+											? 'fs14 xBold     tShaWhiteXl    '
 											: notInTimeButAvail
 											? `fs12 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bOrange bgTrans bold  lh1`
-											: `fs8 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `
+											: `fs8 ${isSel ? 'opacityM' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `
 										: nowAt === 'editor' && isSel
 										? 'boldM fs15 tWhite w100  posRel bBlue tWhite arrowDown1  tSha10 padVerXxs '
 										: 'fs12    tShaWhiteXl   xBold'

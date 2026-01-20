@@ -260,7 +260,7 @@ function Alerts(props) {
 			{newAlerts.length > 0 && (
 				<>
 					<section-title class={`flexCol block borBotLight textAli marTopXl`}>
-						<span className='fs12 inlineBlock tetSha marAuto xBold w100'>Nová upozornění</span>
+						<span className='fs22 inlineBlock tetSha marAuto xBold w100'>Nová upozornění</span>
 						<blue-divider class={` hr0-5 borTop marTopXs  block bInsetBlueTopXl  bgTrans  w90  mw140   marAuto   `} />
 					</section-title>
 					<Masonry
@@ -288,7 +288,7 @@ function Alerts(props) {
 			{olderAlerts.length > 0 && (
 				<>
 					<section-title class={`flexCol block borBotLight textAli ${newAlerts.length > 0 ? 'marTopL' : 'marTopXl'}`}>
-						<span className='fs12 inlineBlock tetSha marAuto xBold w100'>Starší upozornění</span>
+						<span className='fs18 inlineBlock tetSha marAuto xBold w100'>Starší upozornění</span>
 						<blue-divider class={` hr0-5 borTop marTopXs  block bInsetBlueTopXl  bgTrans  w90  mw140   marAuto   `} />
 					</section-title>
 					<Masonry

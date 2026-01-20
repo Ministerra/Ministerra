@@ -15,13 +15,12 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
  * keeps brain cache + forage storage in sync while animating choices.
  * --------------------------------------------------------------------------- */
 function RateAwards(props) {
-	console.log('RateAwards', props);
 	const { obj, thisIs, brain: propsBrain, nowAt: propsNowAt, status, modes, setStatus, setModes } = props, // isCardOrStrip removed - unused ---------------------------
 		{ brain = propsBrain, nowAt = propsNowAt } = useOutletContext() || {},
 		[fade, setFade] = useState(false),
 		[blinkAwards, setBlinkAwards] = useState(true),
 		[marks, powersOfTwo] = [{ event: [-4, 1, 3, 5], user: [1, 5], comment: [-2, 1, 3, 5] }, [1, 2, 4, 8, 16, 32]],
-		awardsSrc = ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs]?.awards.en.slice(
+		awardsSrc = ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.en.slice(
 			0,
 			['comment', 'event'].includes(thisIs) ? undefined : obj.exps?.length > 0 ? 4 : 3
 		),
@@ -120,7 +119,7 @@ function RateAwards(props) {
 								else if (buttMark === mark) modes.awards && man('mark', 0), setModes(prev => ({ ...prev, awards: !prev.awards }));
 								else man('mark', buttMark), setModes(prev => ({ ...prev, awards: true }));
 							}}
-							className={`${!isSelected ? ` boldM textSha  ${nowAt === 'event' ? 'fs14' : 'fs10'}` : `xBold ${nowAt === 'event' ? 'fs18' : 'fs16'} borRedSel `}   ${
+							className={`${!isSelected ? ` boldM textSha  ${nowAt === 'event' ? 'fs14' : 'fs14'}` : `xBold ${nowAt === 'event' ? 'fs18' : 'fs18'} borRedSel tDarkBlue `}   ${
 								nowAt === 'event' ? 'padVerXs ' : 'padVerXs'
 							} textSha posRel      zin10 w25 bHover   noBackground flexCol aliCen`}>
 							{isSelected && <blue-divider class='hr0-5  zin1 block posAbs botCen w80 bInsetBlueTopXl borTop bgTrans w40 marAuto' />}
@@ -144,7 +143,7 @@ function RateAwards(props) {
 								}   posRel hvw18 mh12 bHover grow `}>
 								<img src='/icons/placeholdergood.png' className={`posAbs topCen maskLow h80 grow w100`} alt='' />
 								{/* <img src='/icons/placeholdergood.png' className='blueGlass marBotXxxs zinMax mw6 w25 miw4' alt='' /> */}
-								<span className=' fs9 xBold zinMax   lh0-8 '>{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.cz[i]}</span>
+								<span className=' fs10 tDarkBlue xBold zinMax   lh0-8 '>{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.cz[i]}</span>
 								{(!status.embeded || thisIs !== 'event') && (
 									<span className='fs6  mw30 zinMax   lh1'>{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awardsTexts[i]}</span>
 								)}

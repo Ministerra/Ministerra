@@ -21,15 +21,10 @@ const imgMessagesMap = {
 	},
 	autoLogout: {
 		header: 'Pro jistotu ...',
-		detail: 'Kvůli delší nečinnosti a nebo nestandardní aktivitě jsme Tě z bezpečnostních důvodů raději odhlásili. Pro pokračování se prosím znovu přihlaš heslem.',
+		detail: 'Kvůli delší nečinnosti a nebo nestandardní aktivitě jsme Tě z bezpečnostních důvodů raději odhlásili. Pro pokračování se prosím znovu přihlaš.',
 		image: `/icons/log out.png`,
 	},
 	sessionExpired: { header: 'Relace vypršela', detail: 'Otevřel jsi nový panel nebo zavřel prohlížeč. Pro pokračování se znovu přihlaš.', image: `/icons/surely.png` },
-	registrationComplete: {
-		header: 'Registrace dokončena!',
-		detail: 'Tvůj profil byl úspěšně vytvořen. Přihlaš se prosím svým heslem.',
-		image: `/icons/surely.png`,
-	},
 	mailSent: {
 		header: 'Skvělé! Přijde ti e-mail.',
 		detail: 'Do tvé schránky přijde každou chvilku email s ověřovacím odkazem, který ti otevře cestu k dalšímu kroku. Klikni na něj :-)',
@@ -103,22 +98,68 @@ const submitWarnTexts = {
 function EntranceForm(props: any) {
 	const environment = import.meta.env.VITE_NODE_ENV;
 
+	// PASSWORD STRENGTH INDICATOR ---
+	// Visualizes password entropy for real-time feedback.
+	const StrengthIndicator = ({ score, val }: { score: number; val: string }) => {
+		if (!val?.length) return null;
+		const progress = (score / 7) * 100,
+			baseColor = score < 3 ? '#e53935' : score < 5 ? '#fb8c00' : score < 7 ? '#1e88e5' : '#43a047';
+		return (
+			<strength-indicators class='posRel w80 marAuto marBoS zinMaXl' style={{ height: '10px' }}>
+				<div
+					className='posAbs w100'
+					style={{
+						top: '50%',
+						transform: 'translateY(-50%)',
+						height: '4px',
+						background: `linear-gradient(90deg, transparent 0%, ${baseColor}33 ${50 - progress / 2}%, ${baseColor} 50%, ${baseColor}33 ${50 + progress / 2}%, transparent 100%)`,
+						transition: 'background 0.3s ease',
+					}}
+				/>
+				<div
+					className='posAbs w100'
+					style={{
+						top: '50%',
+						transform: 'translateY(-50%)',
+						height: '1px',
+						marginTop: '-3px',
+						background: `linear-gradient(90deg, transparent 10%, ${baseColor}22 ${50 - progress / 2.5}%, ${baseColor}66 50%, ${baseColor}22 ${50 + progress / 2.5}%, transparent 90%)`,
+						transition: 'background 0.3s ease',
+					}}
+				/>
+				<div
+					className='posAbs w100'
+					style={{
+						top: '50%',
+						transform: 'translateY(-50%)',
+						height: '1px',
+						marginTop: '3px',
+						background: `linear-gradient(90deg, transparent 10%, ${baseColor}22 ${50 - progress / 2.5}%, ${baseColor}66 50%, ${baseColor}22 ${50 + progress / 2.5}%, transparent 90%)`,
+						transition: 'background 0.3s ease',
+					}}
+				/>
+			</strength-indicators>
+		);
+	};
+
 	const navigate = useNavigate(),
 		{ brain, nowAt } = (props || {}) as any,
 		urlParams = new URLSearchParams(window.location.search),
 		returnTo = useRef(urlParams.get('returnTo') ? decodeURIComponent(urlParams.get('returnTo')) : null).current,
 		isContinueMode = useRef(Boolean(returnTo && urlParams.get('mess') === 'sessionExpired')).current,
 		[axiosInProg, setAxiosInProg] = useState(false),
+		[isInitializing, setIsInitializing] = useState(false),
 		[showSubmitBtn, setShowSubmitBtn] = useState(false),
 		[formMode, setFormMode] = useState(urlParams.get('mode') || 'login'),
 		emailRef = useRef<any>(null),
 		passRef = useRef<any>(null),
 		repassRef = useRef<any>(null),
 		passStrengthRef = useRef<any>(null),
+		repassStrengthRef = useRef<any>(null),
 		bSubmitRef = useRef<any>(null),
 		infoMessagesRef = useRef<any>(null),
 		scrollTarget = useRef<any>(null),
-		refs = { emailRef, passRef, repassRef, passStrength: passStrengthRef, bSubmitRef, infoMessagesRef, scrollTarget },
+		refs = { emailRef, passRef, repassRef, passStrength: passStrengthRef, repassStrength: repassStrengthRef, bSubmitRef, infoMessagesRef, scrollTarget },
 		[isLogin, isRegister, isChangePass, isChangeMail, isChangeBoth, isForgotPass, isResetPass, isRevertEmail] = [
 			'login',
 			'register',
@@ -238,8 +279,10 @@ function EntranceForm(props: any) {
 							}, 3000);
 						}
 					}
-					if (what === 'rePass')
+					if (what === 'rePass') {
+						refs.repassStrength.current = (getPasswordStrengthScore as any)(false, val);
 						clearTimeout(passDismatchTimeout.current), val && pass !== val && (passDismatchTimeout.current = setTimeout(() => setInform(prev => ({ ...prev, passDismatch: true })), 1000));
+					}
 					return setData(prev => ({ ...prev, [what]: val }));
 				}
 			}
@@ -363,6 +406,7 @@ function EntranceForm(props: any) {
 				// REDIRECT TO ONBOARDING IF UNINTRODUCED USER ---
 				// User logged in with password, so derive PDK now (skip Welcome password input).
 				if (status === 'unintroduced' && auth) {
+					setIsInitializing(true);
 					const [userID] = auth?.split(':') || [];
 					const pdkValue = await deriveKeyFromPassword(pass, userID + (deviceSalt || ''));
 					storePDK(pdkValue);
@@ -375,6 +419,7 @@ function EntranceForm(props: any) {
 					brain.user.isUnintroduced = true;
 					return navigate('/setup');
 				} else if (cities && auth) {
+					setIsInitializing(true);
 					const [userID, authHash] = auth?.split(':') || [];
 
 					// SECURITY AND DATA STORAGE ---
@@ -551,15 +596,23 @@ function EntranceForm(props: any) {
 					<strong className='fs42 tShaWhiteXl zinMaXl xBold textAli miw60 inlineBlock '>Ministerra</strong>
 				</entrance-header>
 
-				{/* SESSION RESUMPTION BANNER --- */}
+				{/* SESSION EXPIRED BANNER --- */}
 				{isContinueMode && !infoMessageShown && (
-					<continue-mode class='marBotM block'>
-						<div className='bInsetBlueDark posRel tWhite padAllM boRadS marBotS'>
-							<span className='fs12 xBold block tSha10 marBotXxs'>🔐 Relace vypršela</span>
-							<span className='fs11 boldXs textSha block lh1'>Zadej heslo pro pokračování na:</span>
-							<span className='fs8 xBold block marTopXxs tYellow'>{returnTo}</span>
+					<session-expired-banner class='marBotM block mw110 marAuto'>
+						<div className='padBotS posRel w100 shaBotLongDown marAuto flexCol aliCen imw12 textAli'>
+							<img src={imgMessagesMap.sessionExpired.image} alt='' className='marAuto marTopM cover w100 zin1' />
+							<span className='textAli xBold marTopS marBotXs mw80 fs20 aliCen'>{imgMessagesMap.sessionExpired.header}</span>
+							<span className='textAli mw80 fs9 lh1 aliCen'>
+								{imgMessagesMap.sessionExpired.detail}
+								{returnTo && (
+									<return-address class='flexCol marTopS w100 textAli'>
+										<span className='fs10 boldXs block opacityL'>Po přihlášení budeš přesměrován na:</span>
+										<span className='fs14 xBold block tYellow'>{returnTo}</span>
+									</return-address>
+								)}
+							</span>
 						</div>
-					</continue-mode>
+					</session-expired-banner>
 				)}
 
 				{/* SOCIAL LOGINS AND MODE SWITCHER --- */}
@@ -628,12 +681,11 @@ function EntranceForm(props: any) {
 									ref={refs.emailRef}
 									maxLength={100}
 									autoFocus={true}
-									className={`w100 hvh4 mih4 shaSubtleLong fs12 ${isContinueMode ? 'tGray' : ''}`}
-									onChange={e => !isContinueMode && man({ what: 'email', val: e.target.value.toLowerCase() })}
-									onBlur={e => !isContinueMode && man({ what: 'email', val: e.target.value.toLowerCase(), blur: true })}
+									className='w100 hvh4 mih4 shaSubtleLong fs12'
+									onChange={e => man({ what: 'email', val: e.target.value.toLowerCase() })}
+									onBlur={e => man({ what: 'email', val: e.target.value.toLowerCase(), blur: true })}
 									value={email}
 									type='email'
-									readOnly={isContinueMode}
 								/>
 								<blue-divider style={{ filter: 'brightness(0.5)' }} class='hr0-1  zin1 block  bInsetBlueTopXl posRel w60 opacityM marAuto' />
 							</e-mail>
@@ -682,78 +734,14 @@ function EntranceForm(props: any) {
 									</pass-word>
 								)}
 
+								{/* PASSWORD STRENGTH VISUALIZER --- */}
+								{(isRegister || isChangePass || isChangeBoth || isRevertEmail || isResetPass || isLogin) && <StrengthIndicator score={refs.passStrength.current} val={pass} />}
+
 								{isLogin && (
 									<button onClick={() => setFormMode('forgotPass')} className=' marBotS fs10 marAuto bold padAllXxs  bgTrans borBot  w40 tRed mw25 boRadXxs '>
 										zapomenuté heslo
 									</button>
 								)}
-
-								{/* PASSWORD STRENGTH VISUALIZER --- */}
-								{(isRegister || isChangePass || isChangeBoth || isRevertEmail || isResetPass) &&
-									pass.length > 0 &&
-									(() => {
-										const curScore = refs.passStrength.current,
-											progress = (curScore / 7) * 100;
-										const baseColor = curScore < 3 ? '#e53935' : curScore < 5 ? '#fb8c00' : curScore < 7 ? '#1e88e5' : '#43a047';
-										const indiText = curScore < 3 ? 'Slabé' : curScore < 5 ? 'Pořád slabé' : curScore < 7 ? 'Ještě přidej' : 'Perfektní!';
-										return (
-											<strength-indicators class='posRel w100 marBoS zinMaXl' style={{ height: '10px' }}>
-												<div
-													className='posAbs w100'
-													style={{
-														top: '50%',
-														transform: 'translateY(-50%)',
-														height: '4px',
-														background: `linear-gradient(90deg, transparent 0%, ${baseColor}33 ${50 - progress / 2}%, ${baseColor} 50%, ${baseColor}33 ${
-															50 + progress / 2
-														}%, transparent 100%)`,
-														transition: 'background 0.3s ease',
-													}}
-												/>
-												<div
-													className='posAbs w100'
-													style={{
-														top: '50%',
-														transform: 'translateY(-50%)',
-														height: '1px',
-														marginTop: '-3px',
-														background: `linear-gradient(90deg, transparent 10%, ${baseColor}22 ${50 - progress / 2.5}%, ${baseColor}66 50%, ${baseColor}22 ${
-															50 + progress / 2.5
-														}%, transparent 90%)`,
-														transition: 'background 0.3s ease',
-													}}
-												/>
-												<div
-													className='posAbs w100'
-													style={{
-														top: '50%',
-														transform: 'translateY(-50%)',
-														height: '1px',
-														marginTop: '3px',
-														background: `linear-gradient(90deg, transparent 10%, ${baseColor}22 ${50 - progress / 2.5}%, ${baseColor}66 50%, ${baseColor}22 ${
-															50 + progress / 2.5
-														}%, transparent 90%)`,
-														transition: 'background 0.3s ease',
-													}}
-												/>
-												<span
-													className='posAbs fs9 bold tWhite'
-													style={{
-														left: '50%',
-														top: '50%',
-														transform: 'translate(-50%, -50%)',
-														background: baseColor,
-														padding: '4px 100px',
-														borderRadius: '2px',
-														whiteSpace: 'nowrap',
-														boxShadow: `0 0 12px ${baseColor}88`,
-														transition: 'all 0.3s ease',
-													}}>
-													{indiText}
-												</span>
-											</strength-indicators>
-										);
-									})()}
 
 								{/* PASSWORD CONFIRMATION --- */}
 								{(isRegister || isResetPass || isChangePass || isChangeBoth) && refs.passStrength.current === 7 && (
@@ -836,20 +824,19 @@ function EntranceForm(props: any) {
 												<button
 													onClick={() => man({ what: 'resendMail', submit: true })}
 													disabled={axiosInProg}
-													className={`posRel padAllXs boRadXs miw35  xBold fs8  ${resendJustSuccess ? 'bDarkGreen tWhite' : 'bInsetBluetTopXs '}`}
+													className={`posRel padAllXs shaCon bBor2 boRadXs miw35 xBold fs8 ${resendJustSuccess ? 'bDarkGreen tWhite' : 'bInsetBlueTopXs2 shaBlue'}`}
 													style={{
 														cursor: axiosInProg ? 'wait' : 'pointer',
+														transition: 'all 0.2s ease',
 													}}
 													onMouseEnter={e => {
 														if (!axiosInProg && !resendJustSuccess) {
-															e.target.style.transform = 'scale(1.05)';
-															e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+															e.currentTarget.style.transform = 'scale(1.05)';
 														}
 													}}
 													onMouseLeave={e => {
 														if (!axiosInProg && !resendJustSuccess) {
-															e.target.style.transform = 'scale(1)';
-															e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+															e.currentTarget.style.transform = 'scale(1)';
 														}
 													}}>
 													{resendJustSuccess ? (
@@ -889,7 +876,7 @@ function EntranceForm(props: any) {
 					<action-buttons class={`flexCen w100 gapXxs  mw80 ${infoMessageShown ? 'marTopS' : ''} marAuto`}>
 						{(formMode !== 'forgotPass' || !inform.mailSent) && (
 							<button
-								disabled={axiosInProg}
+								disabled={axiosInProg || isInitializing}
 								ref={refs.bSubmitRef}
 								onClick={() => {
 									setInform({});
@@ -897,7 +884,9 @@ function EntranceForm(props: any) {
 									else man({ what: formMode, submit: true });
 								}}
 								className={` ${
-									showBackToLoginBtn
+									isInitializing
+										? 'bDarkGreen'
+										: showBackToLoginBtn
 										? 'bRed'
 										: isChange || inform.mailSent
 										? 'bInsetBlueBotXl   '
@@ -907,7 +896,9 @@ function EntranceForm(props: any) {
 										? 'bRed'
 										: 'bBlue borBot2'
 								} tWhite marAuto posRel  hvw8 mh4  w50 tSha10  boRadXxs xBold fs12`}>
-								{inform.changeSuccess || (inform.mailSent && !isRegister) || inform.emailReverted
+								{isInitializing
+									? 'Probíhá inicializace ...'
+									: inform.changeSuccess || (inform.mailSent && !isRegister) || inform.emailReverted
 									? 'Přihlásit se'
 									: inform.tokenExpired || inform.verifyMail || inform.mailNotSent
 									? 'Na domovskou stránku'

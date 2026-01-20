@@ -37,7 +37,7 @@ export async function eventLoader(brain, params) {
 			// Steps: decide whether we already “gotUsers” cheaply from recent city sync, decide whether to request SQL overlays (unstable), then call backend and merge into local objects.
 			const citySync = brain.citiesContSync?.[cityID];
 			const hasRecentCitySync = typeof citySync === 'number' && now - citySync < fiveMinutes;
-			const gotUsers = type.startsWith('a') && (!isPast ? (Boolean(brain.citiesTypesInTimes?.[cityID]) && hasRecentCitySync) || now - lastUsersSync < fiveMinutes : storedPastUsers);
+			const gotUsers = type.startsWith('a') && (!isPast ? (Boolean(brain.citiesEveTypesInTimes?.[cityID]) && hasRecentCitySync) || now - lastUsersSync < fiveMinutes : storedPastUsers);
 
 			const body = {
 				eventID,

@@ -11,6 +11,7 @@ import { getLogger } from '../systems/handlers/loggers.ts';
 import { getAuth } from '../utilities/helpers/auth.ts';
 import { getDeviceSalt } from '../utilities/helpers/device.ts';
 import Alerts from './alerts.ts';
+import { INTERVALS } from '../../shared/constants.ts';
 
 // SUBMODULES -------------------------------------------------------------------
 import { setRedis, resolveDeviceSync, persistDeviceSync } from './foundation/utils.ts';
@@ -29,16 +30,19 @@ const ioRedisSetter = redisClient => setRedis(redisClient);
 // FOUNDATION DISPATCHER --------------------------------------------------------
 // Orchestrates the full load flow; keeps ordering explicit so sync watermarks are correct.
 async function Foundation(req, res) {
-	let con = null;
-	const { userID, is, devID, devIsStable, load, getCities = [], cities = [], gotKey, clientEpoch } = req.body;
+	const { userID, is, devID, devIsStable, load, getCities = [], cities = [], gotAuth, clientEpoch } = req.body;
 	const authLoads = new Set(['init', 'fast', 'auth']);
+	let con = authLoads.has(load) ? (await Sql.getConnection()) : null;
+
 
 	try {
-		const oldUserUnstableDev = is !== 'newUser' && !devIsStable;
+		const oldUserUnstableDev = is === 'user' && !devIsStable;
 
 		// 1. AUTHENTICATION & SECURITY --------------------------------------------
-		// Steps: mint/rotate auth only when client doesn’t already have a key; do it early so later work can include device salt where needed.
-		const authData = !gotKey && authLoads.has(load) ? getAuth(userID, { clientEpoch }) : null;
+		// Steps: mint/rotate auth only when client doesn’t already have a key or epoch is stale; do it early so later work can include device salt where needed.
+		const currentEpoch = Math.floor(Date.now() / (INTERVALS.authRotation || 3600000));
+		const isStale = clientEpoch !== undefined && Number(clientEpoch) < currentEpoch;
+		const authData = (isStale || !gotAuth) && authLoads.has(load) ? getAuth(userID, { clientEpoch }) : null;
 
 		// NOTIF DOTS ------------------------------------------------------------
 		// Steps: fetch dots early; fall back to zeros so a sub-failure doesn’t block core content load.
@@ -52,11 +56,9 @@ async function Foundation(req, res) {
 
 		// DEVICE SALT -----------------------------------------------------------
 		// Steps: only hit SQL for device salt when auth rotation happened and devID is present (from JWT via attachSession).
+		// If device is revoked/missing, deviceSalt is null and we send deviceKey: null to trigger client-side wipe.
 		let deviceSalt = null;
-		if (authData && devID) {
-			con = con || (await Sql.getConnection());
-			deviceSalt = await getDeviceSalt(con, userID, devID);
-		}
+		const deviceRevoked = authData && devID && !(deviceSalt = await getDeviceSalt(con, userID, devID));
 
 		// AUTH-ONLY RESPONSE ----------------------------------------------------
 		// Steps: short-circuit to keep auth refresh fast; include previous auth so clients can roll safely across rotation boundaries.
@@ -69,7 +71,7 @@ async function Foundation(req, res) {
 							auth: authData.auth,
 							authEpoch: authData.epoch,
 							authExpiry: authData.expiry,
-							...(deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
+							...(deviceRevoked ? { deviceKey: null } : deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
 							...(authData.previousAuth && { previousAuth: authData.previousAuth, previousEpoch: authData.previousEpoch }),
 					  }
 					: {}),
@@ -89,6 +91,8 @@ async function Foundation(req, res) {
 			// USER SYNC -----------------------------------------------------------
 			// Steps: pull deltas since devSync/linksSync; return new watermarks; unstable devices get guarded behavior.
 			const syncResult = await syncUserData(req, con, { userID, load, devID, devSync, linksSync, oldUserUnstableDev });
+			console.log("🚀 ~ Foundation ~ syncResult:", syncResult);
+
 			user = syncResult.user;
 			interactions = syncResult.interactions;
 			delInteractions = syncResult.delInteractions;
@@ -132,7 +136,7 @@ async function Foundation(req, res) {
 						auth: authData.auth,
 						authEpoch: authData.epoch,
 						authExpiry: authData.expiry,
-						...(deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
+						...(deviceRevoked ? { deviceKey: null } : deviceSalt && { deviceSalt: deviceSalt.salt, deviceKey: deviceSalt.deviceKey, pdkSalt: deviceSalt.pdkSalt }),
 						...(authData.previousAuth && { previousAuth: authData.previousAuth, previousEpoch: authData.previousEpoch }),
 				  }
 				: {}),

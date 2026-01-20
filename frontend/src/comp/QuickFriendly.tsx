@@ -1,9 +1,9 @@
 import Editor from '../mainSections/Editor';
 import useCentralFlex from '../hooks/useCentralFlex';
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useMemo, memo, forwardRef } from 'react';
 import { FRIENDLY_MEETINGS } from '../../../shared/constants';
 
-function QuickFriendly(props) {
+const QuickFriendly = forwardRef((props: any, ref: any) => {
 	const { brain, show, fadedIn, quick, showMan, snapMan, provideSnap, initialize } = props;
 	const [showMore, setShowMore] = useState(false);
 	const meetWidth = useCentralFlex('quicks', [showMore, FRIENDLY_MEETINGS.size], 'home', showMore ? FRIENDLY_MEETINGS.size : 4);
@@ -28,7 +28,7 @@ function QuickFriendly(props) {
 	}, [initialize]);
 
 	return (
-		<quick-friendly class={`${show.views ? 'padBotL ' : ''}  posRel   ${fadedIn.includes('Quicks') ? 'fadedIn ' : ''} fadingIn marBotXl block w100 marAuto`}>
+		<quick-friendly ref={ref} class={`${show.views ? 'padBotL ' : ''}  posRel   ${fadedIn.includes('Quicks') ? 'fadedIn ' : ''} fadingIn marBotXl block w100 marAuto`}>
 			<friendlyMeetings-wrapper class={'flexCen aliStretch wrap  w100 '}>
 				<div className={`bgWhite topCen opacityS shaCon mih2 posAbs w100 zinMaXl`} />
 				<div className={`bgWhite topCen opacityM shaCon mih0-3 posAbs w100 zinMaXl`} />
@@ -41,7 +41,7 @@ function QuickFriendly(props) {
 								<single-meeting
 									key={type}
 									style={{ width: '100%', ...(meetWidth && { maxWidth: `${meetWidth}px` }) }}
-									className={`  flexCol aliCen bHover pointer ${showMore ? 'aspect167 mih14 ' : 'aspect167 mih16'} marBotXs    posRel`}>
+									className={`  flexCol aliCen bHover pointer ${showMore ? 'aspect167 mih14 ' : 'aspect167 hvw25 mh20'} marBotXs    posRel`}>
 									<img onClick={() => showMan('quick', type)} className={`boRadXxs posAbs topCen cover w100 h80 maskLowXs `} src={`/covers/friendlyMeetings/a${i + 1}.png`} alt='' />
 									{/* QUICK CREATE / SHOW EVENTS OR ATTENDEES BUTTONS -------------------------------- */}
 									<action-buttons class='posAbs botCen flexCen  w100'>
@@ -119,7 +119,7 @@ function QuickFriendly(props) {
 			{/* QUICK EDITOR WRAPPER -------------------------------------------- */}
 			{quick !== false && (
 				<editor-wrapper class={'block  marTopXxl marBotXl w100'}>
-					<Editor quickType={quick} showMan={showMan} brain={brain} />
+					<Editor quickType={quick} showMan={showMan} setShowMore={setShowMore} brain={brain} />
 					<button
 						onClick={() => showMan('quick', false)}
 						className='bgTransXs tRed shaBlue    marBotXxs bGlassSubtle  posRel borderBot     tRed zinMax downLittle  posRel padAllXs boldM fs10   boRadXxs w50 marAuto mw30  '>
@@ -129,7 +129,7 @@ function QuickFriendly(props) {
 			)}
 		</quick-friendly>
 	);
-}
+});
 
 function areEqualQuickFriendly(prev, next) {
 	return (

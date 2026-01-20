@@ -38,7 +38,7 @@ const MenuButtons = props => {
 			message: 'w16 mw2-5',
 			chat: 'mw3-5 miw2-5 w40',
 			chatsList: 'mw3-5 w80',
-			event: isCardOrStrip || nowAt === 'home' ? 'mw2-5 w40' : 'mw8 w40',
+			event: isCardOrStrip || nowAt === 'home' ? 'mw2-5 w40' : 'mw6 w40',
 			chatsMenu: 'mw6 w33',
 			comment: 'mw2-5 w25',
 		},
@@ -46,7 +46,7 @@ const MenuButtons = props => {
 			user: ' w100 hvh6 mh5',
 			chat: 'hvh6 mh6',
 			chatsList: 'hvh6 mh6',
-			event: isCardOrStrip || nowAt === 'home' ? 'hvh6 mh5' : 'hvh25 mh12',
+			event: isCardOrStrip || nowAt === 'home' ? 'hvh6 mh5' : 'hvh25 mh9',
 			chatsMenu: 'hvh6 mh5 ',
 			message: 'hvh6 mh5',
 		},
@@ -72,7 +72,7 @@ const MenuButtons = props => {
 						(b === 'editovat' && modes.textArea) ||
 						(b === 'profil' && modes.profile) ||
 						(b === 'účast' && modes.inter) ||
-						(b === 'pozvat' && modes.invite) ||
+						(b === 'pozvat' && modes.invites) ||
 						(b === 'nahlásit' && protocol === 'report') ||
 						(b === 'náhled' && modes.evePreview) ||
 						(b === 'ukončit' && selButton === b) ||

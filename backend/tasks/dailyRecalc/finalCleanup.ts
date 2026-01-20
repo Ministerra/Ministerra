@@ -3,7 +3,7 @@ import { getIDsString } from '../../../shared/utilities.ts';
 import { Querer } from '../../systems/systems.ts';
 import { loadMetaPipes, loadBasicsDetailsPipe, clearState } from '../../utilities/contentHelpers.ts';
 import { getLogger } from '../../systems/handlers/loggers.ts';
-import { REDIS_KEYS } from '../../../shared/constants.ts';
+import { EXPIRATIONS, INTERVALS, REDIS_KEYS } from '../../../shared/constants.ts';
 
 const logger = getLogger('Task:DailyRecalc:FinalCleanup');
 
@@ -46,11 +46,11 @@ export async function refreshTop100Events({ con, redis }) {
 export async function executeFinalQueries({ con, redis, inaUse }) {
 	const queries = [
 		...(inaUse.size ? [`UPDATE logins SET inactive = TRUE WHERE user IN (${getIDsString(inaUse)})`] : []),
-		`UPDATE users SET status = "user" WHERE status = "newUser" AND created < CURDATE() - INTERVAL 3 MONTH`,
+		`UPDATE users SET status = "user" WHERE status = "newUser" AND created < CURDATE() - INTERVAL ${EXPIRATIONS.newUserStatusExpiration} MONTH`,
 		`UPDATE changes_tracking SET changed_name = FALSE WHERE changed_name = TRUE`,
-		`DELETE FROM rjwt_tokens WHERE created < NOW() - INTERVAL 3 DAY`,
-		`DELETE FROM user_alerts WHERE created < NOW() - INTERVAL 3 MONTH`,
-		`DELETE FROM user_links WHERE changed < NOW() - INTERVAL 3 MONTH AND link = 'req'`,
+		`DELETE FROM rjwt_tokens WHERE created < NOW() - INTERVAL ${parseInt(EXPIRATIONS.refreshToken)} DAY`,
+		`DELETE FROM user_alerts WHERE created < NOW() - INTERVAL ${INTERVALS.userAlertsCleanup} MONTH`,
+		`DELETE FROM user_links WHERE changed < NOW() - INTERVAL ${INTERVALS.userLinksRequestsCleanup} MONTH AND link = 'req'`,
 	];
 	try {
 		await Querer({ con, queries, task: 'dailyRecalc', mode: 'atomic_seq' });

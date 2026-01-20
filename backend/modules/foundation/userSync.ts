@@ -110,10 +110,8 @@ async function syncUserData(req: any, con: any, { userID, load, devID, devSync, 
 
 	// 1. UPDATE LOGIN STATS (Non-blocking) -----------------------------------
 	// Steps: fire-and-forget so init doesn’t stall on analytics bookkeeping.
-	if (load === 'init') {
-		if (!con) con = await Sql.getConnection();
-		updateLoginsTable(req, userID, con).catch(e => logger.error('foundation.login_track_fail', { error: e }));
-	}
+	if (load === 'init') updateLoginsTable(req, userID, con).catch(e => logger.error('foundation.login_track_fail', { error: e }));
+	
 
 	// 2. CHECK REDIS SUMMARIES FOR CHANGES -----------------------------------
 	// Steps: fetch summary watermarks unless device is unstable (unstable devices follow a safer fallback path).
@@ -126,6 +124,7 @@ async function syncUserData(req: any, con: any, { userID, load, devID, devSync, 
 		}
 	}
 
+	console.log('lastDevSummary', oldUserUnstableDev);
 	// 3. DETERMINE TABLES TO FETCH -------------------------------------------
 	// Steps: choose between (a) unstable-device fallback, (b) full snapshot for devSync=0, (c) throttled delta reads when enough time has passed.
 	if (oldUserUnstableDev) {
@@ -151,35 +150,38 @@ async function syncUserData(req: any, con: any, { userID, load, devID, devSync, 
 			if (!linksChange || Number(linksChange) > linksSync) tablesToFetch.push('user_links'), !linksChange && hasNoTimestamp.push('user_links');
 		}
 	} else if (!devSync) {
+		console.log('devSync', devSync);
 		// CLEAN STATE FULL SNAPSHOT -------------------------------------------
 		// Steps: first-time device fetch pulls all tracked tables so client can bootstrap without deltas.
-		tablesToFetch.push(...tableNames);
+		tablesToFetch.push(...tableNames,'users');
 	} else if (now - devSync > minInterval) {
 		// THROTTLED DELTA UPDATE ----------------------------------------------
 		// Steps: only do delta reads when minInterval passed; avoids hammering SQL during rapid client polling.
-		try {
+		try {	
 			// LINKS CHECK --------------------------------------------------------
 			// Steps: links are checked against summary and use devSync as default watermark when linksSync isn’t separate.
 			if (!linksChangeSummary || Number(linksChangeSummary) > devSync) tablesToFetch.push('user_links'), !linksChangeSummary && hasNoTimestamp.push('user_links');
+
 			// CROSS-DEVICE UPDATE CHECK -----------------------------------------
 			// Steps: when last_dev differs, another device likely wrote changes; fetch only tables whose summary timestamp exceeds devSync.
 			if (lastDevSummary !== devID) {
 				if (devID) await redis.hset(summaryKey, 'last_dev', devID);
-				const ownInteractionTables: string[] = tableNames.filter(t => t !== 'user_links');
-				const summaryValues: (string | null)[] = await redis.hmget(summaryKey, ...ownInteractionTables);
+				const ownTables: string[] = tableNames.filter(t => t !== 'user_links').concat('users');
+				const summaryValues: (string | null)[] = await redis.hmget(summaryKey, ...ownTables);
 				for (const [idx, value] of summaryValues.entries())
-					if (!value || Number(value) > devSync) tablesToFetch.push(ownInteractionTables[idx]), !value && hasNoTimestamp.push(ownInteractionTables[idx]);
+					if (!value || Number(value) > devSync) tablesToFetch.push(ownTables[idx]), !value && hasNoTimestamp.push(ownTables[idx]);
 			}
 		} catch (error) {
 			logger.error('Foundation', { error, userID, step: 'checkForUpdates' });
 		}
 	}
 
+	console.log('tablesToFetch', tablesToFetch);
+
 	// 4. EXECUTE SQL FETCHES -------------------------------------------------
 	// Steps: open a connection once, then run per-table execQuery in parallel; update the correct watermark (linksSync vs devSync) based on which path executed.
 	if (tablesToFetch.length > 0) {
 		try {
-			if (!con) con = await Sql.getConnection();
 			// PROFILE FETCH ------------------------------------------------------
 			// Steps: fetch profile only when explicitly included; most deltas avoid the user profile read.
 			if (tablesToFetch.includes('users')) user = await getProfile({ userID, id: userID, basiOnly: false, devIsStable: true }, con);

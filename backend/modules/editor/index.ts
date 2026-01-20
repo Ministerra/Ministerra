@@ -154,7 +154,7 @@ async function Editor(req, res) {
 			// Steps: generate globally unique ID, insert event, run side effects.
 			try {
 				// testUser has id 1 and test event as well (this is for API testing purposes only)
-				eventID = userID == '1' && !(await con.execute('SELECT id FROM events WHERE id = 1 LIMIT 1'))[0][0]?.id ? '1' : generateIDString();
+				eventID = userID == '1' && !(await con.execute('SELECT id FROM events WHERE id = 3 LIMIT 1'))[0][0]?.id ? '3' : generateIDString();
 				const placeholders = cols.map(c => (c === 'coords' ? 'Point(?, ?)' : '?'));
 				const Q = `INSERT INTO events (id, ${cols.join(', ')}, owner, flag) VALUES (?, ${placeholders.join(',')}, ?, 'new')`;
 				const P = [eventID, ...values, userID];

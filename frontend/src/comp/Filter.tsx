@@ -61,9 +61,9 @@ function Filter(props) {
 			<blue-divider style={{ filter: 'saturate(1) hue-rotate(0deg)' }} class={` ${nowAt === 'editor' ? 'hr2' : 'hr10'} bInsetBlueTopXs2  block zin1 maskLowXs     w80   zinMax   marAuto   `} />
 
 			{/* SELECT / DESELECT ALL --------------------------------------------------------------------- */}
-			{nowAt !== 'editor' && (
+			{nowAt !== 'editor' && avail.types?.length > 1 && (
 				<button
-					className={`${allSel && active ? 'tRed' : ''}   padBotXxs   w100 mw30 fs10 borderBot shaBlue  boldM   posRel marBotXs marAuto inlineBlock  borderLight boRadXxxs `}
+					className={`${allSel && active ? 'tRed' : ''}   padBotXxs   w100 mw30 fs12  shaBlueLight bBor  bold borBotLight   posRel marBotXs marAuto inlineBlock  borderLight boRadXxxs `}
 					onClick={() => man(null, allSel && active ? 'none' : 'all')}>
 					{allSel && active ? 'odznačit vše' : 'označit vše'}
 				</button>
@@ -87,7 +87,7 @@ function Filter(props) {
 										style={{ width: `100%`, maxWidth: `${Math.min(bWidth, 100)}px` }}
 										className={`noBackground flexCol xBold  borRed  shaBlue  posRel  grow textSha   bHover`}
 										onClick={() => man(cat, allSel && active ? 'none' : 'all')}>
-										<span className='lh0-6 fs14 xBold'>{cat.slice(0, 4)}</span>
+										<span className='lh0-6 fs18 xBold'>{cat.slice(0, 4)}</span>
 										<span className={`${allSel && active ? 'tRed' : 'tBlue'} lh1 boldXs  fs8`}>{allSel && active ? 'nic >' : 'vše >'}</span>
 									</button>
 								)}

@@ -21,6 +21,12 @@ const userSummaryKey = (userID: string | number): string => `${REDIS_KEYS.userSu
 // RESOLVE DEVICE SYNC ----------------------------------------------------------
 // Steps: clamp client timestamp to sane bounds, then merge with stored per-device watermark so we never rewind and miss updates (clock skew / replay guard).
 async function resolveDeviceSync(userID: string | number, devID: string, clientDevSync: string | number): Promise<number> {
+
+	// For private browser tabs or other cases where FE caching is disabled. 
+	// Abusing this would also require abusing newUser status. (creating large amount of interactions)
+	
+	if (clientDevSync === 0) return 0;
+
 	const numericClient: number = Number(clientDevSync) || 0;
 	const now: number = Date.now();
 	// CLIENT CLAMP ------------------------------------------------------------

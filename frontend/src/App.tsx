@@ -64,26 +64,76 @@ const backendUrl = import.meta.env.VITE_BACK_END?.replace('127.0.0.1', 'localhos
 const throttleMap = (window.__throttleMap ||= new Map());
 
 // VIEWPORT SCALING LOGIC ---
-// Calculates and sets the base font size for fluid typography based on viewport width.
+// Calculates base font size for fluid typography.
+// Device type is determined by SCREEN resolution (not viewport) - PC users resizing browser stay on PC scaling.
+// Mobile devices use viewport-responsive scaling; desktops use fixed scaling based on screen size.
 function activateDynamicScaling() {
 	const BASE_FONT_SIZE = 62.5,
 		REF_WIDTH = 1920,
 		MIN_WIDTH = 320,
 		MIN_SCALE = 0.55,
-		PHONE_ADJUST = 0;
-	const updateFontSize = () => {
-		const vw = Math.max(window.innerWidth || MIN_WIDTH, MIN_WIDTH),
-			widthRatio = Math.min(vw / REF_WIDTH, 1),
-			baseScale = MIN_SCALE + widthRatio * (1 - MIN_SCALE);
-		const progressiveAdjust = vw < 768 ? (1 - widthRatio) * PHONE_ADJUST : 0,
-			scale = Math.max(MIN_SCALE, baseScale + progressiveAdjust);
-		document.documentElement.style.fontSize = `${(BASE_FONT_SIZE * scale).toFixed(3)}%`;
+		MOBILE_SCREEN_THRESHOLD = 1024;
+
+	// DEVICE TYPE DETECTION ---
+	// Uses screen.width (physical resolution) to determine device class, not viewport width.
+	// This prevents PC browsers resized to small windows from triggering mobile scaling.
+	const detectDeviceType = (): 'mobile' | 'desktop' => {
+		const screenWidth = window.screen.width,
+			hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		// Mobile: small screen resolution AND touch capability
+		if (screenWidth <= MOBILE_SCREEN_THRESHOLD && hasTouchSupport) return 'mobile';
+		return 'desktop';
 	};
-	if (window.__dynamicScalingHandler) window.removeEventListener('resize', window.__dynamicScalingHandler), window.removeEventListener('orientationchange', window.__dynamicScalingHandler);
-	(window.__dynamicScalingHandler = updateFontSize),
-		updateFontSize(),
-		window.addEventListener('resize', window.__dynamicScalingHandler, { passive: true }),
-		window.addEventListener('orientationchange', window.__dynamicScalingHandler, { passive: true });
+
+	// CORE FONT SIZE CALCULATION ---
+	const computeAndApplyFontSize = () => {
+		const deviceType = detectDeviceType(),
+			screenWidth = window.screen.width,
+			viewportWidth = document.documentElement.clientWidth || window.innerWidth || MIN_WIDTH;
+
+		let scale: number;
+		if (deviceType === 'mobile') {
+			// MOBILE SCALING ---
+			// Responsive to viewport, since mobile users rotate/change viewport legitimately
+			const effectiveWidth = Math.max(viewportWidth, MIN_WIDTH),
+				widthRatio = Math.min(effectiveWidth / REF_WIDTH, 1);
+			scale = MIN_SCALE + widthRatio * (1 - MIN_SCALE);
+		} else {
+			// DESKTOP SCALING ---
+			// Based on screen resolution, NOT viewport - browser resize doesn't shrink UI
+			const effectiveWidth = Math.max(screenWidth, MIN_WIDTH),
+				widthRatio = Math.min(effectiveWidth / REF_WIDTH, 1);
+			scale = MIN_SCALE + widthRatio * (1 - MIN_SCALE);
+		}
+
+		const newFontSize = `${(BASE_FONT_SIZE * Math.max(MIN_SCALE, scale)).toFixed(3)}%`;
+		if (document.documentElement.style.fontSize !== newFontSize) {
+			document.documentElement.style.fontSize = newFontSize;
+		}
+	};
+
+	// RESIZE HANDLER ---
+	// Only relevant for mobile orientation changes; desktop ignores resize for scaling
+	let resizeRafId: number | null = null;
+	const handleResize = () => {
+		if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
+		resizeRafId = requestAnimationFrame(() => {
+			resizeRafId = null;
+			computeAndApplyFontSize();
+		});
+	};
+
+	// CLEANUP PREVIOUS LISTENERS ---
+	if (window.__dynamicScalingHandler) {
+		window.removeEventListener('resize', window.__dynamicScalingHandler);
+		window.removeEventListener('orientationchange', window.__dynamicScalingHandler);
+	}
+
+	// ATTACH NEW LISTENERS ---
+	window.__dynamicScalingHandler = handleResize;
+	computeAndApplyFontSize();
+	window.addEventListener('resize', handleResize, { passive: true });
+	window.addEventListener('orientationchange', handleResize, { passive: true });
 }
 
 // DATA DECODING UTILITY ---
@@ -216,11 +266,11 @@ function App() {
 							})();
 					}
 					response.data = decodeResponseData(response.data, response.headers['content-type']);
+
 					// DATE NORMALIZATION ------------------------------------------------
 					// Convert known date/datetime fields into ms timestamps.
 					response.data = normalizeIncomingDateFieldsToMs(response.data);
-					console.log('🟢RESPONSE FROM', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms', response.data);
-					if (import.meta.env.DEV) console.log('RESPONSE', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms');
+					if (import.meta.env.DEV) console.log('🟢RESPONSE FROM', response.config?.url, 'TOOK:', Date.now() - (response.config?.__requestStart || 0), 'ms', response.data);
 					return Promise.resolve(response);
 				},
 				async error => {

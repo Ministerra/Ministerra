@@ -1,5 +1,5 @@
 import { Sql } from '../systems/systems.ts';
-import { listDevices, revokeDevice, renameDevice } from '../utilities/helpers/device.ts';
+import { listDevices, revokeUserDevice, revokeDevice, renameDevice } from '../utilities/helpers/device.ts';
 import { getLogger } from '../systems/handlers/loggers.ts';
 import { invalidateCacheForDevice } from './jwtokens.ts';
 import { REDIS_KEYS } from '../../shared/constants.ts';
@@ -7,10 +7,11 @@ import { Redis } from 'ioredis';
 
 interface DeviceRequest {
 	userID: string | number;
-	mode: 'list' | 'revoke' | 'rename';
+	mode: 'list' | 'revoke' | 'rename' | 'wipeDevice';
 	deviceID?: string;
 	name?: string;
 	currentDeviceID?: string;
+	isAdmin?: boolean;
 }
 
 interface FormattedDevice {
@@ -62,10 +63,10 @@ async function Devices(req: { body: DeviceRequest }, res: any) {
 			}
 
 			case 'revoke': {
-				// REVOKE DEVICE -----------------------------------------------------
-				// Steps: mark revoked in SQL, delete refresh token entry in redis (best-effort), then invalidate in-process JWT cache so access checks converge quickly.
+				// REVOKE USER DEVICE ------------------------------------------------
+				// Steps: revoke user's session on this device (user-device scope, not entire device DEK).
 				if (!deviceID) return res.status(400).json({ error: 'Missing deviceID' });
-				await revokeDevice(con, userID, deviceID);
+				await revokeUserDevice(con, userID, deviceID);
 
 				if (redis) {
 					try {
@@ -84,6 +85,16 @@ async function Devices(req: { body: DeviceRequest }, res: any) {
 				// Steps: validate input, update DB, and return success; cache consistency is handled by listDevices reading from SQL.
 				if (!deviceID || !name) return res.status(400).json({ error: 'Missing deviceID or name' });
 				await renameDevice(con, userID, deviceID, name);
+				return res.json({ success: true });
+			}
+
+			case 'wipeDevice': {
+				// WIPE DEVICE (ADMIN ONLY) ------------------------------------------
+				// Steps: revoke entire device DEK, affects ALL users on this device. Cache becomes unrecoverable.
+				if (!req.body.isAdmin) return res.status(403).json({ error: 'Admin only' });
+				if (!deviceID) return res.status(400).json({ error: 'Missing deviceID' });
+				await revokeDevice(con, deviceID);
+				logger.info('Device wiped (admin)', { deviceID, adminUserID: userID });
 				return res.json({ success: true });
 			}
 

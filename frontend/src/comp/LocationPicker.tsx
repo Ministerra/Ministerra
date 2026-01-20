@@ -413,13 +413,13 @@ function LocationPicker(props) {
 									} else man(nowAt === 'setup' ? 'delCity' : nowAt === 'editor' ? 'cityID' : 'selCity', id);
 								}}
 								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${
-									invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBluTopS ' : ''
+									invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBlueTopS ' : ''
 								} ${`${
 									nowAt === 'editor' ? (isSelected ? 'bInsetBlueTop  borTop textSha boRadS  xBold fs14' : '  fs14 xBold') : inMenu ? '  boldM fs15  ' : '  bold fs13'
-								}  posRel miw16  `}  
+								}  posRel   `}  
 								  ${inMenu && curSelCities.includes(id) ? 'bInsetBlueTopS borTop xBold' : ''}
 								 
-								 ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXs   flexCen bgTrans       `}>
+								 ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXxxs padHorL   flexCen bgTrans       `}>
 								{nowAt === 'setup' && (
 									<button
 										title='Domovské město'
@@ -480,7 +480,7 @@ function LocationPicker(props) {
 									man('selCitiesInRad', button);
 								}}
 								style={{ width: `calc(100%/${arr.length})px` }}
-								className='grow bgTrans fs7  bInsetBlueTopXs bInsetBlueTopXs padVerXxxs  xBold posRel mw30  shaBlue tDarkBlue  boRadXs    borBotLight  bHover '>
+								className='grow bgTrans fs10  bInsetBlueTopXs bInsetBlueTopXs padVerXxxs  xBold posRel mw10  shaBlue tDarkBlue  boRadXs    borBotLight  bHover '>
 								{button}
 								{typeof button === 'number' ? ' km' : ''}
 							</button>

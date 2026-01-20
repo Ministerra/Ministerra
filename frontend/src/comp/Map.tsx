@@ -7,7 +7,7 @@ import axios from 'axios';
 import { notifyGlobalError } from '../hooks/useErrorsMan';
 import { humanizeDateTime, getFilteredContent, areEqual } from '../../helpers';
 import { getDistance } from '../utils/locationUtils';
-import EventCard from '../comp/EventCard';
+import EventCard from '../comp/EventCard.tsx';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -18,6 +18,7 @@ function MapLibre(props: any) {
 	// PROPS AND STATE INITIALIZATION ------------------------------------------
 	const { show, map, nowAt, showMan, brain, sherData, snap, avail, setSnap, singleEvent } = props,
 		[zoom, setZoom] = useState({ zoomIn: () => {}, zoomOut: () => {}, fitMap: () => {} }),
+		[zoomLimits, setZoomLimits] = useState({ min: 0, max: 18, current: 0 }),
 		inited = useRef<any>(null),
 		mapContainer = useRef<any>(null),
 		mapInstanceRef = useRef<any>(null),
@@ -251,6 +252,13 @@ function MapLibre(props: any) {
 					return;
 				}
 
+				// CLEAR ALL MARKERS IF NO ITEMS ---
+				if (!snapItems.current?.length) {
+					mapMarkersArr.current.forEach(marker => marker.remove());
+					mapMarkersArr.current = [];
+					return;
+				}
+
 				const renderedUnclustered = mapBox.queryRenderedFeatures(undefined, { layers: ['unclustered-events'] });
 				const newMarkerIds = new Set(renderedUnclustered.map(feature => feature.properties.id));
 
@@ -433,6 +441,9 @@ function MapLibre(props: any) {
 					}
 
 					setZoom({ zoomIn: () => mapBox.zoomIn(), zoomOut: () => mapBox.zoomOut(), fitMap: () => fitMapToBounds() });
+					const syncZoom = () => setZoomLimits({ min: mapBox.getMinZoom(), max: mapBox.getMaxZoom(), current: mapBox.getZoom() });
+					mapBox.on('zoom', syncZoom);
+					syncZoom();
 					mapInstanceRef.current = mapBox;
 					if (singleEvent) createCustomMarkers();
 					else fitMapToBounds();
@@ -482,7 +493,7 @@ function MapLibre(props: any) {
 
 	// RENDER MAP UI -----------------------------------------------------------
 	return (
-		<map-libre class={`${map === 'hide' ? 'hide' : singleEvent ? 'hvh50' : 'hvh80'} ${show?.filter || singleEvent ? 'marTopXs' : 'marTopM'}   shaTop  posRel marAuto boRadS block zinMax  `}>
+		<map-libre class={`${map === 'hide' ? 'hide' : singleEvent ? 'hvh50' : 'hvh80'} ${show?.filter || singleEvent ? 'marTopXs' : 'marTopXxl'}   shaTop  posRel marAuto boRadS block zinMax  `}>
 			{/* HIDE MAP OVERLAY ----------------------------------------------------- */}
 			{map === true && (show?.filter || show?.history) && !singleEvent && (
 				<button onClick={() => showMan('map')} className='posAbs bgTransXs   tDarkBlue zinMenu topCen padAllXs boldM fs20 borTop  w40 marAuto mw30'>
@@ -493,27 +504,34 @@ function MapLibre(props: any) {
 			{/* CLUSTER POPUP CONTAINER ----------------------------------------------- */}
 			{/* Wraps thumbnails row + EventCard in vertical stack - only show when eventPopup is set (step 2) */}
 			{brain.eventPopup && nowAt === 'home' && !singleEvent && (
-				<cluster-popup class='posAbs topCen zinMenu flexCol aliCen shaBotLongDown w100 overY' style={{ maxHeight: '95%' }}>
+				<cluster-popup
+					onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))}
+					class='posAbs topCen zinMenu flexCol  aliCen  w100 {}'
+					style={{ maxHeight: '95%' }}>
 					{/* CLUSTER EVENT THUMBNAILS ROW --- */}
 					{clusterEventsRef.current.length > 1 && brain.eventPopup && (
-						<cluster-thumbs class='flexRow gapXs  boRadXs wrap justCen w100 shrink0'>
+						<cluster-thumbs
+							onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))}
+							class='flexRow gapXs  boRadXs wrap justCen w100 shrink0'>
 							{clusterEventsRef.current.map(event => {
 								const isSelected = brain.eventPopup?.id === event.id;
 								const [upper, lower] = [humanizeDateTime({ dateInMs: event.starts, thumbRow: 'upper' }), humanizeDateTime({ dateInMs: event.starts, thumbRow: 'bottom' })];
 								return (
 									<event-thumb
 										key={event.id}
-										onClick={() => handleClusterThumbnailClick(event)}
-										class={`flexInline bgWhite bHover padAllXs pointer shaLight posRel boRadXs bgTransXxs justStart ${isSelected ? 'borBlueSel' : ''}`}>
+										onClick={e => (e.stopPropagation(), handleClusterThumbnailClick(event))}
+										class={`flexInline bHover padAllXs pointer shaLight posRel boRadXs justStart ${
+											isSelected ? 'bDarkBlue arrowDown1 tWhite zinMaXl bsContentGlow' : 'bgWhite bgTransXxs'
+										}`}>
 										{/* TYPE ICON --- */}
 										<img className='miw5 mw5 marRigS boRadXs' src={`/icons/types/${event.type}.png`} alt='' />
 										{/* DATE/TIME TEXTS --- */}
 										<texts-wrapper class='flexCol justStart aliStart'>
-											<span className={`${event.inter === 'sur' ? 'tGreen' : 'tBlue'} textSha boldM fsD lh1`}>{upper}</span>
-											<span className='boldXs tNoWrap fsA lh1 marTopXxxs'>{lower}</span>
+											<span className={`${isSelected ? 'tWhite' : event.inter === 'sur' ? 'tGreen' : 'tBlue'} textSha boldM fsD lh1`}>{upper}</span>
+											<span className={`${isSelected ? 'tWhite' : ''} boldXs tNoWrap fsA lh1 marTopXxxs`}>{lower}</span>
 											{/* ATTENDANCE CHIPS --- */}
-											{event.inter === 'sur' && <span className='bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite marTopXxs'>určitě</span>}
-											{event.inter === 'may' && <span className='bBlue boldS fs6 flexCen boRadXxs padVerXxxxs tWhite marTopXxs'>možná</span>}
+											{!isSelected && event.inter === 'sur' && <span className='bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite marTopXxs'>určitě</span>}
+											{!isSelected && event.inter === 'may' && <span className='bBlue boldS fs6 flexCen boRadXxs padVerXxxxs tWhite marTopXxs'>možná</span>}
 										</texts-wrapper>
 									</event-thumb>
 								);
@@ -530,16 +548,18 @@ function MapLibre(props: any) {
 
 			{/* INTERACTIVE CONTROLS ------------------------------------------------- */}
 			<map-buttons class={`flexCen  boRadXs overHidden bInsetBlueTopXl zinMaXl gapXxxs posAbs marAuto botCen w70 mw90 `}>
-				{snapItems.current?.length > 0 && (
 					<button
+						disabled={zoomLimits.current >= zoomLimits.max}
 						onClick={() => {
 							zoom.zoomIn();
 							mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
 						}}
-						className='grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold'>
+						className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${
+							zoomLimits.current >= zoomLimits.max ? 'opacityS noPoint' : ''
+						}`}>
 						Přiblížit
 					</button>
-				)}
+				
 
 				{/* NAVIGATION MESSAGES AND RESET --------------------------- */}
 				{!singleEvent &&
@@ -565,16 +585,18 @@ function MapLibre(props: any) {
 						</button>
 					)}
 
-				{snapItems.current?.length > 0 && (
 					<button
+						disabled={zoomLimits.current <= zoomLimits.min}
 						onClick={() => {
 							zoom.zoomOut();
 							mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
 						}}
-						className='grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold'>
+						className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${
+							zoomLimits.current <= zoomLimits.min ? 'opacityS noPoint' : ''
+						}`}>
 						Oddálit
 					</button>
-				)}
+				
 			</map-buttons>
 
 			<blue-divider class={` hr1 borTop block bInsetBlueTopXl borTop bgTrans posAbs botCen zinMax downTinyBit w100  mw160   marAuto   `} />

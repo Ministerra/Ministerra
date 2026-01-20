@@ -21,10 +21,11 @@ function Invitations({
 	invitesTotal,
 	fetchMoreUsers,
 	superMan,
+	nowAt,
 	showUsersOnly = false,
 	galleryMode = '',
 	invitesHandler,
-	topPadding = false,
+	topPadding = false,	
 }: any) {
 	const [selectedItems, setSelectedItems] = useState([]);
 	const [inviteStatus, setInviteStatus] = useState('idle');
@@ -90,18 +91,18 @@ function Invitations({
 	return (
 		<invitations-container
 			onClick={e => e.stopPropagation()}
-			class={`w100 ${tabMode ? 'mw150' : 'mw150'} marAuto zinMaXl posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXl ' : ''} ${topPadding ? 'marTopS' : ''} `}
+			class={`w100 ${tabMode ? 'mw150' : 'mw150'} marAuto zinMaXl padBotXs borderBot posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXl ' : ''} ${topPadding ? 'marTopS' : ''} ${nowAt === 'event' ? 'marTopXl' : !galleryMode ? 'padTopM' : ''} `}
 			ref={containerRef}>
 			{!showUsersOnly && (
-				<upper-wrapper class='w100 padBotXxs '>
-					{isUserToEvents && itemLimit > selItemsSrc.length && (
+				<upper-wrapper class='w100   '>
+					{nowAt !== 'editor' && itemLimit > selItemsSrc.length && (
 						<>
 							<span
-								className='fs20 textAli   w100 
+								className='fs20 tDarkBlue textAli   w100 
 					 inlineBlock marAuto xBold marBotXs'>
-								Pozvání uživatele
+								{isUserToEvents ? 'Pozvání uživatele' : 'Pozvaní uživatelů'}
 							</span>
-							<p className='fs7 textAli mw120 marBotXxs fPadHorXs lh1-1 '>
+							<p className='fs7 textAli  marBotXxs fPadHorXs lh1-1 '>
 								Níže vyber zdroj, ve kterém chceš události dohledat. Můžeš až 3 najednou. Zdroje lze také kombinovat = vybrané události &quot;přežijí&quot; v zásobníku i když v průběhu
 								změníš zdroj.
 							</p>
@@ -112,9 +113,9 @@ function Invitations({
 							<button
 								onClick={() => setTabMode('')}
 								className={`${
-									tabMode ? 'tRed textSha fs10' : 'tDarkBlue fs10'
-								} posRel  xBold borBot2 bGlassSubtle   padHorL padVerXxs  posAbs topCen  zinMaXl    sideBors marBotXxxs  marAuto `}>
-								{tabMode ? `Zpět na zdroje ${isUserToEvents ? 'událostí' : 'uživatelů'}` : `${isUserToEvents ? 'Vyber zdroj události' : 'Vyber zdroj uživatelů'}`}
+									tabMode ? 'tBlue textSha fs8' : 'tDarkBlue fs8'
+								} posRel  xBold borBot2 bGlassSubtle w33 mw60 padVerXxs  posAbs topCen  zinMaXl    sideBors marBotXxxs  marAuto `}>
+								{tabMode ? `Zpět na zdroje` : `${isUserToEvents ? 'Vyber zdroj události' : 'Vyber zdroj uživatelů'}`}
 							</button>
 						)}
 						{/* {tabMode && !isUserToEvents && (

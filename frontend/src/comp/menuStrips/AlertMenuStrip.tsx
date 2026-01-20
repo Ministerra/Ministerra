@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import MenuButtons from './stripButtonsJSX';
 import { previewEveCard } from './helpers';
 import { showUsersProfile } from '../../utils/userProfileUtils';
-import EventCard from '../EventCard';
+import EventCard from '../EventCard.tsx';
 import UserCard from '../UserCard';
 import IntersPrivsButtons from '../IntersPrivsButtons';
 import { linksHandler } from '../../hooks/useLinksAndBlocks';
@@ -19,6 +20,7 @@ import { storeMenuViewState } from '../LogoAndMenu';
  * -------------------------------------------------------------------------- */
 function AlertMenuStrip(props) {
 	const { alert, brain, onRemoveAlert, setMenuView, nowAt = 'alerts', buttons = [], status, modes, setModes, setStatus, storeAlertsData } = props;
+	const navigate = useNavigate();
 	const { what, target, data = {} } = alert || {};
 	const [selButton, setSelButton] = useState(null);
 	const [interStatus, setInterStatus] = useState({ inter: null, interPriv: 'pub', surely: 0, maybe: 0, own: false, isMeeting: false });
@@ -33,7 +35,7 @@ function AlertMenuStrip(props) {
 		storeMenuViewState('alerts', null, alert?.id); // STORE ALERTS + ALERT ID FOR BACK NAVIGATION ---------------------------
 		const title = data?.title || brain?.events?.[eid]?.title || '';
 		const slug = encodeURIComponent(title).replace(/\./g, '-').replace(/%20/g, '_');
-		window.location.href = `/event/${eid}${slug ? '!' + slug : ''}`;
+		navigate(`/event/${eid}${slug ? '!' + slug : ''}`);
 	};
 
 	// Local helper to sync invites structures and gallery categories

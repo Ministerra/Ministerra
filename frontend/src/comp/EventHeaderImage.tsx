@@ -46,7 +46,7 @@ function EventHeaderImage({ event, fadedIn = [], maximizeImg = false, onImageCli
 					<img loading='lazy' className='w100 boRadXs maskLow  zinMin h100 hvh40  cover' src={`/covers/friendlyMeetings/${event.type}.png`} alt='' />
 					{/* EVENT TYPE ICON ----------------------------------------------------------------*/}
 					{!maximizeImg && (
-						<event-type class={` flexCol  w100 maskLowXs padTopXxxl padBotL noPoint aliCen posAbs zinMax   ${!isMeeting ? 'botCen imw35' : 'topCen imw40 marTopS '}     `}>
+						<event-type class={` flexCol  w100 maskLowXs padTopXxxl padBotL noPoint aliCen posAbs zinMax   ${!isMeeting ? 'botCen imw35' : 'topCen imw33 marTopS '}     `}>
 							<img className='   boRadL  w70' src={`/icons/types/${event.type}.png`} alt='' />
 						</event-type>
 					)}

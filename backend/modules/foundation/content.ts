@@ -16,7 +16,7 @@ const logger = getLogger('FoundationContent');
 // Steps: on each request we first try this tiny in-process cache, then hit Redis only
 // for misses; this collapses read bursts for hot cities without changing correctness
 // because the underlying source-of-truth remains Redis (with short TTL here).
-const cityCache = new LRUCache({
+const cityCache = new LRUCache<string, any>({
 	max: 5000,
 	ttl: 5 * 60 * 1000, // 5 minute TTL matches typical task intervals
 	updateAgeOnGet: false, // Ensure data refreshes from Redis eventually
@@ -25,7 +25,7 @@ const cityCache = new LRUCache({
 // USER SETS CACHE -------------------------------------------------------------
 // Steps: caching user's blocks/links sets to avoid fetching them on every request.
 // Timestamps in Redis ensure synchronization.
-const userSetCache = new LRUCache({
+const userSetCache = new LRUCache<string, { set: Set<string | number>; ts: number }>({
 	max: 10000, // 1000 users/sets
 	ttl: 30 * 60 * 1000, // 30 minutes
 	updateAgeOnGet: false, // Ensure data refreshes from Redis eventually
@@ -82,7 +82,7 @@ async function getUserSet(con, userID, type) {
 	if (cached && cached.ts === tsNumber) return cached.set;
 
 	const members = await redis.smembers(`${type}:${userID}`);
-	const set = new Set(members);
+	const set = new Set<string | number>(members);
 	userSetCache.set(`${type}:${userID}`, { set, ts: tsNumber });
 	return set;
 }
@@ -145,7 +145,12 @@ async function processContentMetas({ con, load, getCities, cities, userID }) {
 			if (missingIndices.length) {
 				// PIPELINE FLUSH ---
 				// Steps: execute once, then stitch results back into their original city order, then populate cache on success.
-				const [fRes, pRes] = await Promise.all([getFilteringMapsPipe.exec(), getPublicMetasPipe.exec()]);
+				const [pRes, fRes] = await Promise.all([getPublicMetasPipe.exec(), getFilteringMapsPipe.exec()]);
+				console.log("🚀 ~ processContentMetas ~ pRes:", pRes);
+
+				console.log("🚀 ~ processContentMetas ~ fRes:", fRes);
+
+		
 
 				for (let j = 0; j < missingIndices.length; j++) {
 					const idx = missingIndices[j];

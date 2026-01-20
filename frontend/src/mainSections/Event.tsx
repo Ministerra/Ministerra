@@ -73,23 +73,23 @@ function Event() {
 					!status.isMeeting && !obj.imgVers ? 'padTopXxxl' : !maximizeImg ? 'padTopXxl' : 'padTopS'
 				}   zinMax posRel  fadingIn flexCol  textAli  marAuto   w100`}>
 				{/*  DATE, CITY, PLACE, ADDRESS ------------------------------------------------------ */}
-				<date-time class='zinMax fitContent bgTrans maskLowXs padTopXxs borWhite tShaWhite  fPadHorXs      boRadXs    posRel   marAuto'>
-					<span className={`${new Date(obj.starts) >= new Date() ? 'tDarkBlue ' : 'tRed'} fs22   xBold inline marRigS  imw3   textSha  wrap textAli`}>
+				<date-time class='zinMax fitContent bgTrans maskLowXxs padTopXxs padBotXxxs borWhite tShaWhite  fPadHorXs      boRadXs    posRel   marAuto'>
+					<span className={`${new Date(obj.starts) >= new Date() ? 'tDarkBlue ' : 'tRed'} fs20   xBold inline marRigS  imw3   textSha  wrap textAli`}>
 						{`${humanizeDateTime({ dateInMs: obj.starts })}${obj.ends ? ` - ${humanizeDateTime({ dateInMs: obj.ends })}` : ''}`}
 					</span>
 
 					{(obj.location?.startsWith('+') || (!obj.location && !obj.place)) && (
-						<span className={`bold marRigS fs22  inlineBlock tBlue bgTrans tSha10  flewRow textSha`}>{obj.location?.startsWith('+') ? 'někde v okolí ' : 'kdekoliv v'}</span>
+						<span className={`bold marRigS fs20  inlineBlock tBlue bgTrans tSha10  flewRow textSha`}>{obj.location?.startsWith('+') ? 'někde v okolí ' : 'kdekoliv v'}</span>
 					)}
 
-					{obj.place && <strong className='fs22 tBlue boldM'>{`${obj.place}`}</strong>}
+					{obj.place && <strong className='fs20 tBlue boldM'>{`${obj.place}`}</strong>}
 
-					<span className={`fs22 inline  lh1    boldXs imw3  textSha flexCen wrap textAli`}>{` ${obj.location?.slice(obj.location?.startsWith('+') ? 1 : 0) || ''} ${obj.city}`}</span>
+					<span className={`fs20 inline  lh1    boldXs imw3  textSha flexCen wrap textAli`}>{` ${obj.location?.slice(obj.location?.startsWith('+') ? 1 : 0) || ''} ${obj.city}`}</span>
 				</date-time>
 
 				{/* TITLE ------------------------------------------------------------------ */}
 				{(obj.title || status.canceled) && (
-					<span className={` fs35 tShaWhiteXl textAli zin100 xBold lh1  inlineBlock marAuto marBotXs miw30 textAli`}>
+					<span className={` fs35 tShaWhiteXl textAli zin100 xBold lh1  inlineBlock marAuto marBotXxs miw30 textAli`}>
 						{obj.canceled && <strong className='xBold inlineBlock tRed borderRed marRigM'>ZRUŠENO! </strong>}
 						{obj.title}
 					</span>
@@ -100,27 +100,15 @@ function Event() {
 
 				{/* MENU BUTTON ---------------------------------------------------------------*/}
 				<menu-comp
-					onClick={() => setModes(prev => ({ ...prev, menu: !prev.menu, protocol: false }))}
+				
 					class={`${modes.menu ? 'marBotM' : ''} ${fadedIn.includes('Image') ? 'fadedIn' : ''} block fadingIn w100 fPadHorXs aliCen justCen    zinMaXl    block posRel  marAuto`}>
 					<menu-button
+						onClick={() => setModes(prev => ({ ...prev, menu: !prev.menu, protocol: false }))}
 						class={`${
 							modes.menu ? 'posRel borRed bgWhite' : 'shaBlue'
 						} flexInline wrap borderBot bgTransXs boRadXxs pointer miw12 fitContent marAuto justCen aliCen bHover zinMaXl padHorXxs`}>
 						{obj.starts < Date.now() && (
 							<span className='fs9 padVerXxxs boldM boRadXxs padHorXs bRed borBot8 tWhite tNoWrap'>{humanizeDateTime({ dateInMs: obj.starts, getLabel: true, endsInMs: obj.ends })}</span>
-						)}
-						{status.inter && (
-							<inter-indi class='boRadXxs flexInline tNoWrap bgWhite posRel thickBors borBot2 marRigS'>
-								<span className={`boldM padHorS fs9 padVerXxxs tNoWrap selfCen textSha tWhite ${status.inter === 'may' ? 'bBlue' : status.inter === 'sur' ? 'bGreen' : 'bOrange'}`}>
-									{status.inter === 'may' ? 'Možná jdeš' : status.inter === 'sur' ? 'Určitě jdeš' : 'Zajímá tě'}
-								</span>
-								{status.interPriv && status.interPriv !== 'pub' && (
-									<span className='padHorXs fs9 textSha marRigS tNoWrap'>
-										<strong>vidí: </strong>
-										{{ lin: 'spojenci', own: 'jen autor', tru: 'důvěrníci' }[status.interPriv]}
-									</span>
-								)}
-							</inter-indi>
 						)}
 
 						{/* INDICATORS ----------------------------------------------------------------*/}
@@ -133,7 +121,10 @@ function Event() {
 					{/* MENU STRIP */}
 					{modes.menu && (
 						<>
-							<blue-divider style={{ filter: 'saturate(1) brightness(1)' }} class={` hr1 opacityM   block bInsetBlueTopXl bgTrans  w100     marAuto   `} />
+							{modes.invites && <button className=' bHover posRel bInsetBlueTopXs shaBot padHorL padVerXxs  marAuto xBold fs8  tRed' onClick={() => setModes(prev => ({ ...prev, invites: false }))}>
+								zavřít pozvánky
+							</button>
+							}
 							<EveMenuStrip
 								{...{
 									modes,
@@ -180,7 +171,7 @@ function Event() {
 					</feedback-section>
 				)}
 
-				{obj.shortDesc && <span className={`${status.isMeeting ? 'marBotL' : ''} fs15 lh1-2  marTopXl marAuto textAli mw160  block fPadHorS  marAuto  `}>{obj.shortDesc}</span>}
+				{obj.shortDesc && <span className={`${status.isMeeting ? 'marBotS' : ''} fs15 lh1-2  marTopXl marAuto textAli mw160  block fPadHorS  marAuto  `}>{obj.shortDesc}</span>}
 			</title-texts>
 
 			{/* USER CARDS ---------------------------------------------------------- */}

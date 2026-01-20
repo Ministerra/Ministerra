@@ -45,6 +45,10 @@ function Foundation() {
 		restoreScroll = useRef(false);
 
 	useEffect(() => {
+		if (menuView) setMenuView('');
+	}, [location.pathname]);
+
+	useEffect(() => {
 		if (loader.state === 'idle' && loader.data) {
 			delete loader.data; //keep this
 			if (nowAt !== 'home') navigate('/');
@@ -80,6 +84,13 @@ function Foundation() {
 		navigate(`/entrance${searchParam ? `?${searchParam}` : ''}`);
 		if (typeof window !== 'undefined') setTimeout(() => (window.__wipeInProgress = false), 1500);
 	};
+
+	// EXPOSE LOGOUT GLOBALLY ---
+	// Steps: allow rekey modal (in ErrorContext) to trigger full logout flow.
+	useEffect(() => {
+		window.__logOut = logOut;
+		return () => { if (window.__logOut === logOut) delete window.__logOut; };
+	}, [brain]);
 
 	// JSX PROPS ---------------------------------------------------
 	const JSXProps = {

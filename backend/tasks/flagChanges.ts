@@ -16,7 +16,7 @@ async function processFlagChanges(con, redis) {
 		const state = getStateVariables();
 		const userMetasProcessor = async params => processUserMetas({ ...params, state, redis });
 
-		const [remEve, remUse, privUse, newEve] = [new Set(), new Set(), new Map(), []];
+		const [remEve, remUse, privUse, newEve] = [new Set<number | string>(), new Set<number | string>(), new Map<number | string, string>(), [] as any[]];
 		// Note: privsPipe removed - was created but never used, wasting resources
 		const [deletionsPipe, metasPipe, basiDetaPipe, attenPipe] = Array.from({ length: 4 }, () => redis.pipeline());
 
@@ -160,7 +160,7 @@ async function processFlagChanges(con, redis) {
 		// APPLY META UPDATES ----------------------------------------------------
 		// Steps: run removals + priv changes in parallel, then fill pipelines from state to produce the redis writes.
 		await Promise.all([processRemEvents(), processRemUsers(), processPrivChangeUsers()]); // Parallel execution ---------------------------
-		loadMetaPipes(state, metasPipe, attenPipe), loadBasicsDetailsPipe(state, basiDetaPipe);
+		loadMetaPipes(state, metasPipe, attenPipe, 'flagChanges'), loadBasicsDetailsPipe(state, basiDetaPipe);
 
 		// INVALIDATE LOCAL CACHES ----------------------------------------------
 		// Steps: invalidate per-process module caches after state/pipelines are ready, so the next request won’t serve stale entities.

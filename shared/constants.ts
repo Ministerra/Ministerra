@@ -292,7 +292,7 @@ export const USER_META_KEYS: string[] = ['id', 'priv', 'birth', 'gender', 'indis
 export const USER_BASI_KEYS: string[] = ['first', 'last', 'shortDesc', 'exps', 'favs'];
 export const USER_GENERIC_KEYS: string[] = [...USER_META_KEYS, ...USER_BASI_KEYS];
 export const USER_UTILITY_KEYS: string[] = ['cities', 'askPriv', 'defPriv'];
-export const USER_PROFILE_KEYS: string[] = [...USER_GENERIC_KEYS, ...USER_UTILITY_KEYS];
+export const USER_PROFILE_KEYS: string[] = [...USER_GENERIC_KEYS, ...USER_UTILITY_KEYS].filter(key => !['score', 'basiVers'].includes(key));
 
 export const FRIENDLY_MEETINGS = new Map(
 	Object.entries({
@@ -370,9 +370,9 @@ export const REGEXES = {
 	name: /^[\p{L}\s'-]+$/u,
 	// FAVEX TOPIC REGEX ---
 	// Allow letters, numbers, spaces, and common punctuation (hyphens, apostrophes, periods, commas, colons, slashes, ampersands, plus, parentheses, quotes).
-	// Must start and end with letter or number. Single/double char topics allowed if alphanumeric.
+	// First word (before first space) must be alphanumeric only.
 	// Pipe character (|) forbidden as it's used as delimiter in storage.
-	favouriteExpertTopic: /^[\p{L}\p{N}][\p{L}\p{N}\s.,;:!?'"\-\/&+()@#%*=_~]*[\p{L}\p{N}]$|^[\p{L}\p{N}]{1,2}$/u,
+	favouriteExpertTopic: /^[\p{L}\p{N}]+(?:\s[\p{L}\p{N}\s.,;:!?'"\-\/&+()@#%*=_~]*)?$/u,
 	email: /^(?=.{1,254})(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@(?:(?=[a-zA-Z0-9-]{1,63}\.)(xn--)?[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\.){1,8}(?=[a-zA-Z]{2,63})(xn--[a-zA-Z0-9]{1,59})?[a-zA-Z]{2,63}$/,
 } as const;
 
@@ -403,15 +403,18 @@ export const FOUNDATION_LOADS = { init: 'init', fast: 'fast', auth: 'auth', citi
 
 export const REVERT_EMAIL_DAYS = 14;
 export const EXPIRATIONS = {
-	accessToken: '7d', // Access token
-	refreshToken: '7d', // Refresh token
+	accessToken: '20m', // Access token
+	refreshToken: '3d', // Refresh token
 	authToken: '5m', // Temporary tokens (verify, reset)
 	introductionMailLink: '30m', // Unintroduced user token
 	revertEmailChangeLink: `${REVERT_EMAIL_DAYS}d`, // Email revert window
+	newUserStatusExpiration: 2, // (months, users.status) newUser -> user (foundation.ts userSync optimization)
 } as const;
 
 export const INTERVALS = {
 	authRotation: 30 * 24 * 60 * 60 * 1000,
+	userAlertsCleanup: 3, // months
+	userLinksRequestsCleanup: 3, // months
 } as const;
 
 export const ALLOWED_IDS = {
