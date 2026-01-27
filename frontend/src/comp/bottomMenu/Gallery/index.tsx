@@ -135,10 +135,9 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 	useLayoutEffect(() => {
 		const isEmpty = Boolean(content && !content.length && noMoreForMode);
 		if (isEmpty) {
-			setEmptyNotice(`Žádné položky v sekci ${modeTexts[mode]?.full || 'galerie'}`);
+			setEmptyNotice(`V této sekci nemáš žádné položky`);
 			if (isInvitations) (setShow('menu'), setMode(null));
 			clearTimeout(emptyNoticeTimer.current);
-			emptyNoticeTimer.current = setTimeout(() => setEmptyNotice(''), 3000);
 		} else {
 			(setEmptyNotice(''), clearTimeout(emptyNoticeTimer.current));
 		}
@@ -318,12 +317,12 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 	// CONTENT WRAPPER COMPONENT -----------------------------------------------
 	// Wraps masonry grid and fetch buttons. Handles centering and scrolling.
 	const ContentWrapper = () => (
-		<content-wrapper ref={wrapperRef} onClick={e => e.target === e.currentTarget && e.target.nodeName === 'CONTENT-WRAPPER' && setMenuView('')} class={` ${!selectedItems && !isInvitations ? 'h100' : ''} block flexCol aliCen overAuto justCen w100 marAuto posRel`}>
+		<content-wrapper onClick={e => e.target === e.currentTarget && e.target.nodeName === 'CONTENT-WRAPPER' && setMenuView('')} class={` ${!selectedItems && !isInvitations ? 'h100' : ''} block flexCol aliCen overAuto justCen w100 marAuto posRel`}>
 			{/* CATEGORY TITLE ------------------------------------- */}
-			{!isInvitations && <section-title class={`block  textAli ${directMode ? '' : 'marTopL '}`}>{!directMode && <span className="fs30 inlineBlock  textSha marAuto xBold w100">{modeTexts[mode]?.full || 'Tvoje profilové úložiště'}</span>}</section-title>}
+			{!isInvitations && <section-title class={`block  textAli ${directMode ? '' : 'marTopL '}`}>{!directMode && <span className="fs25 inlineBlock  textSha marAuto xBold w100">{modeTexts[mode]?.full || 'Tvoje profilové úložiště'}</span>}</section-title>}
 			{content?.length > 0 && <Masonry content={contentStrips} config={{ contType: isEvents ? 'eveStrips' : 'userStrips', numOfCols, noPadTop: isInvitations }} brain={brain} />}
 			{showFetchBtn && (
-				<button onClick={() => !inform.includes('nothingMore') && man('fetchAxi')} className={`${inform.includes('nothingMore') ? 'tRed bInsetBlueTopXs bBor2 fsD xBold' : `${locally.current && !isInvitations ? 'posFix botCen bRed tWhite marBotXxl' : 'bInsetBlueTopXs bBor boRadXxs tDarkBlue textSha posRel'} xBold zinMaXl`} w80 marAuto fs10 mw60 padVerXs  textSha marBotS marTopM zinMenu`}>
+				<button onClick={() => !inform.includes('nothingMore') && man('fetchAxi')} className={`${inform.includes('nothingMore') ? 'tBlue  fs14 textSha xBold ' : ` ${locally.current ? 'tRed bInsetBlueTopXs bBor2 fs14 bsContentGlowTop textSha xBold ' : 'tDarkBlue'} ${locally.current && !isInvitations ? 'posFix botCen marBotXl' : ''} boldM  shaTop borBot8  `} ${isInvitations ? 'fs12 padVerXxs mw50 posRel ' : 'fs10 mw50 padVerXxs'} w80 marAuto marTopS borBot8 zinMaXl boRadXxs textSha `}>
 					{inform.includes('nothingMore') ? 'Nic dalšího už není' : locally.current ? (contentStrips?.length > 0 ? 'Tohle ne. Prohledat server ...' : 'Prohledat ještě server ...') : 'Načíst další výsledky'}
 				</button>
 			)}
@@ -331,23 +330,20 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 		</content-wrapper>
 	);
 
-	console.log(numOfCols, 'cols gallery');
 	// RENDER ------------------------------------------------------------------
 	return (
-		<gallery-menu class={`boRadXs ${menuView !== 'gallery' && !directMode && !isInvitations ? 'hide' : ''} ${!directMode && !isInvitations ? 'hvh100 mihvh100 shaMega bgWhite' : 'noBackground'} flexCol ${!isInvitations ? 'overAuto bInsetBlueDark' : ''}	 justStart zinMaXl w100 aliCen ${isInvitations && mode && contentStrips?.length ? 'marBotXxxl' : ''}`}>
+		<gallery-menu ref={wrapperRef} class={`boRadXs ${menuView !== 'gallery' && !directMode && !isInvitations ? 'hide' : ''} ${!directMode && !isInvitations ? 'hvh100 mihvh100 shaMega bgWhite' : 'noBackground'} flexCol ${!isInvitations ? 'overAuto bInsetBlueDark' : ''}	 justStart zinMaXl w100 aliCen ${isInvitations && mode && contentStrips?.length ? 'marBotXxxl' : ''} `}>
 			{!isInvitations && <ContentWrapper />}
 
 			{/* BOTTOM MENU SECTION ------------------------------------- */}
 			{(!directMode || isInvitations) && (
-				<bottom-section class={` aliStretch zinMaXl padBotXxs   w100  textAli`}>
-					{/* EMPTY STATE NOTICE ------------------------------------- */}
-					{emptyNotice && !show && (!directMode || isInvitations) && <div className="bRed tWhite padAllXxs w100 xBold w100 fs8">{emptyNotice}</div>}
+				<bottom-section class={` aliStretch zinMaXl    w100  textAli`}>
 					<inner-wrapper class="overAuto  shaTop posRel">
 						{/* SUB-MENU (CATEGORY SELECTION) ------------------------------------- */}
 						{show === 'menu' ? (
-							<menu-bs class="w100 flexCen wrap marAuto  posRel aliStretch shaTop bgTransXs">
+							<menu-bs class="w100 flexCen wrap marAuto padBotXxs  posRel aliStretch shaTop bgTransXs">
 								{(!isInvitations ? ['futuOwn', 'futuSurMay', 'futuInt', 'links', 'trusts', 'requests', 'invitesIn', 'invitesOut', 'pastOwn', 'pastSurMay', 'pastInt', 'blocks'] : isInvitations === 'userToEvents' ? ['futuOwn', 'futuSurMay'] : ['links', 'trusts']).map(m => (
-									<button key={m} onClick={() => (man('selMode', m), setShow(false))} style={{ width: isInvitations ? '50%' : '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }} className={`${show === 'menu' && mode === m ? 'bDarkBlue tWhite xBold ' : ''} bHover grow imw6 imiw4 padAllXxxs`}>
+									<button key={m} onClick={() => (man('selMode', m), setShow(false))} style={{ width: isInvitations ? '50%' : '100%', ...(catWidth && { maxWidth: `${catWidth - 1}px` }) }} className={`${!isInvitations && show === 'menu' && mode === m ? 'bDarkBlue tWhite xBold ' : ''} bHover grow imw6 imiw4 padAllXxxs`}>
 										<inner-wrapper class="bInsetBlueTopXs iw25 gapXxs shaBlueLight bBor padAllS flexCol aliCen justCen posRel w100 h100">
 											<img src={`/icons/gallery/${m}.png`} alt={`${m} icon`} />
 											<span className={`${numOfCols > 3 ? 'boldM fs14' : 'boldM fs9'} textSha`}>{modeTexts[m]?.full}</span>
@@ -387,6 +383,8 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 							</cat-bs>
 						)}
 					</inner-wrapper>
+					{/* EMPTY STATE NOTICE ------------------------------------- */}
+					{emptyNotice && !show && (!directMode || isInvitations) && <div className="bRed tWhite padAllXs w100 xBold w100 fs12">{emptyNotice}</div>}
 				</bottom-section>
 			)}
 

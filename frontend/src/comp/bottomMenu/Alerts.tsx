@@ -103,18 +103,18 @@ function Alerts(props) {
 	const buildAlertKey = useCallback(a => {
 		// Priority 1: Use unique ID if available. This ensures we show exactly what the backend sends (20 items = 20 items).
 		if (a.id) return `id:${a.id}`;
-		
+
 		// Fallback (mostly for socket events before they are persisted/fetched with ID, though typically they have IDs too)
 		const userKey = a?.data?.user || `${a?.data?.first || ''}${a?.data?.last || ''}`;
 		const eveKey = a?.data?.title || '';
 		const contentKey = (a?.data?.content || '').slice(0, 20);
-		
+
 		// Interest alerts might still benefit from merging if they are purely count updates
 		if (a?.what === 'interest') {
 			const countsKey = a?.data?.sur || a?.data?.may || a?.data?.int ? `${a?.data?.sur || 0},${a?.data?.may || 0},${a?.data?.int || 0}` : `${Date.now()}`;
 			return `${a?.what}:${a?.target}:${countsKey}:${userKey}:${eveKey}:${contentKey}`;
 		}
-		
+
 		return `${a?.what}:${a?.target}:${userKey}:${eveKey}:${contentKey}`;
 	}, []);
 
@@ -318,24 +318,12 @@ function Alerts(props) {
 			{/* NEW ALERTS */}
 			{newAlerts.length > 0 && (
 				<>
-					<section-title class={`flexCol block borBotLight textAli marTopXl`}>
-						<span className="fs22 inlineBlock tetSha marAuto xBold w100">Nová upozornění</span>
-						<blue-divider class={` hr0-5 borTop marTopXs  block bInsetBlueTopXl  bgTrans  w90  mw140   marAuto   `} />
+					<section-title class={`flexCol block marBotS textAli marTopXl`}>
+						<span className="fs30 inlineBlock tetSha marAuto xBold w100">Nová upozornění</span>
 					</section-title>
 					<Masonry
 						content={newAlerts.map(a => (
-							<AlertStrip
-								key={a.id}
-								alert={a}
-								brain={brain}
-								menuView={menuView}
-								onClick={() => onStripClick(a)}
-								onRemoveAlert={() => removeAlert(a.id)}
-								setMenuView={setMenuView}
-								storeAlertsData={() => saveToStorage(alertsData, pagination)}
-								stripMenu={stripMenu}
-								setStripMenu={setStripMenu}
-							/>
+							<AlertStrip key={a.id} alert={a} brain={brain} menuView={menuView} onClick={() => onStripClick(a)} onRemoveAlert={() => removeAlert(a.id)} setMenuView={setMenuView} storeAlertsData={() => saveToStorage(alertsData, pagination)} stripMenu={stripMenu} setStripMenu={setStripMenu} />
 						))}
 						config={{ contType: 'alertStrips', numOfCols: numOfCols, noPadTop: true }}
 						brain={brain}
@@ -352,18 +340,7 @@ function Alerts(props) {
 					</section-title>
 					<Masonry
 						content={olderAlerts.map(a => (
-							<AlertStrip
-								key={a.id}
-								alert={a}
-								brain={brain}
-								storeAlertsData={() => saveToStorage(alertsData, pagination)}
-								menuView={menuView}
-								onClick={() => onStripClick(a)}
-								onRemoveAlert={() => removeAlert(a.id)}
-								setMenuView={setMenuView}
-								stripMenu={stripMenu}
-								setStripMenu={setStripMenu}
-							/>
+							<AlertStrip key={a.id} alert={a} brain={brain} storeAlertsData={() => saveToStorage(alertsData, pagination)} menuView={menuView} onClick={() => onStripClick(a)} onRemoveAlert={() => removeAlert(a.id)} setMenuView={setMenuView} stripMenu={stripMenu} setStripMenu={setStripMenu} />
 						))}
 						config={{ contType: 'alertStrips', numOfCols: numOfCols, noPadTop: true }}
 						brain={brain}
@@ -374,10 +351,7 @@ function Alerts(props) {
 			{/* LOAD MORE BUTTON */}
 			{/* Always show if hasMore is true, unless loading */}
 			{(pagination.hasMore || ui.loading) && (
-				<button
-					onClick={() => !ui.loading && fetchAlerts('older')}
-					className={` ${!pagination.hasMore ? 'tBlue borRed fsD xBold' : ui.loading ? 'bBlue tWhite' : ui.error ? 'bRed tWhite' : ' thickBors posRel xBold  zinMaXl bInsetBlueTopXs bBor2   '} w80 marAuto  fs10 mw60 padVerXxs  shaTop  textSha marBotS marTopM`}
-				>
+				<button onClick={() => !ui.loading && fetchAlerts('older')} className={` ${!pagination.hasMore ? 'tBlue borRed fsD xBold' : ui.loading ? 'bBlue tWhite' : ui.error ? 'bRed tWhite' : ' thickBors posRel xBold  zinMaXl bInsetBlueTopXs bBor2   '} w80 marAuto  fs10 mw60 padVerXxs  shaTop  textSha marBotS marTopM`}>
 					{!pagination.hasMore ? 'Nic dalšího už není' : ui.loading ? 'Načítám...' : ui.error ? 'Chyba při načítání' : 'Načíst další výsledky'}
 				</button>
 			)}

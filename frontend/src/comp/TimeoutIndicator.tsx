@@ -15,9 +15,9 @@ export default function TimeoutIndicator({ progress, invert = false, noRedColor 
 	const displayProgress = invert ? 100 - progress : progress;
 
 	return (
-		<timeout-indicator class={`${posAbs ? `posAbs ${posAbs}` : ''}  w100`} style={{ height: '2px', zIndex: 2500 }}>
+		<timeout-indicator class={`${posAbs ? `posAbs ${posAbs}` : ''} marBotXxs  block w100`} style={{ height: '2px', zIndex: 2500 }}>
 			<div
-				className="posAbs w100 h100"
+				className=" hr0-5 w100 h100"
 				style={{
 					background: `linear-gradient(90deg, transparent 0%, ${colorAlpha} ${50 - displayProgress / 2}%, ${color} 50%, ${colorAlpha} ${50 + displayProgress / 2}%, transparent 100%)`,
 					// SEGMENTED GAPS ---

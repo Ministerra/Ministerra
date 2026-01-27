@@ -16,23 +16,25 @@ function Menu(props) {
 	const citiesChanged =
 		curSelCities.length > 0 &&
 		!areEqual(
-			[...brain.user.curCities].sort((a, b) => a - b),
-			curSelCities.map(c => c.cityID || c).sort((a, b) => a - b)
+			[...brain.user.curCities].map(c => c?.cityID || c).sort((a, b) => a - b),
+			curSelCities.map(c => c?.cityID || c).sort((a, b) => a - b)
 		);
 
 	useEffect(() => {
 		setCurSelCities([...brain.user.curCities]);
 	}, [brain.user.curCities, menuView]);
 
+	console.log(brain.user, 'BRAIN USER');
+
 	return (
-		<main-menu class={`${menuView !== 'menu' ? 'hide' : ''} boRadM textAli       bgTransXxs    fPadHorXxs flexCol `}>
-			<span className="fs35 xBold marBotM textSha marTopXxl">Hlavní menu</span>
+		<main-menu class={`${menuView !== 'menu' ? 'hide' : ''} boRadM textAli  shaBotLong bBor2    bgTransXxs    fPadHorXxs flexCol `}>
+			<span className="fs30 xBold marBotM textSha marTopM">Hlavní menu</span>
 
 			{/* CITY SELECTION --------------------------- */}
 			<LocationPicker brain={brain} curSelCities={curSelCities} setCurSelCities={setCurSelCities} changeCities={changeCities} inMenu={true} />
 
 			{/* CORE ACTIONS --------------------------- */}
-			<bottom-row class="flexCen  growAll spaceBet marBotXs  w100 mw130 imw5 hvw6 mh6  marAuto ">
+			<bottom-row class="flexCen  growAll spaceBet marBotXs marTopS  w100 mw130 imw5 hvw6 mh6  marAuto ">
 				{/* SETUP LINK --------------------------- */}
 				<button
 					className="   fs6 w20 miw8 mw14 hvw10 mh8 padVerXxs flexCol aliCen bold justCen  borderLight  bHover"

@@ -102,7 +102,7 @@ const UserCard = props => {
 	// EVENT THUMBNAILS COMPONENT ---------------------------
 	// Renders list of upcoming events for the user with status indicators.
 	const eventsThumb = (
-		<thumbs-wrapper onClick={() => setModes(prev => ({ ...prev, allEveThumbs: false }))} class={`flexRow aliEnd point ${modes.allEveThumbs ? 'w100  bgTransXs padBotXs padTopXxs   overAuto' : hasMoreEvents ? `marBotXxs` : cardsView !== 2 ? `miw9 marRigXs ` : ` `} ${modes.evePreview && hasMoreEvents ? 'padBotXs ' : ''}   posRel wrap  boRadXs zinMax  `}>
+		<thumbs-wrapper onClick={() => setModes(prev => ({ ...prev, allEveThumbs: false }))} class={`flexRow aliEnd point ${modes.allEveThumbs ? '  bgTransXs padBotL padTopXxs   overAuto' : hasMoreEvents ? `marBotXxs` : cardsView !== 2 ? `miw9 marRigXs ` : ` marBotXxsp`} ${modes.evePreview && hasMoreEvents ? 'padBotXs ' : ''}   posRel wrap  boRadXs zinMaXl  `}>
 			{/* SHOW ALL BUTTON --------------------------- */}
 			{!modes.allEveThumbs && hasMoreEvents && (
 				<show-all onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, allEveThumbs: !prev.allEveThumbs, evePreview: false, actions: false })))} className={`${modes.allEveThumbs ? 'noBackground padHorS posRel zinMaXl' : 'borRedSel'} block flexCol aliCen boldM shaLight boRadXxxs  posRel`}>
@@ -124,12 +124,12 @@ const UserCard = props => {
 							<single-thumb
 								key={eventID}
 								onClick={async e => (e.stopPropagation(), modes.evePreview?.id === eventObj.id ? setModes(prev => ({ ...prev, evePreview: false })) : (await previewEveCard({ obj: eventObj, brain }), setModes(prev => ({ ...prev, evePreview: eventObj, protocol: false, invite: false }))))}
-								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue arrowDown1 tWhite zinMaXl bsContentGlow' : 'zinMax'} flexCen ${modes.allEveThumbs ? '' : ''}  ${cardsView === 2 ? 'mw8' : 'padRightXs'}  pointer bgTransXs  miw12     posRel boRadXxs`}>
-								<inner-wrapper class="flexCen bHover aliCen padLeftXxs justCen grow">
-									<img className={`${cols === 3 ? 'mw10' : cols === 4 ? 'mw7' : 'mw7 '}   posRel  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt="" />
+								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue arrowDown1 tWhite upTiny bsContentGlow' : 'zinMax'} flexCen   ${cardsView === 2 ? 'mw8' : 'padRightXs'}  pointer bgTransXs  ${cardsView === 2 ? 'miw14' : 'miw13'} padHorXs    posRel boRadXxs`}>
+								<inner-wrapper class="flexCen bHover aliCen padVerXxxs  justCen grow">
+									<img className={`${cols === 1 ? 'mw7' : cols === 3 ? 'mw9' : cols === 4 ? 'mw7' : 'mw7 '}   posRel  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt="" />
 									<texts-wraper class="flexCol justCen  fPadHorXxxs    ">
-										<span className={`${flag === 'sur' ? 'tGreen tSha10 xBold' : eventIsPast ? 'tGrey textSha' : 'tBlue bold'} textSha fs18 lh1`}>{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'upper' })}</span>
-										<span className="tNoWrap fs7 bold lh1">{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'bottom' })}</span>
+										<span className={`${flag === 'sur' ? 'tGreen tSha10 xBold' : eventIsPast ? 'tGrey textSha' : 'tBlue bold'} textSha fs20 lh1`}>{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'upper' })}</span>
+										<span className="tNoWrap fs9 bold lh1">{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'bottom' })}</span>
 										{/* INTERACTION BADGES --------------------------- */}
 										{eventObj.inter === 'may' && obj.id !== brain.user.id && <span className="bBlue boldS fs6 flexCen boRadXxs padVerXxxxs  tWhite">možná</span>}
 										{eventObj.inter === 'sur' && obj.id !== brain.user.id && <span className="bDarkGreen flexCen fs7 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite">určitě</span>}
@@ -181,8 +181,6 @@ const UserCard = props => {
 			}));
 	};
 
-	console.log('obj', obj);
-
 	// JSX RETURN ----------------------------------------------------------------
 	return (
 		<user-cards
@@ -218,8 +216,8 @@ const UserCard = props => {
 						)}
 						{nowAt !== 'event' && !isProfile && eveThumbsToShow?.length > 0 && eventsThumb}
 						{!modes.allEveThumbs && (
-							<left-side class="flexCol fPadHorXxs grow aliStart textLeft  posRel">
-								<span className={`${!cols || cols === 1 ? 'fs20' : cols <= 3 ? 'fs16' : cols === 4 ? 'fs14' : cols === 5 ? 'fs9' : 'fs10'} textSha  inlineBlock lh1 wordBreak`}>
+							<left-side class="flexCol fPadHorXxxs grow marLefS aliStart textLeft  posRel">
+								<span className={`${!cols || cols === 1 ? 'fs18' : cols <= 3 ? 'fs16' : cols === 4 ? 'fs14' : cols === 5 ? 'fs9' : 'fs10'} textSha  inlineBlock lh1 wordBreak`}>
 									<strong className={'xBold'}>{obj.first + ' ' + obj.last}</strong> ({obj.age})
 								</span>
 								{indiRow}

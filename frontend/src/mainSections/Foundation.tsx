@@ -28,6 +28,7 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
 // TODO create cleanup function to remove sensitive data from events and users after logout or forced logout
 // TODO might need to create a VISIBLE spinner when localforage works. so that users dont close the tab and lose data
 // INFO REMOVE ESLINT and other packages for production
+//TODO need to show the eventPriv type in strips and cards (content indis)
 
 const LOGOUT_REQUEST_TIMEOUT_MS = 2000;
 
@@ -57,7 +58,7 @@ function Foundation() {
 		if (!restoreScroll.current && brain.homeView !== 'topEvents') setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
 		const [onEscapeKey, onResize] = [e => e.key === 'Escape' && window.history.back(), debounce(() => setIsMobile(setMobile()), 200)];
 		restoreScroll.current = nowAt !== 'home';
-		window.addEventListener('resize', onResize), document.addEventListener('keydown', onEscapeKey);
+		(window.addEventListener('resize', onResize), document.addEventListener('keydown', onEscapeKey));
 		return () => {
 			document.removeEventListener('keydown', onEscapeKey);
 			window.removeEventListener('resize', onResize);
@@ -88,7 +89,9 @@ function Foundation() {
 	// Steps: allow rekey modal (in ErrorContext) to trigger full logout flow.
 	useEffect(() => {
 		window.__logOut = logOut;
-		return () => { if (window.__logOut === logOut) delete window.__logOut; };
+		return () => {
+			if (window.__logOut === logOut) delete window.__logOut;
+		};
 	}, [brain]);
 
 	// JSX PROPS ---------------------------------------------------

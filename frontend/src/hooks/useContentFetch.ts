@@ -18,14 +18,11 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 	useEffect(() => {
 		if (!event.id && !snap.fetch) return;
 		if (snap.fetch || (nowAt !== 'home' && !content)) {
-			(disableInfinite.current = true), (firstBatchReady.current = false), contentMan();
+			((disableInfinite.current = true), (firstBatchReady.current = false), contentMan());
 			setTimeout(() => (disableInfinite.current = false), 1000);
 		} else if (nowAt === 'event' && event.type?.startsWith('a')) {
 			const [curContent, isAttending] = [content || [], ['sur', 'may'].includes(eveInter)];
-			let newContent =
-				isAttending && curContent[0]?.id !== brain.user.id
-					? [brain.user, ...curContent.filter(user => user.id !== brain.user.id)]
-					: !isAttending && curContent.filter(user => user.id !== brain.user.id);
+			let newContent = isAttending && curContent[0]?.id !== brain.user.id ? [brain.user, ...curContent.filter(user => user.id !== brain.user.id)] : !isAttending && curContent.filter(user => user.id !== brain.user.id);
 			if (newContent && (newContent.length !== curContent.length || newContent.some((user, i) => user.id !== curContent[i]?.id))) {
 				setCardsToContent(newContent);
 			}
@@ -42,16 +39,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 			// USABILITY RULE --------------------------------------------------
 			// Steps: treat basi-ish items as usable; for users view, allow self even when partially hydrated so UI can still render "me" card.
 			const usable = item => item.state?.includes('basi') || (contView === 'users' && item.id == brain.user.id && item.first);
-			let [gotSQLset, storeUser, unstableObj, actualyReceivedIDs, IDsToRemove, numOfUsable, IDsToFetch, interrupted] = [
-				new Set(brain.user.unstableObj?.gotSQL[contView] || []),
-				nowAt === 'event' && !event.userIDs,
-				brain.user.unstableObj,
-				new Set(),
-				new Set(),
-				0,
-				[],
-				false,
-			];
+			let [gotSQLset, storeUser, unstableObj, actualyReceivedIDs, IDsToRemove, numOfUsable, IDsToFetch, interrupted] = [new Set(brain.user.unstableObj?.gotSQL[contView] || []), nowAt === 'event' && !event.userIDs, brain.user.unstableObj, new Set(), new Set(), 0, [], false];
 
 			// QUEUE BUILD (NON-INFINITE) --------------------------------------
 			// Steps: on initial fetch, derive queue from filter logic, ensure self profile if needed, and cache queue IDs for map/search flows.
@@ -71,7 +59,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 				indexeMap.set(item.id, index);
 				if (item.id == brain.user.id) numOfUsable++;
 				else if (!interrupted && usable(item)) numOfUsable++;
-				else if (!interrupted || !usable(item)) (interrupted = true), IDsToFetch.push(item.id);
+				else if (!interrupted || !usable(item)) ((interrupted = true), IDsToFetch.push(item.id));
 				if (IDsToFetch.length === (nowAt === 'home' ? 20 : isPast ? 20 : 4)) break;
 			}
 
@@ -90,7 +78,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 
 				// MERGE + UNSTABLE OVERLAYS -------------------------------------
 				// Steps: extractInteractions when unstable so per-user overlays are applied locally; normalize fields (split arrays / numeric ends), then mark items as received and stage for persistence.
-				if (unstableObj) extractInteractions(basics, contView, brain), (storeUser = true);
+				if (unstableObj) (extractInteractions(basics, contView, brain), (storeUser = true));
 				const itemsToStore = [];
 
 				for (const [id, basiObj] of Object.entries(basics as any) as any) {
@@ -101,7 +89,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 					if (!queueItem) continue;
 					const existing = (brain[contView][id] = queueItem);
 					Object.assign(existing, basiObj, { sync: Date.now(), state: contView === 'users' || existing.state !== 'Deta' ? 'basi' : 'basiDeta' });
-					actualyReceivedIDs.add(id), itemsToStore.push(existing);
+					(actualyReceivedIDs.add(id), itemsToStore.push(existing));
 				}
 
 				// HANDLE MISSES -------------------------------------------------
@@ -122,7 +110,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 				return !IDsToRemove.has(item.id);
 			});
 
-			if (brain.canScroll) contentRef.current.scrollIntoView({ behavior: 'smooth' }), delete brain.canScroll;
+			if (brain.canScroll) (contentRef.current.scrollIntoView({ behavior: 'smooth' }), delete brain.canScroll);
 			usableItems = contQueue.current.slice(0, firstUnusable);
 			setCardsToContent([infinite ? content || [] : [], usableItems].flat());
 
@@ -133,8 +121,7 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 				else ['lastFetchMapIDs', 'snapChangedWhileMapHidden', 'stillShowingMapContent'].forEach(key => delete brain[key]);
 				const lastSnap = provideSnap('last');
 				if (lastSnap && typeof lastSnap === 'object') delete lastSnap.last;
-				if (!provideSnap('exact'))
-					brain.user.history.push({ ...trim(snap), types: snap.types.filter(type => avail.types.includes(type)), id: brain.user.history.length + 1, last: true }), (storeUser = true);
+				if (!provideSnap('exact')) (brain.user.history.push({ ...trim(snap), types: snap.types.filter(type => avail.types.includes(type)), id: brain.user.history.length + 1, last: true }), (storeUser = true));
 				else provideSnap('exact').last = true;
 			}
 

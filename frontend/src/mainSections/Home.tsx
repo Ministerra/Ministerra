@@ -177,7 +177,6 @@ function Home(props) {
 	// SNAP MANAGER FUNCTION -------------------------------------------------
 	const snapMan = useCallback(
 		(inp, val, reset) => {
-			console.log(inp, val, reset, 'SNAP MANAGER');
 			const isSnapProp = !Object.keys(sherlockObj).includes(inp);
 			let [lastSnap, newSnap, newSherlock, snapChanged, sherChanged, sherActive] = [provideSnap('last'), null, null, false, false, false];
 			const lastSnapSafe = lastSnap || {};
@@ -320,8 +319,6 @@ function Home(props) {
 		[fadedIn, show, brain, snap, avail, nowAt, provideSnap, snapMan, showMan, setSnap, setShow, isMobile, sherData, setSherData, sherAvail, isSherActive, inform, initialize, quick, cats, time, types, tools, history, filter, sort, noMeetSel, setFadedIn, setAvailOrGetAvaTypes, setMenuView]
 	);
 
-	console.log(show, snap, brain, initialize, 'SHOW, SNAP, BRAIN, INITIALIZE');
-
 	return (
 		<home-section class={`${nowAt !== 'home' ? 'hide' : ''} h100 padBotXxxl w100 block`}>
 			{/* HEADER IMAGE ------------------------------------------------- */}
@@ -360,7 +357,7 @@ function Home(props) {
 										const noEventsInTime = !avail.times?.includes(time);
 										return (
 											<button className={`   grow  allOff  mw45   bHover h100     textSha ${noEventsAvailable || (noEventsInTime && avail.types.length) ? 'bRed tWhite xBold' : ''}`} onClick={() => showMan('times')} disabled={noEventsAvailable}>
-												<img src={`/icons/gallery/pastSurMay.png`} className="aspect1612  w20 miw3 mw4" alt="" />
+												<img src={`/icons/dateTime.png`} className="aspect1613  w20  mw4" alt="" />
 												<span className="fs12 bold ">{noEventsAvailable ? 'období' : timeLabel[time]}</span>
 											</button>
 										);
@@ -392,7 +389,7 @@ function Home(props) {
 																({availCount - numOfAvailNotSel}/{availCount})
 															</span>
 														)}
-														{(notAllTypesSelected || (isSel && !inform.length && hasEffectiveTypeSelection)) && <blue-divider style={{ bottom: notAllTypesSelected ? '-2px' : '0px', filter: 'saturate(1.5) brightness(0.5)' }} class={`hvw1 ${notAllTypesSelected ? 'hr1 borRed' : 'hr0-5'}  block posAbs botCen  zinMaXl     bInsetBlueTopXl   w100  marAuto`} />}
+														{snap.types.length > 0 && (notAllTypesSelected || (isSel && !inform.length && hasEffectiveTypeSelection)) && <blue-divider style={{ bottom: notAllTypesSelected ? '-2px' : '0px', filter: 'saturate(1.5) brightness(0.5)' }} class={`hvw1 ${notAllTypesSelected ? 'hr1 borRed' : 'hr0-5'}  block posAbs botCen  zinMaXl     bInsetBlueTopXl   w100  marAuto`} />}
 													</button>
 												);
 											})}

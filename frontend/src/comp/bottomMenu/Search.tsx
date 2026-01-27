@@ -260,36 +260,42 @@ export function Search(props) {
 		<search-cat class={` bgTrans  aliStretch zinMenu block posRel ${!isInvitations ? 'posAbs botCen' : 'padTopXs'} w100 textAli `}>
 			{/* DIVIDER --- */}
 			{isInvitations && cat && <blue-divider class={` hr1 maskLowXs    block bInsetBlueTopXs  zinMax bgTrans  w100     marAuto   `} />}
-			{timerProgress > 0 && !noResults && <TimeoutIndicator progress={timerProgress} invert={true} noRedColor={true} />}
 
 			{!showCats && (
-				<input-wrapper class={` posRel aliStretch bgWhite thickBors  bBor shaTopLight h100 hvw3 mh6 w100 flexRow`}>
-					{/* BACK BUTTON --- */}
-					<button
-						onClick={() => {
-							if (isInvitations === 'userToEvents') return searchInput.current.focus({ preventScroll: true });
-							cat !== 'chats' ? setShowCats(true) : setModes(prev => ({ ...prev, searchChats: !prev.searchChats }));
-						}}
-						className={` w20 posRel  flexCol bHover iw70 imw5 bInsetBlueTopXs bBor  bold`}>
-						<img className={'zinMenu posRel downTinyBit maskLowXs'} src={`/icons/${cat === 'users' ? 'people' : cat === 'events' ? 'event' : cat === 'pastEvents' ? 'history' : cat === 'links' ? 'indicators/1' : cat === 'trusts' ? 'gallery/trusts' : 'error'}.png`} alt="" />
-						<span className="fs7 bold">{cat === 'users' ? 'Uživatelé' : cat === 'events' ? 'Události' : cat === 'pastEvents' ? 'Proběhlé' : cat === 'links' ? 'Spojenci' : cat === 'trusts' ? 'Důvěrníci' : 'Zpět'}</span>
-					</button>
-					{/* INPUT --- */}
-					{inputJSX}
-					{/* SEARCH BUTTON --- */}
-					<button
-						onClick={() => {
-							if (searchQ.trim().length < 2) {
-								setInform(['shortSearch']);
-								setTimeout(() => setInform([]), 2000);
-							} else if (!content) performSearch(searchQ, true);
-						}}
-						className={` w20 miw5  posRel flexCol bHover iw70 imw5-5 bInsetBlueTopXs bBor bold ${inform.includes('shortSearch') ? 'bRed tWhite xBold' : ''}`}>
-						<img style={{ transform: 'rotate(-10deg)' }} src="/icons/search.png" alt="" className={`zinMenu downTinyBit maskLowXs posRel ${inform.includes('shortSearch') ? 'hide' : ''}`} />
-						<span className="fs7 bold">{inform.includes('shortSearch') ? 'min. 2 znaky' : 'Najít'}</span>
-					</button>
-				</input-wrapper>
+				<>
+					<input-wrapper class={` posRel aliStretch bgWhite thickBors  bBor shaTopLight h100 hvw3 mh6 w100 flexRow`}>
+						{/* BACK BUTTON --- */}
+						<button
+							onClick={() => {
+								if (isInvitations === 'userToEvents') return searchInput.current.focus({ preventScroll: true });
+								cat !== 'chats' ? setShowCats(true) : setModes(prev => ({ ...prev, searchChats: !prev.searchChats }));
+							}}
+							className={` w20 posRel  flexCol bHover iw70 imw5 bInsetBlueTopXs bBor  bold`}>
+							<img className={'zinMenu posRel downTinyBit maskLowXs'} src={`/icons/${cat === 'users' ? 'people' : cat === 'events' ? 'event' : cat === 'pastEvents' ? 'history' : cat === 'links' ? 'indicators/1' : cat === 'trusts' ? 'gallery/trusts' : 'error'}.png`} alt="" />
+							<span className="fs7 bold">{cat === 'users' ? 'Uživatelé' : cat === 'events' ? 'Události' : cat === 'pastEvents' ? 'Proběhlé' : cat === 'links' ? 'Spojenci' : cat === 'trusts' ? 'Důvěrníci' : 'Zpět'}</span>
+						</button>
+						{/* INPUT --- */}
+						{inputJSX}
+						{/* SEARCH BUTTON --- */}
+						<button
+							onClick={() => {
+								if (searchQ.trim().length < 2) {
+									setInform(['shortSearch']);
+									setTimeout(() => setInform([]), 2000);
+								} else if (!content) performSearch(searchQ, true);
+							}}
+							className={` w20 miw5  posRel flexCol bHover iw70 imw5-5 bInsetBlueTopXs bBor bold ${inform.includes('shortSearch') ? 'bRed tWhite xBold' : ''}`}>
+							<img style={{ transform: 'rotate(-10deg)' }} src="/icons/search.png" alt="" className={`zinMenu downTinyBit maskLowXs posRel ${inform.includes('shortSearch') ? 'hide' : ''}`} />
+							<span className="fs7 bold">{inform.includes('shortSearch') ? 'min. 2 znaky' : 'Najít'}</span>
+						</button>
+					</input-wrapper>
+					{timerProgress > 0 && !noResults && <TimeoutIndicator progress={timerProgress} invert={true} noRedColor={true} />}
+				</>
 			)}
+
+			{/* NO RESULTS --- */}
+			{noResults && <no-results className={`${!isChatSetup && !isInvitations ? '' : ''} bRed   posRel  zin2500 textAli selfEnd tWhite block padAllXs w98 marAuto boldS borTopRed  w100 fs12`}>Nebyly nalezeny žádné výsledky</no-results>}
+
 			{/* CATEGORY SELECTOR MENU ----------------------------------------------------- */}
 			{showCats && searchCat !== 'chats' && (
 				<menu-bs class={` w100 flexCen wrap marAuto bInsetBlueTopXs2 posRel noBackground `}>
@@ -303,7 +309,7 @@ export function Search(props) {
 									if (cat !== m) (setContent(null), setCat(m));
 									searchInput.current && searchInput.current.focus({ preventScroll: true });
 								}}
-								className={`fs7 boldXs textSha bHover grow bgTransXs iw33 grow ${isInvitations && nowAt !== 'event' ? 'imw8 padAllS' : 'imw10 padAllS'}`}>
+								className={`fs7 boldXs textSha bHover grow bgTransXs iw33 grow ${isInvitations ? (nowAt === 'home' ? 'imw4 padAllS' : 'imw8 padAllS') : 'imw10 padAllS'}`}>
 								{showCats && <img src={`/icons/${m === 'users' ? 'people' : m === 'links' ? 'indicators/1' : m === 'trusts' ? 'gallery/trusts' : m === 'pastEvents' ? 'history' : 'event'}.png`} alt={`${m} icon`} />}
 								{m === 'pastEvents' ? 'proběhlé' : m === 'links' ? 'spojence' : m === 'trusts' ? 'důvěrníky' : m === 'users' ? 'uživatele' : m === 'events' ? 'události' : m}
 							</button>
@@ -318,7 +324,12 @@ export function Search(props) {
 		<search-menu onClick={e => setMenuView && cat !== 'chats' && e.target === e.currentTarget && setMenuView('')} class={` ${!isChatSetup && !isInvitations && menuView !== 'search' && cat !== 'chats' ? 'hide' : ''}  w100 block ${isChatSetup || selectedItems ? ' noBackground posRel' : content?.length ? `hvh100 ${!isInvitations ? 'bInsetBlueDark' : ''} bgTransXxs posRel mhvh100` : ''} justStart zinMax flexCol`}>
 			{/* CONDITIONAL TOP ELEMENTS --- */}
 			{isInvitations && <SearchCats />}
-			{isChatSetup && inputJSX}
+			{isChatSetup && (
+				<div className="w100 posRel">
+					{inputJSX}
+					{timerProgress > 0 && <TimeoutIndicator progress={timerProgress} invert={true} noRedColor={true} />}
+				</div>
+			)}
 
 			{/* RESULTS WRAPPER --- */}
 			{contentStrips && contentStrips?.length > 0 && (
@@ -338,7 +349,7 @@ export function Search(props) {
 					{(inform.includes('nothingMore') || (content && searchQ && !brain.user.noMore.search[cat]?.includes(searchQ))) && (
 						<button
 							onClick={() => !inform.includes('nothingMore') && performSearch(searchQ, true)}
-							className={`${inform.includes('nothingMore') ? 'tBlue borRed fsD xBold ' : `borRed ${showingLocalContent ? 'bRed tWhite thickBors' : 'tDarkBlue'} ${showingLocalContent && !isChatSetup && !selectedItems && cat !== 'chats' ? 'posFix botCen marBotXxl' : ''} boldM  shaTop borBot8  `} ${isChatSetup || isInvitations || cat === 'chats' ? 'fs12 padVerXxs mw50 posRel ' : 'fs10 mw30 padVerXxs'} w80 marAuto marTopS borBot8 zinMaXl boRadXxs textSha `}>
+							className={`${inform.includes('nothingMore') ? 'tBlue  fs14 textSha xBold ' : ` ${showingLocalContent ? 'tRed bInsetBlueTopXs bBor2 fs14 bsContentGlowTop textSha xBold ' : 'tDarkBlue'} ${showingLocalContent && !isChatSetup && !selectedItems && cat !== 'chats' ? 'posFix botCen marBotXl' : ''} boldM  shaTop borBot8  `} ${isChatSetup || isInvitations || cat === 'chats' ? 'fs12 padVerXxs mw50 posRel ' : 'fs10 mw50 padVerXxs'} w80 marAuto marTopS borBot8 zinMaXl boRadXxs textSha `}>
 							{inform.includes('nothingMore') ? 'Nic dalšího už není' : showingLocalContent ? 'Tohle ne. Prohledat server ...' : 'Načíst další výsledky'}
 						</button>
 					)}
@@ -346,9 +357,6 @@ export function Search(props) {
 					{cat !== 'chats' && !isChatSetup && !selectedItems && <EmptyDiv height={`hr20`} />}
 				</content-wrapper>
 			)}
-
-			{/* NO RESULTS --- */}
-			{noResults && <no-results className={`${!isChatSetup && !isInvitations ? 'marBotL' : ''} bRed downTinyBit   posRel zin2000 textAli selfEnd tWhite block padAllXxs w98 marAuto boldS borTopRed  w100 fs10`}>Žádné výsledky</no-results>}
 
 			{/* BOTTOM NAV STRIP --- */}
 			{!isChatSetup && !isInvitations && <SearchCats />}

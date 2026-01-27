@@ -359,14 +359,14 @@ function LocationPicker(props) {
 					onBlur={handleInputBlur}
 					onChange={handleInputChange}
 					onFocus={handleInputFocus}
-					className={`${inform.includes('noCity') || inform.includes('noLocation') ? 'borderRed' : 'shaBlueLight '}  ${(inMenu && locaInput) || isIntroduction ? 'boldXs fs18 mw160' : 'fs16'} ${disableSearch ? '' : ''} hvw3 mih5  textAli w100 marAuto borBotLight boldXs phLight`}
+					className={`${inform.includes('noCity') || inform.includes('noLocation') ? 'borderRed' : 'borBotLight shaBlueLight '}  ${(inMenu && locaInput) || isIntroduction ? 'boldXs fs18 mw160' : 'fs16'} ${disableSearch ? '' : ''} hvw3 mih5  textAli w100 marAuto  boldXs phLight`}
 					placeholder={inputPlaceholder()}
 					type="text"
 					ref={locaInp}
 				/>
 			)}
 
-			{inform.includes('noCity') && !isIntroduction && <span className="tRed fs12 block marTopXs xBold">Přidej si alespoň 1 město (domovské)</span>}
+			{inform.includes('noCity') && !isIntroduction && <span className="tRed fs8 block marTopXs xBold">Přidej si alespoň 1 město (domovské)</span>}
 
 			{/* SEARCH RESULTS --------------------------------------------------------------------------------- */}
 			{showSuggest && suggestItems.length > 0 && (
@@ -385,7 +385,7 @@ function LocationPicker(props) {
 
 			{/* CITIES WRAPPER ---------------------------------------------------------------------------- */}
 			{(nowAt !== 'editor' || (data.locaMode === 'city' && (!isEditing || (isEditing && brain.user.cities.some(city => city === data.cityID))))) && !showSuggest && (
-				<cities-wrapper class={`flexCen wrap marTopXs w100 gapXxs  posRel   marAuto  `}>
+				<cities-wrapper class={`flexCen wrap marTopXxs w100 gapXxxs  posRel   marAuto  `}>
 					{(isIntroduction ? data.cities || [] : nowAt === 'setup' ? data.cities || [] : brain.user.cities).map((city, i) => {
 						city = brain.cities.find(c => c.cityID === city) || city;
 
@@ -406,10 +406,7 @@ function LocationPicker(props) {
 										superMan('cities', newCities);
 									} else man(nowAt === 'setup' ? 'delCity' : nowAt === 'editor' ? 'cityID' : 'selCity', id);
 								}}
-								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBlueTopS ' : ''} ${`${nowAt === 'editor' ? (isSelected ? 'bInsetBlueTop  borTop textSha boRadS  xBold fs14' : '  fs14 xBold') : inMenu ? '  boldM fs15  ' : '  bold fs13'}  posRel   `}  
-								  ${inMenu && curSelCities.includes(id) ? 'bInsetBlueTopS borTop xBold' : ''}
-								 
-								 ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXxxs padHorL   flexCen bgTrans       `}>
+								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBlueTopXs bBor2 ' : ''} posRel ${inMenu ? 'fs15' : 'fs13'} ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXxxs padHorL   flexCen bgTrans       `}>
 								{nowAt === 'setup' && (
 									<button
 										title="Domovské město"
@@ -441,7 +438,7 @@ function LocationPicker(props) {
 
 			{/* QUICK SELECTION BUTTONS -------------------------------------------------------------------- */}
 			{inMenu && brain.user.cities.length > 1 && (
-				<quick-sel className="flexCen  growAll marTopS   posRel posRel  boRadXs  wAuto    marBotL marAuto">
+				<quick-sel className="flexCen  growAll    posRel posRel  boRadXs  wAuto    marBotS marAuto">
 					{['Domov', 10, 25, 50, 'Všechny']
 						.filter(button => {
 							return button === 'Domov'
@@ -462,7 +459,7 @@ function LocationPicker(props) {
 									man('selCitiesInRad', button);
 								}}
 								style={{ width: `calc(100%/${arr.length})px` }}
-								className="grow bgTrans fs10  bInsetBlueTopXs bInsetBlueTopXs padVerXxxs  xBold posRel mw10  shaBlue tDarkBlue  boRadXs    borBotLight  bHover ">
+								className="grow bgTrans fs10  tBlue padVerXxxs  bold posRel mw10  shaBlue   boRadXs    borBotLight  bHover ">
 								{button}
 								{typeof button === 'number' ? ' km' : ''}
 							</button>

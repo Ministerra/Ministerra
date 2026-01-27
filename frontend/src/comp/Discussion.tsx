@@ -70,15 +70,7 @@ function Discussion(props) {
 				}
 				return merged;
 			});
-			const [newCommsMap, curCommIDs] = [
-				new Map(
-					setPropsToContent('comments', sanitized, brain).map(comm => [
-						comm.id,
-						{ ...comm, created: typeof comm.created === 'number' ? comm.created : Date.parse(comm.created) },
-					])
-				),
-				new Set(comms.map(comm => comm.id)),
-			];
+			const [newCommsMap, curCommIDs] = [new Map(setPropsToContent('comments', sanitized, brain).map(comm => [comm.id, { ...comm, created: typeof comm.created === 'number' ? comm.created : Date.parse(comm.created) }])), new Set(comms.map(comm => comm.id))];
 			const updatedComms = comms.map(comm => {
 				const newComm = newCommsMap.get(comm.id);
 				return newComm ? Object.assign(comm, { commsData: comm.commsData }, newComm) : comm;
@@ -223,12 +215,12 @@ function Discussion(props) {
 					id: data,
 					own: true,
 				};
-				parent[comment ? 'replies' : 'comments']++, targetCommsArr.unshift(newComment);
+				(parent[comment ? 'replies' : 'comments']++, targetCommsArr.unshift(newComment));
 			}
 
 			if (mode === 'getComments' || mode === 'getReplies') {
 				const newComms = mergeOrSort(targetCommsArr, axiComms, sortBy);
-				(targetCommsArr.length = 0), targetCommsArr.push(...newComms);
+				((targetCommsArr.length = 0), targetCommsArr.push(...newComms));
 				// SYNC TIMESTAMP UPDATE ---
 				// For getComments: set on event object (obj.commsSyncedAt)
 				// For getReplies: set on parent comment (parent.repliesSyncedAt)
@@ -237,18 +229,15 @@ function Discussion(props) {
 					else parent.repliesSyncedAt = sync;
 				}
 				const oppositeCursor = typeof cursorsRef === 'object' && cursorsRef !== null ? cursorsRef[oppositeSort] : null;
-				const isAllCommentsFetched =
-					axiComms.length < 20 || (canOrder && oppositeCursor && ((sortBy === 'recent' && lastAxiID <= oppositeCursor[1]) || (sortBy === 'oldest' && lastAxiID >= oppositeCursor[1])));
+				const isAllCommentsFetched = axiComms.length < 20 || (canOrder && oppositeCursor && ((sortBy === 'recent' && lastAxiID <= oppositeCursor[1]) || (sortBy === 'oldest' && lastAxiID >= oppositeCursor[1])));
 				if (!isAllCommentsFetched) {
 					if (typeof cursorsRef !== 'object' || cursorsRef === null) parent.cursors = { ...emptyCursors };
 					const safeCursorsRef = parent.cursors;
 					safeCursorsRef[sortBy] ??= canOrder ? ['new', 0, 0] : [0];
 					if (canOrder) {
-						if (syncMode === 'new' && sortBy === 'recent' && targetCommsArr.some(c => c.id > lastAxiID && c.created > fifteenMinutesAgo))
-							safeCursorsRef[sortBy][0] = lastAxiID <= lastID ? 'old' : 'del';
+						if (syncMode === 'new' && sortBy === 'recent' && targetCommsArr.some(c => c.id > lastAxiID && c.created > fifteenMinutesAgo)) safeCursorsRef[sortBy][0] = lastAxiID <= lastID ? 'old' : 'del';
 						else if (syncMode === 'del' && axiComms.filter(c => !c.content).map(c => c.id).length !== axiComms.length) safeCursorsRef[sortBy][0] = nextSyncMode;
-						else if (syncMode === 'old' && sortBy === 'oldest' && targetCommsArr.some(c => c.id < lastAxiID && c.created > fifteenMinutesAgo))
-							safeCursorsRef[sortBy][0] = lastAxiID >= lastID ? 'new' : 'del';
+						else if (syncMode === 'old' && sortBy === 'oldest' && targetCommsArr.some(c => c.id < lastAxiID && c.created > fifteenMinutesAgo)) safeCursorsRef[sortBy][0] = lastAxiID >= lastID ? 'new' : 'del';
 						safeCursorsRef[sortBy][1] = lastAxiID;
 						const boundaryFn = sortBy === 'recent' ? Math.min : Math.max;
 						safeCursorsRef[sortBy][2] = boundaryFn(safeCursorsRef[sortBy][2] || lastAxiID, lastAxiID);
@@ -264,16 +253,16 @@ function Discussion(props) {
 
 			if (mode === 'delete') {
 				parent[parent.replies !== undefined ? 'replies' : 'comments']--;
-				if (data === 'deleted') (comment.content = null), (comment.flag = 'del');
+				if (data === 'deleted') ((comment.content = null), (comment.flag = 'del'));
 			}
 
 			parent[comment ? 'repliesData' : 'commsData'] = mergeOrSort(targetCommsArr, null, sortBy);
 			if (parent.comments !== undefined) setStatus(prev => ({ ...prev, comments: parent.comments }));
-			sort && setSelSort([sort, selSort[1]]),
+			(sort && setSelSort([sort, selSort[1]]),
 				setComments(() => {
 					if (!comment || (depth === 0 && ['delete', 'remove'].includes(mode))) return [...targetCommsArr];
 					else return [...comments];
-				});
+				}));
 
 			await forage({ mode: 'set', what: `comms`, id: obj.id, val: ['commsData', 'commsSyncedAt', 'cursors'].reduce((acc, key) => ({ ...acc, [key]: obj[key] }), {}) });
 		} catch (err) {
@@ -289,7 +278,7 @@ function Discussion(props) {
 		const infiniteObserver = new IntersectionObserver(
 			entries => {
 				entries.forEach(entry => {
-					if (entry.isIntersecting && obj.cursors !== 'gotAll' && !fetchInProg.current) (fetchInProg.current = true), handleDiscussionAction({ mode: 'getComments' });
+					if (entry.isIntersecting && obj.cursors !== 'gotAll' && !fetchInProg.current) ((fetchInProg.current = true), handleDiscussionAction({ mode: 'getComments' }));
 				});
 			},
 			{ rootMargin: '0%' }
@@ -301,7 +290,7 @@ function Discussion(props) {
 	// COMPONENT RENDERING ---
 	// Renders the full discussion thread including input area, sort menu, and comment list
 	return (
-		<discussion-div ref={discussionTrigger} id='discussion' class={`${fadedIn.includes('Discussion') ? 'fadedIn' : 'fadingIn'} flexCol  block w100  aliCen  posRel    justCen marAuto`}>
+		<discussion-div ref={discussionTrigger} id="discussion" class={`${fadedIn.includes('Discussion') ? 'fadedIn' : 'fadingIn'} flexCol  block w100  aliCen  posRel    justCen marAuto`}>
 			<discussion-wrapper class={`flexCol  block marAuto   posRel mihvh100 noBackground fPadHorXs  `}>
 				{/* POST INPUT AREA --- */}
 				{/* Sticky input field for creating new top-level comments */}
@@ -311,28 +300,9 @@ function Discussion(props) {
 				{comments?.length > 1 && <SortMenu {...{ fadedIn, mode: 'discussion', hideSort, superMan: handleDiscussionAction, selSort, setSelSort }} />}
 				{/* COMMENT LIST CONTAINER --- */}
 				{/* Renders the collection of comments using the recursive Comment component */}
-				<comments-wrapper class='block w100 mw140 flexCol gapXxxs    marAuto h100  '>
-					{(obj.cursors === 'gotAll'
-						? sortedComms
-						: canOrder
-						? sortedComms.filter(
-								c =>
-									cursOrOffset &&
-									(selSort[0] === 'recent' ? c.id >= cursOrOffset || (c.own && c.created > obj.commsSyncedAt) : c.id <= cursOrOffset || (c.own && c.created > obj.commsSyncedAt))
-						  )
-						: sortedComms.slice(0, cursOrOffset || 0)
-					).map((comment, i) => (
-						<Comment
-							brain={brain}
-							mergeOrSort={mergeOrSort}
-							showingMenuCommID={showingMenuCommID}
-							setShowingMenuCommID={setShowingMenuCommID}
-							initCommsAndCursors={initCommsAndCursors}
-							selSort={selSort}
-							eventID={obj.id}
-							key={comment.id}
-							{...{ comment, isFirst: i === 0, depth: 0, superMan: handleDiscussionAction }}
-						/>
+				<comments-wrapper class="block w100 mw120 flexCol gapXxxs    marAuto h100  ">
+					{(obj.cursors === 'gotAll' ? sortedComms : canOrder ? sortedComms.filter(c => cursOrOffset && (selSort[0] === 'recent' ? c.id >= cursOrOffset || (c.own && c.created > obj.commsSyncedAt) : c.id <= cursOrOffset || (c.own && c.created > obj.commsSyncedAt))) : sortedComms.slice(0, cursOrOffset || 0)).map((comment, i) => (
+						<Comment brain={brain} mergeOrSort={mergeOrSort} showingMenuCommID={showingMenuCommID} setShowingMenuCommID={setShowingMenuCommID} initCommsAndCursors={initCommsAndCursors} selSort={selSort} eventID={obj.id} key={comment.id} {...{ comment, isFirst: i === 0, depth: 0, superMan: handleDiscussionAction }} />
 					))}
 				</comments-wrapper>
 			</discussion-wrapper>
@@ -340,9 +310,9 @@ function Discussion(props) {
 			{/* Visual marker at the end of the list to prompt data fetching and signal end of content */}
 			<after-content ref={infinityTrigger} class={`${obj.cursors === 'gotAll' ? '' : 'mih1'} flexCol noBackground justCen gapS miw36 aliCen imw50 marAuto`}>
 				{obj.cursors === 'gotAll' && (
-					<end-content class='flexCol aliCen mw50 marAuto iw80 w100 textAli'>
-						<img src='/icons/placeholdergood.png' alt='' />
-						<p className='xBold fsF'>Komponenta na konec obsahu</p>
+					<end-content class="flexCol aliCen mw50 marAuto iw80 w100 textAli">
+						<img src="/icons/placeholdergood.png" alt="" />
+						<p className="xBold fsF">Komponenta na konec obsahu</p>
 					</end-content>
 				)}
 			</after-content>

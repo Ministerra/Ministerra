@@ -13,6 +13,7 @@ import { Redis } from 'ioredis';
 import { EVENT_META_INDEXES, REDIS_KEYS, EVENT_COLUMNS, EVENT_BASICS_KEYS, EVENT_DETAILS_KEYS } from '../../shared/constants.ts';
 const { evePrivIdx, eveOwnerIdx, eveStartsIdx, eveTypeIdx, eveBasiVersIdx, eveDetailsVersIdx } = EVENT_META_INDEXES;
 
+// TODO need to make thorough revision of the isPast variable everywhere (because here we  added  the grace persiod of 2 hours. what are the implication o that in other places?)
 interface EventRequest {
 	eventID: number | string;
 	userID?: number | string;

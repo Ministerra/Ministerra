@@ -14,7 +14,7 @@ const MenuButtons = props => {
 		nowAt === 'event' && !galleryMode
 			? []
 			: [
-					...(thisIs !== 'message' ? ['editovat', 'smazat'] : []),
+					// ...(thisIs !== 'message' ? ['editovat', 'smazat'] : []),
 					'zrušit',
 					'opustit',
 					'ukončit',
@@ -23,7 +23,7 @@ const MenuButtons = props => {
 					'oddůvěřit',
 					...(!isBlocked ? ['nahlásit', 'potrestat'] : []), // POTRESTAT ADDED ------
 					...(galleryMode === 'pastSurMay' ? ['skrýt'] : []),
-			  ];
+				];
 
 	// Filter buttons based on whether additional actions are shown
 	const primaryButtons = Object.keys(src).filter(b => src[b] && (nowAt === 'editor' || !hiddenButtons.includes(b)));
@@ -38,7 +38,7 @@ const MenuButtons = props => {
 			message: 'w16 mw2-5',
 			chat: 'mw3-5 miw2-5 w40',
 			chatsList: 'mw3-5 w80',
-			event: isCardOrStrip || nowAt === 'home' ? 'mw2-5 w40' : 'mw6 w40',
+			event: isCardOrStrip || nowAt === 'home' ? 'mw2-5 w40' : 'mw5 w40',
 			chatsMenu: 'mw6 w33',
 			comment: 'mw2-5 w25',
 		},
@@ -54,10 +54,7 @@ const MenuButtons = props => {
 
 	// RENDER ------------------------------------------------------------------
 	return (
-		<menu-strip
-			ref={scrollTarget}
-			onClick={e => e.stopPropagation()}
-			class={`${classes.bs[thisIs]} ${selButton ? 'marBotXs' : ''} flexCen  wrap	  posRel aliStretch  shaComment   gapXxxs  boRadXs  zinMenu  w100`}>
+		<menu-strip ref={scrollTarget} onClick={e => e.stopPropagation()} class={`${classes.bs[thisIs]} ${selButton ? 'marBotXs' : ''} flexCen  wrap	  posRel aliStretch     gapXxxs  boRadXs  zinMenu  w100`}>
 			{visibleButtons.map((b, index) => (
 				<button
 					key={b}
@@ -85,13 +82,13 @@ const MenuButtons = props => {
 						(b === 'účastníci' && modes.members)
 							? `${!['zpět', 'kopírovat'].includes(b) ? 'arrowDown1' : ''} borTo8 bgTrans xBold  arrowDown1    fs10  `
 							: b === 'odvolat'
-							? 'tRed xBold fs8'
-							: b === 'kopírovat' && copied
-							? 'xBold fs10 shaBot  bInsetBlueTopS'
-							: ' bInsetBlueTopXs bBor bold  shaBlueLight '
+								? 'tRed xBold fs8'
+								: b === 'kopírovat' && copied
+									? 'xBold fs10 shaBot  bInsetBlueTopS'
+									: ' bInsetBlueTopXs bBor bold   '
 					} ${nowAt === 'event' && thisIs === 'event' ? 'fs8' : nowAt === 'editor' ? 'fs8' : 'fs5'} posRel zinMaXl miw2 grow  h100 bHover`}>
-					<img className={`${classes.img[thisIs]}`} src={`/icons/indicators/${index + 1}.png`} alt='' />
-					{b === 'archiv' && notifDots?.archive > 0 && <span className='miw2 hr2 bDarkRed round posAbs upLittle' />}
+					<img className={`${classes.img[thisIs]}`} src={`/icons/indicators/${index + 1}.png`} alt="" />
+					{b === 'archiv' && notifDots?.archive > 0 && <span className="miw2 hr2 bDarkRed round posAbs upLittle" />}
 					{b === 'kopírovat' ? (!copied ? 'kopírovat' : copied === 'info' ? 'Užij CTRL + V' : 'zkopírováno') : b}
 				</button>
 			))}
@@ -99,15 +96,13 @@ const MenuButtons = props => {
 			{/* Additional Actions Button */}
 			{hasHiddenButtons && nowAt !== 'editor' && (
 				<button
-					key='additional-actions'
+					key="additional-actions"
 					onClick={e => {
 						e.stopPropagation();
 						setShowAdditionalActions(!showAdditionalActions);
 						setSelButton(null);
 					}}
-					className={`${showAdditionalActions ? 'thickBors shaBot xBold posRel bBor2 boRadXxs bRed tWhite shaComment' : 'shaBlue posRel  bold'} ${
-						nowAt === 'event' && thisIs === 'event' ? 'fs10' : 'fs11'
-					} posRel zinMaXl shaBlue miw5 hvh6 mh5 mw8 zinMaXl  grow h100 ${classes.bs[thisIs]} bHover`}>
+					className={`${showAdditionalActions ? 'thickBors shaBot xBold posRel bBor2 boRadXxs bRed tWhite shaComment' : 'shaBlue posRel  bold'} ${nowAt === 'event' && thisIs === 'event' ? 'fs10' : 'fs11'} posRel zinMaXl shaBlue miw5 hvh6 mh5 mw8 zinMaXl  grow h100 ${classes.bs[thisIs]} bHover`}>
 					<span className={`${classes.img[thisIs]} flexCen marBotXxxs fs25 boldM`}>{showAdditionalActions ? '←' : '⋯'}</span>
 					{showAdditionalActions ? 'zpět' : 'další'}
 				</button>

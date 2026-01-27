@@ -15,7 +15,7 @@ let brain;
 // Steps: keep tiny helpers as expressions to minimize callsite noise; these functions mostly gate early exits and normalize inputs before the heavy loader path runs.
 const ensureBrainRef = brainParam => ((brain = brainParam || brain || { ...emptyBrain }), brain),
 	parseUrlOverrides = url => (url ? Object.fromEntries(['newCities', 'homeView'].map(key => [key, new URL(url).searchParams.get(key)])) : { newCities: null, homeView: null }),
-	createCityFinder = brain => city => brain.cities.find(c => (city.hashID ? city.hashID === c.hashID : (city.cityID || city) === c.cityID)),
+	createCityFinder = brain => city => brain.cities.find(c => (city?.hashID ? city.hashID === c.hashID : (city?.cityID || city) === c.cityID)),
 	shouldSkipLoad = (path, params, brainRef) => (params.size && ['/entrance', '/setup'].some(str => path.startsWith(str))) || brainRef.user.isUnintroduced || (path !== '/' && brainRef.fastLoaded),
 	handleMissingToken = (path, brainRef) => (path.startsWith('/event') ? brainRef : redirect('/entrance')),
 	pruneCitySync = miscel => {
@@ -63,7 +63,7 @@ const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 	else {
 		(delete brainRef.fastLoaded, delete brainRef.isAfterLoginInit);
 		plan.citiesGetCityData = cities?.filter(city => !findCity(city));
-		plan.citiesGetContentMetas = cities?.filter(city => !brainRef.citiesContSync[city.cityID || city]).map(city => city.cityID || city) || [];
+		plan.citiesGetContentMetas = cities?.map(city => city.cityID || city.hashID || city).filter(id => id && typeof id !== 'object' && !brainRef.citiesContSync[id]) || [];
 		plan.axiosPayload = plan.citiesGetContentMetas.length
 			? delUndef({
 					getCities: plan.citiesGetCityData,
@@ -239,7 +239,7 @@ const storeCitiesAndContent = async (ctx, data) => {
 	const { citiesData, contentMetas, contSync } = data;
 	if (ctx.isFastLoad) return;
 	if (citiesData) citiesData.forEach(city => brainRef.cities.push(city));
-	if (meta.cities) brainRef.user.curCities = meta.cities.map(city => city.cityID || findCity(city)?.cityID || 1).sort((a, b) => a - b);
+	if (meta.cities) brainRef.user.curCities = meta.cities.map(city => city?.cityID || findCity(city)?.cityID || (typeof city === 'number' ? city : 1)).sort((a, b) => a - b);
 	if (!contentMetas) return;
 	const receivedEventIDs = new Set();
 	const receivedUserIDs = new Set();

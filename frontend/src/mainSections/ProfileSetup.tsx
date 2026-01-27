@@ -54,8 +54,8 @@ const ProfileSetup = props => {
 	}, [curSection, isIntroduction]);
 
 	return (
-		<profile-setup class='w100 posRel block   boRadL bgTrans'>
-			{!isIntroduction && <span className='xBold  inlineBlock marBotXl  borRed padVerXs tDarkBlue textSha fs30'>{'Základní nastavení'}</span>}
+		<profile-setup class="w100 posRel block   boRadL bgTrans">
+			{!isIntroduction && <span className="xBold  inlineBlock marBotXl  borRed padVerXs tDarkBlue textSha fs30">{'Základní nastavení'}</span>}
 			{visibleSections.map((name, index) => {
 				const SectionComponent = components[name];
 				const isLastVisible = index === visibleSections.length - 1;
@@ -66,25 +66,25 @@ const ProfileSetup = props => {
 						ref={isLastVisible ? scrollTarget : null}
 						class={`${!isIntroduction || !isLastVisible ? 'marBotXxl mhvh100' : 'hvh100  mhvh100 mihvh100'} 
 						${!isIntroduction && index === 0 ? 'padTopS ' : ''} 
-						flexCol  posRel  shaTop`}>
+						flexCol  posRel  ${isIntroduction ? 'shaTop' : ''}`}>
 						{/* HEADER IMAGE ---------------------------------------- */}
-						<blue-divider class={` hr2 borTop block bInsetBlueTopXl borTop bgTrans  w100  mw120   marAuto   `} />
+						{isIntroduction && <blue-divider class={` hr2 borTop block bInsetBlueTopXl borTop bgTrans  w100  mw120   marAuto   `} />}
 						{isIntroduction && <HeaderImage isIntroduction={isIntroduction} isLastVisible={isLastVisible} currentSection={name} />}
 
-						<spacing-wrapper class='flexCol fPadHorXxs padBotS  spaceAro h100   posRel'>
+						<spacing-wrapper class="flexCol fPadHorXxs padBotS  spaceAro h100   posRel">
 							{/* SECTION COMPONENT ---------------------------------------- */}
 							<SectionComponent {...props} />
 							{/* SUBMIT BUTTON AND ERRORS ---
 							   Hidden for Welcome section - Welcome has its own password confirmation flow. */}
 							{isIntroduction && isLastVisible && name !== 'Welcome' && (
-								<submit-and-errors class=''>
+								<submit-and-errors class="">
 									{/* ERROR MESSAGES ---------------------------------------- */}
 									{inform.length > 0 && (
-										<inform-messages class=' block'>
+										<inform-messages class=" block">
 											{(() => {
 												const actualWarnings = Object.keys(informTexts).filter(warn => inform.includes(warn));
 												return actualWarnings.map((warning, index) => (
-													<span key={warning} className='tRed marRigXs xBold fs16  marBotXxs marTopS lh1 inlineBlock aliCen'>
+													<span key={warning} className="tRed marRigXs xBold fs16  marBotXxs marTopS lh1 inlineBlock aliCen">
 														{`${index > 0 ? ' + ' : ''}${informTexts[warning]}`}
 													</span>
 												));
@@ -95,15 +95,7 @@ const ProfileSetup = props => {
 										isIntroduction={true}
 										superMan={superMan}
 										nowAt={'setup'}
-										text={
-											inform.includes('finalizing')
-												? 'Finalizuji profil ...'
-												: inform.includes('Request throttled')
-												? 'Chyba serveru, opakuj za 10 sekund'
-												: inform.length > 0
-												? 'Oprav nedostatky'
-												: `${bigButtonSrc[name]} ${index < Object.keys(bigButtonSrc).length - 1 ? `(${index + 2}/${Object.keys(bigButtonSrc).length})` : ''}`
-										}
+										text={inform.includes('finalizing') ? 'Finalizuji profil ...' : inform.includes('Request throttled') ? 'Chyba serveru, opakuj za 10 sekund' : inform.length > 0 ? 'Oprav nedostatky' : `${bigButtonSrc[name]} ${index < Object.keys(bigButtonSrc).length - 1 ? `(${index + 2}/${Object.keys(bigButtonSrc).length})` : ''}`}
 										onClick={() => superMan('bigButton')}
 										className={`${inform.length > 0 ? ` shaStrong ${inform.includes('finalizing') ? 'bDarkGreen' : 'bRed'}` : ' bGreen shaStrong'} boRadXs padVerS bHover`}
 									/>
@@ -115,21 +107,11 @@ const ProfileSetup = props => {
 			})}
 			{/* "ABOUT ME" TEXT FIELD ------------------------------- */}
 			{!isIntroduction && (
-				<div className='flexCol marTopL boRadM marBotL fPadHorS w100 marAuto padAllM bgTransXs shaBlueLight posRel'>
-					<span className=' xBold fs15 inlineBlock marBotXxs'>Krátké představení</span>
-					<p className='fs8 marBotXs mw160 lh1 marAuto '>Pověz ostatním proč by se s tebou měli chtít potkat...</p>
-					{typeof data.shortDesc === 'string' && data.shortDesc.length >= MAX_CHARS.userShortDesc && (
-						<span className='fs7 tGrey inlineBlock'>Dosažen limit: {MAX_CHARS.userShortDesc} znaků</span>
-					)}
-					<textarea
-						title='Krátké představení'
-						placeholder='Pověz ostatním proč by se s tebou měli chtít potkat...'
-						className='textArea border boRadM bgTransXs w100 shaBlue boRadM padAllM textAli fsB'
-						value={data.shortDesc || ''}
-						maxLength={MAX_CHARS.userShortDesc}
-						rows={5}
-						onChange={e => superMan('shortDesc', e.target.value)}
-					/>
+				<div className="flexCol marTopL boRadM marBotL fPadHorS w100 marAuto padAllM bgTransXs shaBlueLight posRel">
+					<span className=" xBold fs15 inlineBlock marBotXxs">Krátké představení</span>
+					<p className="fs8 marBotXs mw160 lh1 marAuto ">Pověz ostatním proč by se s tebou měli chtít potkat...</p>
+					{typeof data.shortDesc === 'string' && data.shortDesc.length >= MAX_CHARS.userShortDesc && <span className="fs7 tGrey inlineBlock">Dosažen limit: {MAX_CHARS.userShortDesc} znaků</span>}
+					<textarea title="Krátké představení" placeholder="Pověz ostatním proč by se s tebou měli chtít potkat..." className="textArea border boRadM bgTransXs w100 shaBlue boRadM padAllM textAli fsB" value={data.shortDesc || ''} maxLength={MAX_CHARS.userShortDesc} rows={5} onChange={e => superMan('shortDesc', e.target.value)} />
 				</div>
 			)}
 		</profile-setup>

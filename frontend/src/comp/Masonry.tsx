@@ -109,7 +109,7 @@ const Masonry = props => {
 	// RENDER MASONRY LAYOUT ---------------------------------------------------
 	return (
 		<masonry-wrapper ref={masonryRef} class={`block ${contType.includes('Strips') ? 'w100 marAuto padBotXs fPadHorXxxs   ' : nowAt !== 'event' ? 'mihvh120 w100' : 'w100'}  posRel block `}>
-			<content-chunks class={` ${nowAt !== 'event' && !view.includes('Strips') ? ' block' : nowAt !== 'event' && !isChatSetup && !noPadTop ? 'padTopXs' : ''}  w100 posRel block  posRel   aliCen flexCol fPadHorXxxs  `}>
+			<content-chunks class={` ${nowAt !== 'event' && !view.includes('Strips') ? ' block' : nowAt !== 'event' && !isChatSetup && !noPadTop ? 'padTopXs' : ''}  w100 posRel block  posRel   aliCen flexCol  `}>
 				{(() => {
 					let cumulative = 0;
 					return chunks?.map((chunk, i) => {
@@ -119,7 +119,7 @@ const Masonry = props => {
 						const end = cumulative;
 
 						return (
-							<single-chunk class={` aliCen ${contType.includes('Strips') ? '' : 'fPadHorXxxs'} block  w100`} key={i}>
+							<single-chunk class={` aliCen fPadHorXxs block  w100`} key={i}>
 								{i > 0 && nowAt !== 'event' && contType !== 'alertStrips' && (
 									<chunks-divider
 										class={`marVerS w100 block mw30 posRel textAli padVerXxs padHorXs marAuto boRadS fsD xBold`}
@@ -136,7 +136,7 @@ const Masonry = props => {
 								<cols-wrapper class={`${view === 'alertStrips' ? 'gapXxs' : view === 'pastUsers' ? 'gapXxs' : ['users', 'eveUsers'].includes(view) ? 'gapXs' : view.includes('Strips') ? 'gapXxs' : ['gapMiddleL', 'gapMiddleS', 'gapMiddleXs'][numCols > 3 ? 2 : numCols - 2]} flexCen w100 marAuto aliStart  spaceCen padBotXs `} key={i}>
 									{chunk.map((cards, j) => {
 										return (
-											<content-column style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }} class={`flexCol justStart grow ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen   `} key={j}>
+											<content-column style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }} class={`flexCol justStart grow ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen    `} key={j}>
 												{/* RENDER ITEMS OR PLACEHOLDERS --------------------------- */}
 												{cards.map((item, idx) => (isValidElement(item) ? item : <Comp {...cardProps} key={item.id} obj={item} isFirstInCol={idx === 0} />))}
 											</content-column>

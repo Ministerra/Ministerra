@@ -77,12 +77,12 @@ const BsDynamic = props => {
 			{/* SECONDARY NAVIGATION CONTROLS --- */}
 			{/* Renders back and scroll-to-top buttons when header is not visible */}
 			{!isIntroduction && !bigButton && scrollDir === 'up' && (
-				<small-buttons className='posAbs  botCen marBotM posRel  w70 bw50 mw40 flexCen'>
+				<small-buttons className="posAbs  botCen marBotM posRel  w70 bw50 mw40 flexCen">
 					{nowAt !== 'home' ||
 						(brain.homeView !== 'cityEvents' && (
 							<button
 								style={{ filter: 'hue-rotate(30deg) ' }}
-								className='hr3 bBlue tWhite fs-1'
+								className="hr3 bBlue tWhite fs-1"
 								onClick={() => {
 									if (nowAt === 'chatSetup') window.history.back();
 									else if (nowAt === 'home' && brain.homeView !== 'cityEvents') setInitialize('cityEvents');
@@ -91,9 +91,7 @@ const BsDynamic = props => {
 								{nowAt === 'home' && brain.homeView !== 'cityEvents' ? 'Domů' : `zpět [esc.]`}
 							</button>
 						))}
-					<button
-						className='padVerXxxs marAuto bBlue tWhite  fs9'
-						onClick={() => window.scrollTo({ top: nowAt !== 'home' ? 0 : document.querySelector('cats-wrapper').offsetTop + 220, behavior: 'smooth' })}>
+					<button className="padVerXxxs marAuto bBlue tWhite  fs9" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
 						Nahoru
 					</button>
 				</small-buttons>
@@ -101,11 +99,7 @@ const BsDynamic = props => {
 			{/* PRIMARY CONTEXTUAL ACTION BUTTON --- */}
 			{/* Renders the large call-to-action button for home and setup screens */}
 			{['home', 'setup'].includes(nowAt) && !menuView && (
-				<big-button
-					onClick={() => !disabled && bigBsFunctions[nowAt]()}
-					className={`${className || 'bDarkGreen'} ${bigButton && !menuView ? 'fadedIn ' : 'noPoint'} ${disabled ? 'noPoint' : 'pointer'} w95 textAli flexCol justCen ${
-						!isIntroduction ? 'marBotM bsContentGlow mw110 mh6  fs24' : 'mh6  fs20 mw80 bInsetGreen'
-					}  zinMaXl marAuto tSha10  tWhite  padHorXs bInsetGreen borBot8 zinMenu  xBold posRel shaTop borderLight boRadXs  padVerXs fadingIn  tWhite `}>
+				<big-button onClick={() => !disabled && bigBsFunctions[nowAt]()} className={`${className || 'bDarkGreen bsContentGlow bInsetGreen'} ${bigButton && !menuView ? 'fadedIn ' : 'noPoint'} ${disabled ? 'noPoint' : 'pointer'} w95 textAli flexCol justCen ${!isIntroduction ? 'marBotM  mw110 mh6  fs24' : 'mh6  fs20 mw80 bInsetGreen'}  zinMaXl marAuto tSha10  tWhite    borBot8 zinMenu  xBold posRel shaTop borderLight boRadXs  padVerXs fadingIn  tWhite `}>
 					{text}
 				</big-button>
 			)}

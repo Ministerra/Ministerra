@@ -10,7 +10,7 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
 
 // TODO implement the note into invitations.
 
-function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'eventToUsers', pendingMode = false, selectedItems: externalSelectedItems, invitesTotal, fetchMoreUsers, superMan, nowAt, showUsersOnly = false, galleryMode = '', invitesHandler, topPadding = false }: any) {
+function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'eventToUsers', pendingMode = false, selectedItems: externalSelectedItems, invitesTotal, fetchMoreUsers, superMan, nowAt, showUsersOnly = false, galleryMode = '', invitesHandler }: any) {
 	const [selectedItems, setSelectedItems] = useState([]);
 	const [inviteStatus, setInviteStatus] = useState('idle');
 	const [tabMode, setTabMode] = useState();
@@ -73,7 +73,7 @@ function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'ev
 	}
 
 	return (
-		<invitations-container onClick={e => e.stopPropagation()} class={`w100 ${tabMode ? 'mw150' : 'mw150'} marAuto zinMaXl padTopXs padBotXs  posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXl ' : ''}  ${nowAt === 'event' ? 'marTopXl' : ''} `} ref={containerRef}>
+		<invitations-container onClick={e => e.stopPropagation()} class={`w100 ${tabMode ? 'mw150' : 'mw150'} marAuto zinMaXl padTopS   posRel aliCen justStart flexCol mihvh33 ${downMargin ? 'marBotXl ' : ''}  ${nowAt === 'event' ? 'marTopXl' : ''} `} ref={containerRef}>
 			{!showUsersOnly && (
 				<upper-wrapper class="w100   ">
 					{nowAt !== 'editor' && itemLimit > selItemsSrc.length && (
@@ -110,9 +110,9 @@ function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'ev
 												if (m === 'search' && !isUserToEvents) setSearchCat(null);
 												setTabMode(prev => (prev === m ? '' : m));
 											}}
-											className={` bHover  bBor  padAllS imw6   iw80   bInsetBlueTopXs2   borderTop      ${tabMode === m ? 'marAuto boRadM posAbs topCen maskLowXs upTiny bgTransXs  mw40  w100 bInsetBlueTopXs fs7    zinMaXl bgTransXs padHorM      xBold ' : 'grow boldXs fs7    posRel   '}`}>
+											className={` bHover  bBor  padAllS imw6   iw80   bInsetBlueTopXs2   borderTop      ${tabMode === m ? 'marAuto boRadM posAbs topCen maskLowXs upTiny bgTransXs  mw40  w100 bInsetBlueTopXs fs9    zinMaXl bgTransXs padHorM      xBold ' : 'grow  fs9    posRel   '}`}>
 											<img src={`/icons/${m === 'search' ? 'search' : m === 'gallery' ? (mode === 'userToEvents' ? 'event' : 'people') : 'email'}.png`} style={{ aspectRatio: '16/10' }} className={`${!tabMode || tabMode === m ? '' : 'opacityS'}`} alt={`${m} icon`} />
-											{!tabMode && <span className=" xBold">{m === 'search' ? 'Vyhledávání' : m === 'gallery' ? 'Galerie' : 'Ostatní'}</span>}
+											{!tabMode && <span className=" bold fs8">{m === 'search' ? 'Vyhledat' : m === 'gallery' ? 'Galerie' : 'Ostatní'}</span>}
 										</button>
 									))}
 							</menu-bs>
@@ -120,7 +120,7 @@ function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'ev
 
 						{tabMode === 'search' && (
 							<div className={`${selItemsSrc.length >= itemLimit ? 'hide' : ''} mw160  padTopXs block marAuto`}>
-								<Search brain={brain} cat={searchCat} isInvitations={mode} superMan={man} selectedItems={selItemsSrc} obj={obj} />
+								<Search brain={brain} cat={searchCat} isInvitations={mode} superMan={man} selectedItems={selItemsSrc} obj={obj} nowAt={nowAt} />
 							</div>
 						)}
 

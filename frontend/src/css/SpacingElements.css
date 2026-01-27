@@ -88,7 +88,7 @@ html.overHidden body {
 }
 
 .cornerTopLeft {
-	top: -1.2rem;
+	top: -1.5rem;
 	left: -1.5rem;
 }
 .topCen {
@@ -347,6 +347,9 @@ html.overHidden body {
 }
 .marTopXxs {
 	margin-top: 0.5rem;
+}
+.marTopXxxs {
+	margin-top: 0.25rem;
 }
 .marTopXs {
 	margin-top: 1rem;

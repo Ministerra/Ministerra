@@ -1,13 +1,20 @@
 import { humanizeDateTime } from '../../../helpers';
-import { useState, memo, useLayoutEffect } from 'react';
+import { useState, memo, useLayoutEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { globalContext } from '../../contexts/globalContext';
+import { storeMenuViewState } from '../LogoAndMenu';
 
 import { FRIENDLY_MEETINGS } from '../../../../shared/constants';
 import ContentIndis from '../ContentIndis';
 import EveMenuStrip from '../menuStrips/EveMenuStrip';
 import EventCard from '../EventCard.tsx';
+import IntersPrivsButtons from '../IntersPrivsButtons';
+import EveActionsBs from '../EveActionsBs.tsx';
 
 function EventStrip(props) {
 	const { obj = {}, brain, galleryMode, isMobile, stripMenu, setStripMenu, isSearch, isPastEvent, isInvitations, superMan, isSelected, setGalleryContent, numOfCols } = props;
+	const navigate = useNavigate();
+	const { menuView, setMenuView } = useContext(globalContext);
 	// UNIFIED CHIP SIZING ---
 	const chipClass = `fs7 bold textSha padHorXs hr1-5 boRadXxs tWhite`;
 	const [modes, setModes] = useState({ inter: false, share: false, menu: false, evePreview: false, protocol: false, invites: false, invitees: false, invitors: false, feedback: false });
@@ -64,10 +71,17 @@ function EventStrip(props) {
 			onClick={() => {
 				if (isInvitations) return superMan({ mode: 'selectEvent', obj });
 				if (modes.menu) return closeEverything();
-				setModes(prev => {
-					setStripMenu(obj.id);
-					return { ...prev, menu: true, evePreview: false, inter: false };
-				});
+
+				// If already on event page and menuView is gallery, close gallery to reveal event
+				if (window.location.pathname.startsWith('/event/') && menuView === 'gallery') {
+					setMenuView(null);
+				} else {
+					// Store current menuView state for back navigation
+					if (menuView) {
+						storeMenuViewState(menuView, galleryMode, obj.id);
+					}
+					navigate(`/event/${obj.id}`);
+				}
 			}}
 			class={`${(() => {
 				const invitedFlag = (() => {
@@ -79,8 +93,18 @@ function EventStrip(props) {
 					return undefined;
 				})();
 				return galleryMode === 'invitesIn' && invitedFlag === 'acc' ? 'bInsetGreen' : galleryMode === 'invitesIn' && invitedFlag === 'ref' ? 'bInsetRed' : isSelected ? 'bInsetBlue shaBot posRel borBot8 bor3 boRadXxs Halo' : '';
-			})()}   mw130 w100 shaBlue marBotXxxs boRadXxs ${!isMobile && !modes.menu && !modes.evePreview ? 'padVerXxs' : modes.menu ? 'shaMega  borTop    ' : ''} ${modes.protocol || modes.menu || modes.evePreview ? ' boRadXs  shaStrong     bInsetBlueTopXs  boRadXs   posRel' : ''} ${isPastEvent ? 'bgTransXxs' : modes.evePreview ? '' : ''} flexCol posRel bHover2  pointer shaBlueLight  aliStart`}>
-			<strip-body class={`${modes.menu ? 'marBotXxs' : ''} flexRow aliStart fPadHorXxxs  marAuto bgWhite  zinMaXl padBotXxs  w100`}>
+			})()}   mw130 w100   boRadXxs ${!isMobile && !modes.menu && !modes.evePreview ? '' : modes.menu ? 'shaMega  borTop    ' : ''} ${modes.protocol || modes.menu || modes.evePreview ? ' boRadXs  shaStrong     bInsetBlueTopXs  boRadXs   posRel' : ''} ${isPastEvent ? 'bgTransXxs' : ''} flexCol posRel bHover2  pointer   aliStart`}>
+			<strip-body class={`${modes.menu ? 'marBotXxs' : ''} flexRow aliStart posRel  fPadHorXxxs  marAuto bgWhite  zinMaXl padBotXs  w100`}>
+				{(modes.profile || modes.invites) && (
+					<info-strip
+						// CLOSE PROFILE (DO NOT NAVIGATE) ---
+						// This overlay is a "back" affordance; it must not bubble into the card's root click navigation.
+						onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, profile: false, invites: false })))}
+						class="posAbs topRight zin2500 w15 textAli">
+						<arrow-down style={{ scale: '0.3', filter: 'brightness(8) saturate(0.5)', right: '42px', transform: 'rotate(55deg)', top: '9px' }} className="arrowDownLongRed posRel  zinMaXl  textAli   marAuto   inlineBlock   downTinyBit    xBold " />
+						<span className="  tRed  w100    marAuto posAbs topCen  noBackground textAli  zinMaXl padHorXs marAuto  padVerXxxs inlineBlock  borderLeft  fs8  boldS ">na začátek</span>
+					</info-strip>
+				)}
 				{/* IMAGE ------------------------------------------------------ */}
 				<image-wrapper class={`${modes.menu ? 'bsContentGlow bDarkBlue  boRadM' : ''} bHover  selfStart marTopXs textAli  w18 mw12 posRel marRigS miw10   ${obj.type.startsWith('a') ? 'aspect168 cover' : 'aspect168'} ${isPastEvent ? 'opacityM' : ''} borRed shaBot boRadXxs`}>
 					<img
@@ -97,31 +121,42 @@ function EventStrip(props) {
 						src={obj.imgVers && !obj.type.startsWith('a') ? `${import.meta.env.VITE_BACK_END}/public/events/${obj.id}_${!obj.own ? `${Math.floor(Math.random() * 30) + 1}` : imgVers}S.webp` : obj.type.startsWith('a') ? `/covers/${obj.type}.png` : '/icons/placeholdergood.png'}
 						alt=""
 					/>
-					{hideMenu && (
-						<span className="bold fs8 posRel posAbs opacityL marBotXxxs padVerXxxs bRed tWhite textAli padHorXs w100 botCen textSha boRadXxxs zinMaXl pointer" onClick={e => (e.stopPropagation(), resetSubModes())}>
-							zpět na menu
+					<img className={'zinMaXl bgTrans mw6  posAbs bInsetBlueTopXs cornerTopLeft padAllXxxs boRadM bgTrans aspect1612 boRadXxs'} src={`/icons/types/${obj.type}.png`} alt="" />
+					{modes.menu && (
+						<span
+							onClick={e => {
+								e.stopPropagation();
+								if (hideMenu) return resetSubModes();
+								setModes(prev => {
+									const newMenuState = !prev.menu;
+									setStripMenu(newMenuState ? obj.id : null);
+									return { ...prev, menu: newMenuState, inter: false, protocol: false };
+								});
+							}}
+							className="bold fs6 posRel posAbs padVerXxxxs bRed tWhite padHorXs w100 padBotXxs miw8 botCen textSha">
+							{hideMenu ? 'zpět na menu' : 'skrýt menu'}
 						</span>
 					)}
 				</image-wrapper>
 
 				{/* RIGHT SIDE ------------------------------------------------------ */}
 				<right-side class={`h100 flexCol justStart aliStart h100 padTopXs  `}>
+					{/* TITLE (first row) ---------------------------------------------- */}
+					<span className={`boldM lh1-2 textSha marRigXxs marBotXxxxxs wordBreak ${isPastEvent ? 'tDarkGray' : ''}`}>
+						{status.deleted && <strong className="xBold tRed fs10  marRigXs inlineBlock">SMAZÁNO! </strong>}
+						{status.canceled && <strong className="xBold tRed fs10 marRigXs inlineBlock">ZRUŠENO! </strong>}
+						<span className={` ${numOfCols > 1 ? 'fs14' : 'fs15'} boldM `}>{obj.title}</span>
+					</span>
+
 					<second-row class={`flexRow aliCen wrap textLeft marTopXxxs marBotXxxs  `}>
-						<span className={`fs11 boldM tDarkBlue inline marRigS lh1 ${isPastEvent ? 'tRed' : ''}`}>{humanizeDateTime({ dateInMs: obj.starts })}</span>
+						<span className={`fs9 boldM tDarkBlue inline marRigS lh1 ${isPastEvent ? 'tRed' : ''}`}>{humanizeDateTime({ dateInMs: obj.starts })}</span>
 						{!isSearch && (obj.location?.startsWith('+') || (!obj.location && !obj.place)) && (
 							<around-indi class={`flexInline aliCen posRel down1 marRigXxs`}>
 								<span className={`chipPurple ${chipClass}`}>{obj.location?.startsWith('+') ? 'v okolí' : 'kdekoliv'}</span>
 							</around-indi>
 						)}
-						<span className={`${`fs11  marRigS  ${(isSearch && obj.starts < Date.now()) || isPastEvent ? 'tRed boldM' : 'tDarkGreen boldS'}`} inline marRigXs `}>{`${obj.place ? `${obj.place} -` : ''} ${obj.city}`}</span>
+						<span className={`${`fs9  marRigS  ${(isSearch && obj.starts < Date.now()) || isPastEvent ? 'tRed boldM' : 'tDarkGreen boldS'}`} inline marRigXs `}>{`${obj.place ? `${obj.place} -` : ''} ${obj.city}`}</span>
 					</second-row>
-
-					{/* TITLE (first row) ---------------------------------------------- */}
-					<span className={`boldM lh1-2 textSha marRigXxs marBotXxxxxs wordBreak ${isPastEvent ? 'tDarkGray' : ''}`}>
-						{status.deleted && <strong className="xBold tRed fs10  marRigXs inlineBlock">SMAZÁNO! </strong>}
-						{status.canceled && <strong className="xBold tRed fs10 marRigXs inlineBlock">ZRUŠENO! </strong>}
-						<span className={` ${numOfCols > 1 ? 'fs12' : 'fs15'} boldM `}>{obj.title}</span>
-					</span>
 
 					{/* INDICATORS (third row) --------------------------------------------------- */}
 					<third-row class="flexInline">
@@ -150,11 +185,12 @@ function EventStrip(props) {
 			{/* MENU STRIP + PREVIEW CARD ----------------------------------------------- */}
 			{modes.menu && (
 				<bottom-part onClick={e => e.stopPropagation()} class="w100">
-					<EveMenuStrip {...{ isCardOrStrip: true, status, setStatus, modes, brain, setModes, galleryMode, isSearch, obj, isPastEvent, userCardSetModes: setModes, setGalleryContent }} />
+					<EveMenuStrip {...{ isCardOrStrip: true, isStrip: true, status, setStatus, modes, brain, setModes, galleryMode, isSearch, obj, isPastEvent, userCardSetModes: setModes, setGalleryContent }} />
 
 					{modes.evePreview && <EventCard brain={brain} isPreview={true} obj={obj} isPastEvent={isPastEvent} isSearch={isSearch} />}
 				</bottom-part>
 			)}
+			{!modes.menu && <EveActionsBs {...{ fadedIn: ['BsEvent'], brain, isPastEvent, obj, status, setStatus, modes, setModes, thisIs: 'event' }} />}
 		</event-strip>
 	);
 }

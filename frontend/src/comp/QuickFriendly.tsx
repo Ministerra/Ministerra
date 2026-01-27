@@ -93,7 +93,13 @@ const QuickFriendly = forwardRef(function QuickFriendly(props: any, ref: any) {
 						})}
 			</friendlyMeetings-wrapper>
 			{quick === false && (
-				<button onClick={() => setShowMore(showMore ? false : true)} className={`${showMore ? 'tRed fs12  borderRed' : ' borderBot  arrowDown1 opacityL fs10'}  bgTrans  shaBlueLight  bold       hover  zinMax  posRel padAllXxs   marTopS  boRadXxs w50 marAuto mw30`}>
+				<button
+					onClick={() => {
+						const next = !showMore;
+						setShowMore(next);
+						requestAnimationFrame(() => setTimeout(() => ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50));
+					}}
+					className={`${showMore ? 'tRed fs12  borderRed' : ' borderBot  arrowDown1 opacityL fs10'}  bgTrans  shaBlueLight  bold       hover  zinMax  posRel padAllXxs   marTopS  boRadXxs w50 marAuto mw30`}>
 					{!showMore ? 'zobrazit více' : 'zobrazit méně'}
 				</button>
 			)}

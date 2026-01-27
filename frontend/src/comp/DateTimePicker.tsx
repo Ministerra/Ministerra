@@ -18,6 +18,12 @@ const DateTimePicker = props => {
 		[dateMode, setDateMode] = useState(starts ? null : prop || 'starts'),
 		[hoursMode, setHoursMode] = useState(nowDate.getHours() >= 12 ? 'odpoledne' : 'dopoledne'),
 		[scrollTarget, fullDate, startOnly, noTime, noAmPm] = [useRef(), ['birth'].includes(prop), ['meetWhen'].includes(prop), ['birth'].includes(prop), ['meetWhen'].includes(prop)],
+		// PICKER REFS ---
+		decadePickerRef = useRef(null),
+		monthPickerRef = useRef(null),
+		dayPickerRef = useRef(null),
+		hourPickerRef = useRef(null),
+		minutePickerRef = useRef(null),
 		// ORIGINAL DATE STORAGE FOR EDIT MODE REVERT ---
 		// When editing, store original values to revert to if user clicks button with incomplete date
 		originalStartsRef = useRef(starts),
@@ -285,11 +291,11 @@ const DateTimePicker = props => {
 	// WIDTHS FOR BUTTONS ---------------------------------------------
 	const visibleYears = (fullDate && selDecade ? Array.from({ length: 10 }, (_, i) => selDecade + i) : Array.from({ length: 3 }, (_, i) => nowDate.getFullYear() + i)).filter(yearsFilter);
 	const yearPickerHiddenBySingleOption = visibleYears.length === 1 && visibleYears[0] === nowDate.getFullYear();
-	const decadeWidth = useCentralFlex('decades', [showAllDecades], null, Array.from({ length: 10 }, (_, i) => 1920 + i * 10).length);
-	const monthsWidth = useCentralFlex('months', [year, dateMode], null, Array.from({ length: 12 }, (_, i) => i).filter(monthsFilter).length);
-	const daysWidth = useCentralFlex('days', [month, dateMode], null, 7);
-	const hoursWidth = useCentralFlex('hours', [day, hoursMode], null, Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i).filter(hoursFilter).length);
-	const minutesWidth = useCentralFlex('minutes', [hour, dateMode], null, Array.from({ length: 4 }, (_, i) => i * 15).filter(minutesFilter).length);
+	const decadeWidth = useCentralFlex('decades', [showAllDecades], null, Array.from({ length: 10 }, (_, i) => 1920 + i * 10).length, decadePickerRef);
+	const monthsWidth = useCentralFlex('months', [year, dateMode], null, Array.from({ length: 12 }, (_, i) => i).filter(monthsFilter).length, monthPickerRef);
+	const daysWidth = useCentralFlex('days', [month, dateMode], null, 7, dayPickerRef);
+	const hoursWidth = useCentralFlex('hours', [day, hoursMode], null, Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i).filter(hoursFilter).length, hourPickerRef);
+	const minutesWidth = useCentralFlex('minutes', [hour, dateMode], null, Array.from({ length: 4 }, (_, i) => i * 15).filter(minutesFilter).length, minutePickerRef);
 
 	// DAY SELECTION GENERATION ------------------------------------------------
 	const calendarDays = (() => {
@@ -392,7 +398,7 @@ const DateTimePicker = props => {
 							{/* DECADE SELECTION GRID --- */}
 							{/* Optimizes navigation through long timeframes like birth dates */}
 							{fullDate && (
-								<decade-picker class="w100  zinMax    marAuto wrap bPadS flexCen">
+								<decade-picker ref={decadePickerRef} class="w100  zinMax    marAuto wrap bPadS flexCen">
 									{Array.from({ length: selDecade && !showAllDecades ? 1 : 10 }, (_, i) => (selDecade && !showAllDecades ? selDecade : 1920 + i * 10)).map(d => (
 										<button
 											key={d}
@@ -429,7 +435,7 @@ const DateTimePicker = props => {
 							{/* MONTH SELECTION GRID --- */}
 							{/* Interactive month list filtered by logical date constraints */}
 							{year && !showAllDecades && (
-								<month-picker class={'flexCen   marAuto  marBotL  bPadVerS wrap w100'}>
+								<month-picker ref={monthPickerRef} class={'flexCen   marAuto  marBotL  bPadVerS wrap w100'}>
 									{Array.from({ length: 12 }, (_, i) => i)
 										.filter(monthsFilter)
 										.map(b => (
@@ -445,7 +451,7 @@ const DateTimePicker = props => {
 					{/* DAY SELECTION GRID --- */}
 					{/* Standard monthly calendar view with automatic weekday alignment */}
 					{month !== null && year && mode !== 'week' && !showAllDecades && (
-						<day-picker class=" posRel w100  posRel  marAuto marBotXl flexRow wrap">
+						<day-picker ref={dayPickerRef} class=" posRel w100  posRel  marAuto marBotXl flexRow wrap">
 							{/* WEEKDAY COLUMN LABELS --- */}
 							{!fullDate && (
 								<weekdays-labels class={'  flexCen w100 '}>
@@ -473,7 +479,7 @@ const DateTimePicker = props => {
 					{/* QUICK WEEK SELECTION --- */}
 					{/* Simplified view for selecting days within the current relative week */}
 					{mode === 'week' && (
-						<weekdays-picker className={`${prop === 'meetWhen' ? 'bPadVerS bmw50' : 'bPadVerM'} w100   thickBors aliEnd flexCen`}>
+						<weekdays-picker ref={dayPickerRef} className={`${prop === 'meetWhen' ? 'bPadVerS bmw50' : 'bPadVerM'} w100   thickBors aliEnd flexCen`}>
 							{getWeekDays().map(({ label, date }, i) => (
 								<button
 									style={{ width: '100%', ...(daysWidth && { maxWidth: `${daysWidth}px` }) }}
@@ -527,7 +533,7 @@ const DateTimePicker = props => {
 
 							{/* HOUR SELECTION GRID --- */}
 							{/* Interactive hour blocks filtered by availability and timeframe */}
-							<hour-picker className="flexCen posRel w100  marAuto wrap">
+							<hour-picker ref={hourPickerRef} className="flexCen posRel w100  marAuto wrap">
 								{Array.from({ length: noAmPm ? 24 : 12 }, (_, i) => i)
 									.filter(hoursFilter)
 									.map((b, i) => {
@@ -549,7 +555,7 @@ const DateTimePicker = props => {
 							{/* MINUTE SELECTION GRID --- */}
 							{/* Quick access to 15-minute intervals for efficient time entry */}
 							{hour !== null && (
-								<minute-picker className="flexCen borBotLight posRel  w100 marAuto wrap">
+								<minute-picker ref={minutePickerRef} className="flexCen borBotLight posRel  w100 marAuto wrap">
 									{Array.from({ length: 4 }, (_, i) => i * 15)
 										.filter(minutesFilter)
 										.map((b, i) => (

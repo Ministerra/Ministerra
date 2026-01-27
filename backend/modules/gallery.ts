@@ -74,7 +74,7 @@ const buildQuery = ({ mode, sort, devIsStable }: { mode: string; sort: string; d
 	const base = `SELECT ${eveCols},${needsInters ? 'ei.inter,ei.priv interPriv,' : ''}c.city FROM events e LEFT JOIN cities c ON e.cityID=c.id ${
 		needsInters ? 'LEFT JOIN eve_inters ei ON e.id=ei.event AND ei.user=?' : ''
 	}`;
-	const when = isPast ? 'e.starts<NOW()' : 'e.starts>=NOW()';
+	const when = isPast ? '(e.ends < NOW() OR (e.ends IS NULL AND e.starts < NOW()))' : '(e.ends >= NOW() OR (e.ends IS NULL AND e.starts >= NOW()))';
 	const flagFilter = `e.flag != 'del'`;
 	const cond = mode.includes('Own')
 		? `${when} AND ${flagFilter} AND e.owner=?`
@@ -112,6 +112,7 @@ const buildParams = ({ mode, userID, sort, devIsStable, eventID }: GalleryReques
 
 const logger = getLogger('Gallery');
 const MAX_OFFSET = 10000;
+
 
 // GALLERY HANDLER -------------------------------------------------------------
 // Steps: validate offset, branch special modes (deletePast), build query+params, execute, apply privacy filter only for event lists that require it, then return rows.

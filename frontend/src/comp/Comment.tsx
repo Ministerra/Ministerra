@@ -54,7 +54,7 @@ function Comment(props) {
 		if (depth !== 0) return;
 		const handleNewReply = async e => {
 			if (String(e.detail?.parentCommentId) !== String(comment.id)) return;
-			(comment.replies = (comment.replies || 0) + 1), setStatus(prev => ({ ...prev, replies: comment.replies }));
+			((comment.replies = (comment.replies || 0) + 1), setStatus(prev => ({ ...prev, replies: comment.replies })));
 			if (repliesExpanded) await superMan({ mode: 'getReplies', comment, parent: comment, depth: 0 });
 		};
 		window.addEventListener('reply:new', handleNewReply);
@@ -67,25 +67,13 @@ function Comment(props) {
 	}, [showingMenuCommID]);
 
 	return (
-		<comment-container
-			ref={commentContainerRef}
-			class={` ${modes.protocol ? 'shaCon borderLight' : ''}  block ${modes.textArea || modes.actions ? ' marTopS boRadXs ' : ''} ${depth > 0 ? 'marLefXl ' : ' '} ${
-				modes.replies === true ? `${depth === 0 ? ' marBotL boRadM marVerXs ' : depth === 1 ? 'marBotM' : ''}` : ''
-			} ${depth === 0 ? 'shaComment' : depth === 1 ? `borBotLight` : ''} ${depth === 2 && isFirst ? 'marTopS' : ''} ${modes.menu ? 'borderLight boRadXs' : ''} posRel boRadXxs zin10`}>
+		<comment-container ref={commentContainerRef} class={` ${modes.protocol ? 'shaCon borderLight' : ''}  block ${modes.textArea || modes.actions ? ' marTopS boRadXs ' : ''} ${depth > 0 ? 'marLefXl ' : ' '} ${modes.replies === true ? `${depth === 0 ? ' marBotL boRadM marVerXs ' : depth === 1 ? 'marBotM' : ''}` : ''} ${depth === 0 ? 'shaComment' : depth === 1 ? `borBotLight` : ''} ${depth === 2 && isFirst ? 'marTopS' : ''} ${modes.menu ? 'borderLight boRadXs' : ''} posRel boRadXxs zin10`}>
 			<comment-body class={` ${modes.protocol ? 'fPadHorXxs' : ''} bHover ${depth === 0 ? 'bgTrans ' : depth === 1 ? 'padVerXxs' : 'padVerXxxs'} flexRow boRadXs posRel`}>
-				{depth === 1 && <div style={{ left: '10px', top: '-5rem' }} className='bDarkBlue maskLow zin1 opacityXs wr2 h100 posAbs'></div>}
+				{depth === 1 && <div style={{ left: '10px', top: '-5rem' }} className="bDarkBlue maskLow zin1 opacityXs wr2 h100 posAbs"></div>}
 
 				{/* USER AVATAR --- */}
-				<img-wrapper
-					onClick={e => (e.stopPropagation(), man({ mode: 'menu' }))}
-					class={`${
-						depth === 0 ? 'mw14 marRigM miw5 w25 ' : depth === 1 ? 'marRigM marLefXs mw8 miw4 w20 zinMax' : 'w14 marRigM bgTrans marLefS shaCon mw7 miw3'
-					} posRel textAli bHover zinMaXl selfStart`}>
-					<img
-						className={`aspect1610 bhover w100 ${modes.menu ? 'bsContentGlow borBot8' : ''} boRadXs borderLight posRel shaComment zinMaXl `}
-						src={comment.imgVers ? `${import.meta.env.VITE_BACK_END}/public/users/${comment.user}_${comment.imgVers}S.webp` : '/icons/placeholder169.png'}
-						alt=''
-					/>
+				<img-wrapper onClick={e => (e.stopPropagation(), man({ mode: 'menu' }))} class={`${depth === 0 ? 'mw14 marRigM miw5 w25 ' : depth === 1 ? 'marRigM marLefXs mw8 miw4 w20 zinMax' : 'w14 marRigM bgTrans marLefS shaCon mw7 miw3'} posRel textAli bHover zinMaXl selfStart`}>
+					<img className={`aspect169 bhover w100 ${modes.menu ? 'bsContentGlow borBot8' : ''} boRadXs borderLight posRel shaComment zinMaXl `} src={comment.imgVers ? `${import.meta.env.VITE_BACK_END}/public/users/${comment.user}_${comment.imgVers}S.webp` : '/icons/placeholder169.png'} alt="" />
 				</img-wrapper>
 
 				{/* INTERACTIVE OVERLAYS --- */}
@@ -95,40 +83,27 @@ function Comment(props) {
 				</action-divs>
 
 				{/* COMMENT CONTENT --- */}
-				<texts-div class='flexCol justCen posRel selfCen w100 '>
+				<texts-div class="flexCol justCen posRel selfCen w100 ">
 					<p>
-						<span className={`${depth === 0 ? 'fs9 lh1-3 boldM ' : depth === 1 ? 'fs9 lh1-3 boldM ' : 'fs8 lh0-8 bold '} tDarkBlue marRigS `}>
-							{(comment.first || brain.user.first) + ' ' + (comment.last || brain.user.last)}
-						</span>
+						<span className={`${depth === 0 ? 'fs9 lh1-3 boldM ' : depth === 1 ? 'fs9 lh1-3 boldM ' : 'fs8 lh0-8 bold '} tDarkBlue marRigS `}>{(comment.first || brain.user.first) + ' ' + (comment.last || brain.user.last)}</span>
 						<ContentIndis status={status} superMan={man} isCardOrStrip={true} brain={brain} obj={comment} thisIs={'comment'} />
 						{mention && (
 							<>
-								<span onClick={() => setShowMentionContent(!showMentionContent)} className='tBlue pointer inline lh1 boldM fs8 marRigXs marLefS'>{`@${
-									mention.first || brain.user.first
-								} ${mention.last || brain.user.last}`}</span>
-								<span className='tBlue lh1 inline fs8'>{mention.content.slice(0, !showMentionContent ? 100 : undefined)}</span>
+								<span onClick={() => setShowMentionContent(!showMentionContent)} className="tBlue pointer inline lh1 boldM fs8 marRigXs marLefS">{`@${mention.first || brain.user.first} ${mention.last || brain.user.last}`}</span>
+								<span className="tBlue lh1 inline fs8">{mention.content.slice(0, !showMentionContent ? 100 : undefined)}</span>
 							</>
 						)}
 					</p>
-					<span className={` ${depth === 0 ? 'fsB boldXxs textSha' : depth === 1 ? 'fsA boldXxs' : 'fs7'} lh1 ${comment.flag === 'del' ? 'tRed boldXs' : ''} `}>
-						{comment.flag === 'del' ? 'Komentář byl smazán uživatelem' : comment.content}
-					</span>
+					<span className={` ${depth === 0 ? 'fsB boldXxs textSha' : depth === 1 ? 'fsA boldXxs' : 'fs7'} lh1 ${comment.flag === 'del' ? 'tRed boldXs' : ''} `}>{comment.flag === 'del' ? 'Komentář byl smazán uživatelem' : comment.content}</span>
 					{depth < 2 && status.replies > 0 && (
 						<button
-							onClick={e => (
-								e.stopPropagation(),
-								(comment.cursors === 'gotAll' && (comment.repliesData?.length || 0) >= status.replies) || (comment.repliesData?.length && !modes.replies)
-									? man({ mode: 'toggleReplies' })
-									: man({ mode: 'getReplies' })
-							)}
-							className={`grow w100 ${depth === 0 ? `${modes.replies !== true ? 'mw20' : 'mw30'} fsB padVeXxs marTopXs ` : 'fsA marTopXs boldXs mw20'} ${
-								modes.replies !== true ? 'bold' : ' tRed bGlassSubtle xBold'
-							} posRel padVerXxs zinMaXl bHover`}>
+							onClick={e => (e.stopPropagation(), (comment.cursors === 'gotAll' && (comment.repliesData?.length || 0) >= status.replies) || (comment.repliesData?.length && !modes.replies) ? man({ mode: 'toggleReplies' }) : man({ mode: 'getReplies' }))}
+							className={`grow w100 ${depth === 0 ? `${modes.replies !== true ? 'mw20' : 'mw30'} fsB padVeXxs marTopXs ` : 'fsA marTopXs boldXs mw20'} ${modes.replies !== true ? 'bold' : ' tRed bGlassSubtle xBold'} posRel padVerXxs zinMaXl bHover`}>
 							{modes.replies === true ? `Sbalit (${status.replies})` : `${status.replies} odpovědí`}
 						</button>
 					)}
 				</texts-div>
-				<span onClick={() => man({ mode: 'menu' })} className=' boRadXxs fs7 boldXs posRel padHorXs flexRow aliCen tGrey posAbs topRight boRadXxs noBackground miw3 inlineBlock selfStart '>
+				<span onClick={() => man({ mode: 'menu' })} className=" boRadXxs fs7 boldXs posRel padHorXs flexRow aliCen tGrey posAbs topRight boRadXxs noBackground miw3 inlineBlock selfStart ">
 					{humanizeDateTime({ dateInMs: comment.created, getGranularPast: true })}
 				</span>
 			</comment-body>
@@ -143,15 +118,8 @@ function Comment(props) {
 			{/* NESTED REPLIES --- */}
 			{modes.replies === true && (
 				<replies-wrapper class={`${depth === 0 ? 'gapXxxs padLefM' : 'gapXxxs '} posRel overflow flexCol `}>
-					{depth === 1 && <div style={{ left: 'clamp(5vw, 8vh, 30px)', zIndex: -1 }} className='bBlue opacityS wr0-2 maskLowXs h100 posAbs upLittle'></div>}
-					{(!curSyncMode
-						? sortedReplies
-						: canOrder
-						? sortedReplies.filter(c =>
-								sortBy === 'recent' ? c.id >= cursOrOffset || (c.own && c.created > comment.repliesSyncedAt) : c.id <= cursOrOffset || (c.own && c.created > comment.repliesSyncedAt)
-						  )
-						: sortedReplies.slice(0, cursOrOffset || 0)
-					).map((comm, i) => (
+					{depth === 1 && <div style={{ left: 'clamp(5vw, 8vh, 30px)', zIndex: -1 }} className="bBlue opacityS wr0-2 maskLowXs h100 posAbs upLittle"></div>}
+					{(!curSyncMode ? sortedReplies : canOrder ? sortedReplies.filter(c => (sortBy === 'recent' ? c.id >= cursOrOffset || (c.own && c.created > comment.repliesSyncedAt) : c.id <= cursOrOffset || (c.own && c.created > comment.repliesSyncedAt))) : sortedReplies.slice(0, cursOrOffset || 0)).map((comm, i) => (
 						<Comment
 							key={comm.id}
 							{...{
@@ -174,8 +142,8 @@ function Comment(props) {
 				</replies-wrapper>
 			)}
 			{curSyncMode && modes.replies === true && sortedReplies?.length > 0 && sortedReplies.length % 20 === 0 && (
-				<replies-controls class='flexRow'>
-					<button onClick={e => (e.stopPropagation(), man({ mode: 'getReplies' }))} className='bBottom bBottom--green grow marBotXs zinMax w40 mw30 fsB border bold padVerXxs '>
+				<replies-controls class="flexRow">
+					<button onClick={e => (e.stopPropagation(), man({ mode: 'getReplies' }))} className="bBottom bBottom--green grow marBotXs zinMax w40 mw30 fsB border bold padVerXxs ">
 						Načíst další
 					</button>
 				</replies-controls>

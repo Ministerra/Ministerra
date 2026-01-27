@@ -64,7 +64,7 @@ function AlertStrip(props) {
 		if (c.may) parts.push(`${c.may >= 0 ? '+' : ''}${c.may} možná`);
 		if (c.int) parts.push(`${c.int >= 0 ? '+' : ''}${c.int} sledují`);
 		subtitle = parts.join('  ');
-	} else if (what === 'eve_rating') subtitle = typeof data?.points === 'number' ? `Získala ${data.points >= 0 ? '+' : ''}${data.points} nových bodů!` : data?.title || '';
+	} else if (what === 'eve_rating') subtitle = typeof data?.points === 'number' ? `${data.points >= 0 ? '+' : ''}${data.points} nových bodů!` : data?.title || '';
 	else if (what === 'user_rating') subtitle = typeof data?.points === 'number' || typeof data?.counts === 'number' ? `Získal${fullName ? 'a' : ''} ${(data.points ?? data.counts) >= 0 ? '+' : ''}${data.points ?? data.counts} nových bodů!` : '';
 	else if (what === 'comm_rating') subtitle = data?.content || '';
 	else if (what === 'invite') subtitle = isOutgoingInvite ? (inviteFlagComputed === 'acc' ? 'Pozvánka přijata' : inviteFlagComputed === 'ref' ? 'Pozvánka odmítnuta' : inviteFlagComputed === 'del' ? 'Pozvánka zrušena' : '') : (data?.note || '').trim() || data?.title || '';
@@ -165,20 +165,19 @@ function AlertStrip(props) {
 				{/* LEFT IMAGE --- */}
 				<image-wrapper class={'posRel w25 mw14 miw8 marRigM'}>
 					<img className={'w100 aspect168 boRadXxs'} src={thumbUrl} alt="" />
-					<img className={'zinMaXl bgWhite mw5 posAbs bInsetBlueTopXs  cornerBotRightM padAllXxs boRadM bgTrans aspect1612  boRadXxs'} src={`/icons/alerts/${what === 'message' || what === 'newChat' ? 'comment' : what}.png`} alt="" />
+					<img className={'zinMaXl bgTrans borWhite mw5 posAbs bInsetBlueTopXs  cornerTopLeft padAllXxxs boRadM bgTrans aspect1612  boRadXxs'} src={`/icons/alerts/${what === 'message' || what === 'newChat' ? 'comment' : what}.png`} alt="" />
 				</image-wrapper>
 
 				{/* RIGHT CONTENT --- */}
 				<right-side class={`h100 flexCol padRightS justCen ${!isToast ? '' : 'padTopXxxs'}`}>
-					<first-row class="flexRow gapXxs fs6 tGrey wrap w100">
-						{createdText}
-						<span className=" fs6 ">{typeNode}</span>
-					</first-row>
-					<span className="boldM lh1 textSha marRigXxs fs12 wordBreak ">{targetNode}</span>
-					<second-row class="flexRow aliCen wrap textLeft">
+					<span className="textSha marRigXxs fs14 wordBreak ">{targetNode}</span>
+					<second-row class="flexRow aliCen gapXxs wrap textLeft">
+						<span className=" fs8 textSha  xBold tDarkBlue ">{typeNode}</span>
 						{subtitleNode}
 						{originalNode}
 					</second-row>
+					<first-row class="flexRow gapXxs fs6 tGrey wrap w100"> {createdText}</first-row>
+
 					{status.inter || status.refused || status.accepted ? <ContentIndis status={{ alertAccepted: Boolean(status.inter || status.accepted), alertRefused: status.refused === true }} thisIs={'alert'} isCardOrStrip={true} brain={brain} obj={{}} /> : null}
 				</right-side>
 			</strip-body>

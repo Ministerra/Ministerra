@@ -19,10 +19,7 @@ function SortMenu(props) {
 		bWidth = useCentralFlex('sortMenu', [mode, hideSort.length], null, visibleItems.length);
 
 	return (
-		<sort-menu
-			class={`fadingIn ${fadedIn.includes('SortMenu') || mode === 'content' ? 'fadedIn ' : ''} ${isGallery ? 'posRel boRadS overHidden upLittle mw110 fsC ' : ''}  ${
-				mode === 'discussion' ? 'mw60   w90  ' : mode === 'content' ? '  posRel marTopS w100 ' : 'bPadVerM'
-			}  flexCen  posRel marAuto bInsetBlueTop     `}>
+		<sort-menu class={`fadingIn ${fadedIn.includes('SortMenu') || mode === 'content' ? 'fadedIn ' : ''} ${isGallery ? 'posRel boRadS overHidden upLittle mw110 fsC ' : ''}  ${mode === 'discussion' ? 'mw60   w90  ' : mode === 'content' ? '  posRel marTopS w100 ' : 'bPadVerM'}  flexCen  posRel marAuto bInsetBlueTop     `}>
 			{visibleItems.map((b, i) => {
 				const eng = src[targetProp].en[src[targetProp].cz.indexOf(b)],
 					isSelected = Array.isArray(selSort) ? selSort[0] === eng : selSort === eng;
@@ -32,16 +29,14 @@ function SortMenu(props) {
 						name={b}
 						style={{ maxWidth: bWidth }}
 						onClick={async () => {
-							if (isGallery || mode === 'content') superMan('sort', eng), mode === 'content' && setShow(prev => ({ ...prev, sorts: false }));
+							if (isGallery || mode === 'content') (superMan('sort', eng), mode === 'content' && setShow(prev => ({ ...prev, sorts: false })));
 							else if (mode !== 'discussion' && selSort !== eng) superMan('selSort', eng);
 							else {
 								if (eng === '+replies') superMan({ mode: 'selSort', sort: 'replies' });
 								else selSort[0] !== eng && superMan({ mode: 'selSort', sort: eng });
 							}
 						}}
-						className={`${isSelected || (eng === '+replies' && selSort[1]) ? '  fs20  bBlue tWhite borTop   posRel  xBold' : '   textSha fs12 '} grow  h100 ${
-							mode === 'discussion' ? 'bHover padVerXxs' : 'hvw10 mh5'
-						}  grow bgTransXs borTopLight `}>
+						className={`${isSelected || (eng === '+replies' && selSort[1]) ? '  fs16  bBlue tWhite borTop   posRel  xBold' : '   textSha fs12 '} grow  h100 ${mode === 'discussion' ? 'bHover padVerXxs' : 'hvw10 mh5'}  grow bgTransXs borTopLight `}>
 						{isGallery && selSort === eng ? 'zpátky' : b}
 					</button>
 				);

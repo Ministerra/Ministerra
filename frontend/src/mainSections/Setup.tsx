@@ -64,7 +64,7 @@ const Setup = () => {
 		[data, setData] = useState(() => {
 			if (isIntroduction && sessionStorage.getItem('registrationData')) {
 				const storedData = JSON.parse(sessionStorage.getItem('registrationData'));
-				return delete storedData.section, storedData;
+				return (delete storedData.section, storedData);
 			} else return { ...loaderData, cities: loaderData.cities?.map(city => brain.cities.find(c => c.cityID === city) || city) || [] };
 		}),
 		[inform, setInform] = useState([]),
@@ -101,8 +101,7 @@ const Setup = () => {
 		(async () => {
 			window.scrollTo(0, 0);
 			const [token, expiry] = (isIntroduction ? sessionStorage.getItem('authToken')?.split(':') : (await forage({ mode: 'get', what: 'token' }))?.split(':')) || [];
-			if (!token || Date.now() > Number(expiry))
-				return isIntroduction ? sessionStorage.removeItem('authToken') : await forage({ mode: 'del', what: 'token' }), navigate('/entrance?mess=unauthorized');
+			if (!token || Date.now() > Number(expiry)) return (isIntroduction ? sessionStorage.removeItem('authToken') : await forage({ mode: 'del', what: 'token' }), navigate('/entrance?mess=unauthorized'));
 			else if (!isIntroduction) man();
 		})();
 	}, []);
@@ -133,10 +132,13 @@ const Setup = () => {
 						if (!fieldVal) return issues.push(field === 'first' ? 'noFirstName' : 'noLastName');
 						if (fieldVal.length < 2) issues.push(field === 'first' ? 'shortFirstName' : 'shortLastName');
 					});
-					if (!targetData.birth) issues.push('noBirthDate');
+					if (!targetData.birth && !targetData.age) issues.push('noBirthDate');
 					else {
-						const birthDate = new Date(targetData.birth);
-						const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+						let age = targetData.age;
+						if (targetData.birth) {
+							const birthDate = new Date(targetData.birth);
+							age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+						}
 						if (age < 13) issues.push('tooYoung');
 					}
 					if (!targetData.gender) issues.push('noGender');
@@ -171,7 +173,7 @@ const Setup = () => {
 
 			if (['changeMail', 'changePass', 'changeBoth'].includes(inp)) {
 				await axios.post('/entrance', { mode: inp, pass: data.pass, newEmail: data.newEmail, ...(inp === 'changeMail' && { hasAccessToCurMail: data.hasAccessToCurMail ?? true }) });
-				sessionStorage.removeItem('authToken'), clearSensitiveFields();
+				(sessionStorage.removeItem('authToken'), clearSensitiveFields());
 				return setInform(prev => [...prev, `${inp}MailSent`]);
 			}
 
@@ -205,7 +207,7 @@ const Setup = () => {
 
 			// NOTE: Don't join arrays before sending - backend expects arrays.
 			// splitStrgOrJoinArr is only used for local storage after response.
-			delete payload.age, delete payload.imgVers;
+			(delete payload.age, delete payload.imgVers);
 			const payloadCities = payload.cities as any[] | undefined;
 			if (payloadCities?.length) {
 				const payloadCityIds = payloadCities.map(city => city.cityID || city).sort();
@@ -247,7 +249,7 @@ const Setup = () => {
 				// Skip for introduction - DEK encryption may not be ready; foundationLoader handles cities on init.
 				if (!isIntroduction) {
 					const miscel = (await forage({ mode: 'get', what: 'miscel' })) || {};
-					(miscel.initLoadData = { ...(miscel.initLoadData || {}), cities: payload.cities }), await forage({ mode: 'set', what: 'miscel', val: miscel });
+					((miscel.initLoadData = { ...(miscel.initLoadData || {}), cities: payload.cities }), await forage({ mode: 'set', what: 'miscel', val: miscel }));
 				}
 			}
 
@@ -255,32 +257,29 @@ const Setup = () => {
 			// User is fully authenticated (PDK derived, device registered, cookies set during Welcome).
 			// Navigate directly into the app.
 			if (isIntroduction) {
-				sessionStorage.removeItem('registrationData'), sessionStorage.removeItem('authToken'), sessionStorage.removeItem('introEmail');
+				(sessionStorage.removeItem('registrationData'), sessionStorage.removeItem('authToken'), sessionStorage.removeItem('introEmail'));
 				const userID = introCredentials?.userID;
 				// SET USER DATA ---
 				const cityIDs = ((payload.cities || []) as any[]).map(Number);
 				// CLEAN UP INTRODUCTION-ONLY FIELDS ---
 				// Calculate age from birth, then remove birth/image/print from payload before assigning to user.
 				if (payload.birth) payload.age = calculateAge(payload.birth as string);
-				delete payload.birth, delete payload.image, delete payload.print, delete payload.cities;
+				(delete payload.birth, delete payload.image, delete payload.print, delete payload.cities);
 				Object.assign(brain.user, { id: userID, cities: cityIDs, curCities: cityIDs, ...payload });
-				delete brain.user.isUnintroduced, delete brain.fastLoaded, (brain.isAfterLoginInit = true);
+				(delete brain.user.isUnintroduced, delete brain.fastLoaded, (brain.isAfterLoginInit = true));
 				await forage({ mode: 'set', what: 'user', val: brain.user });
 
 				return navigate('/');
 			}
 
-			(payload.age = data.age), delete payload.birth, delete payload.image;
-			Object.assign(brain.user, splitStrgOrJoinArr(payload, 'split')), await forage({ mode: 'set', what: 'user', val: brain.user });
+			((payload.age = data.age), delete payload.birth, delete payload.image);
+			(Object.assign(brain.user, splitStrgOrJoinArr(payload, 'split')), await forage({ mode: 'set', what: 'user', val: brain.user }));
 
 			// SUCCESS UI + DELAYED NAVIGATION ------------------------------------------------
 			// Show success state in the button, disable it, and navigate away after 2 seconds.
 			setSaveButtonState('success');
 			saveButtonTimeout.current && clearTimeout(saveButtonTimeout.current);
-			saveButtonTimeout.current = setTimeout(
-				() => (isIntroduction || brain.fastLoaded ? (delete brain.fastLoaded, window.history.replaceState({}, '', '/'), loader.load('/')) : navigate(-1)),
-				2000
-			);
+			saveButtonTimeout.current = setTimeout(() => (isIntroduction || brain.fastLoaded ? (delete brain.fastLoaded, window.history.replaceState({}, '', '/'), loader.load('/')) : navigate(-1)), 2000);
 		} catch (err) {
 			const errorData = err.response?.data;
 			const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
@@ -303,32 +302,19 @@ const Setup = () => {
 			{!isIntroduction && (
 				<cat-bs class={` flexCen marAuto posRel bInsetBlue thickBors  padTopXl  w100`}>
 					{['profile', 'advanced'].map(m => (
-						<button
-							key={m}
-							onClick={() =>
-								!inform.length ? setMode(m) : (setInform(prev => ['somethingsWrong', ...prev]), setTimeout(() => setInform(prev => prev.filter(w => w !== 'somethingsWrong')), 2000))
-							}
-							className={` ${mode === m ? 'bBlue boRadXs borBot8 arrowDown posRel tWhite xBold ' : ' bgTransXxs  bGlassSubtle'} textSha fs12  mw60  bHover grow tSha10 hvw2 mih4`}>
+						<button key={m} onClick={() => (!inform.length ? setMode(m) : (setInform(prev => ['somethingsWrong', ...prev]), setTimeout(() => setInform(prev => prev.filter(w => w !== 'somethingsWrong')), 2000)))} className={` ${mode === m ? 'bBlue boRadXs borBot8 arrowDown posRel tWhite xBold ' : ' bgTransXxs  bGlassSubtle'} textSha fs12  mw60  bHover grow tSha10 hvw2 mih4`}>
 							{m === 'profile' ? 'Základní' : m === 'advanced' ? 'Pokročilé' : m === 'blocks' ? 'Bloknutí' : 'Platforma'}
 						</button>
 					))}
-					{inform.includes('somethingsWrong') && (
-						<span className='bDarkRed  shaBot tSha10 textAli inlineBlock pointer marAuto posAbs botCen moveDown zinMax  selfEnd tWhite padAllXs w100 mw80 boRadS xBold fs7'>
-							Nedříve oprav chyby v této sekci
-						</span>
-					)}
+					{inform.includes('somethingsWrong') && <span className="bDarkRed  shaBot tSha10 textAli inlineBlock pointer marAuto posAbs botCen moveDown zinMax  selfEnd tWhite padAllXs w100 mw80 boRadS xBold fs7">Nedříve oprav chyby v této sekci</span>}
 				</cat-bs>
 			)}
-			{!isIntroduction && <blue-divider class='hr5  zin1 block bInsetBlueTopXl borTop bgTrans w100 mw120 marAuto posRel' />}
+			{!isIntroduction && <blue-divider class="hr5  zin1 block bInsetBlueTopXl borTop bgTrans w100 mw120 marAuto posRel" />}
 			<sections-wrapper class={'block '}>
 				{/* PROFILE SETUP CATEGORY WRAPPER  -----------------------------------------------*/}
-				{(isIntroduction || mode === 'profile') && (
-					<ProfileSetup {...{ inform, setInform, isIntroduction, superMan: man, brain, nowAt, fadedIn, visibleSections, curSection, data, introCredentials }} />
-				)}
+				{(isIntroduction || mode === 'profile') && <ProfileSetup {...{ inform, setInform, isIntroduction, superMan: man, brain, nowAt, fadedIn, visibleSections, curSection, data, introCredentials }} />}
 				{/* ADVANCED SETUP SECTION ------------------------------------------------------ */}
-				{mode === 'advanced' && (
-					<AdvancedSetup {...{ data, loaderData, superMan: man, brain, nowAt, inform, setInform, passRef, email, setEmail, changeWhat, setChangeWhat, selDelFreeze, setSelDelFreeze }} />
-				)}
+				{mode === 'advanced' && <AdvancedSetup {...{ data, loaderData, superMan: man, brain, nowAt, inform, setInform, passRef, email, setEmail, changeWhat, setChangeWhat, selDelFreeze, setSelDelFreeze }} />}
 
 				{/* BIG BUTTON FOR sSAVING OR MOVING TO NEXT SECTION ----------------------------- */}
 				{!isIntroduction && (
@@ -336,22 +322,12 @@ const Setup = () => {
 						nowAt={nowAt}
 						superMan={man}
 						disabled={saveButtonState !== 'idle'}
-						text={
-							saveButtonState === 'saving'
-								? 'Ukládám změny...'
-								: saveButtonState === 'success'
-								? 'Uloženo'
-								: saveButtonState === 'error'
-								? 'Uložení selhalo'
-								: inform.length > 0 && mode === 'profile'
-								? 'Oprav chyby v této sekci'
-								: 'Uložit změny a odejít'
-						}
-						className={` posFix botCen ${saveButtonState === 'error' ? 'bRed' : 'bDarkGreen'}`}
+						text={saveButtonState === 'saving' ? 'Ukládám změny...' : saveButtonState === 'success' ? 'Uloženo' : saveButtonState === 'error' ? 'Uložení selhalo' : inform.length > 0 && mode === 'profile' ? 'Oprav chyby v této sekci' : 'Uložit změny a odejít'}
+						className={` posFix botCen ${saveButtonState === 'error' || (saveButtonState === 'idle' && inform.length > 0 && mode === 'profile') ? 'bRed' : 'bDarkGreen'}`}
 					/>
 				)}
 
-				{!isIntroduction && <empty-div class='block hvh10 mih16'></empty-div>}
+				{!isIntroduction && <empty-div class="block hvh10 mih16"></empty-div>}
 			</sections-wrapper>
 		</setup-comp>
 	);

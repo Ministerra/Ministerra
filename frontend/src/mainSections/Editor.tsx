@@ -401,25 +401,21 @@ function Editor(props: any) {
 								e.stopPropagation();
 								setShowCropper(true);
 							}}
-							className="posAbs topRight marTopM marRigM zinMenu bDarkBlue tWhite padAllXs boRadS pointer xBold shaCon fs14">
+							className="posAbs botCen  marBotXs zinMenu bgTransXs  padAllXxs boRadXxs padHorM pointer xBold shaCon fs9">
 							Upravit fotku
 						</button>
 					)}
 				</div>
 			)}
 			{data.id && showCropper && (
-				<div className={`fadingIn ${fadedIn.includes('Cropper') ? 'fadedIn' : ''} mw180 w100 marAuto marTopXxl`}>
-					<div className="posRel marBotXxs block">
-						<span className="boldM block textSha marBotXxxs opacityL fs16 tDarkBlue">Úprava fotky</span>
-					</div>
-					<div className="hr0-3 zin1 block borRed bInsetBlueTopXl borTop bgTrans w80 mw30 marAuto" />
+				<div className={`fadingIn ${fadedIn.includes('Cropper') ? 'fadedIn' : ''} marBotXxl mw180 posRelw100 marAuto`}>
 					<ImageCropper data={data} superMan={man} nowAt={nowAt} image={image} />
 					<button
 						onClick={() => {
 							man('image', null);
 							setShowCropper(false);
 						}}
-						className="marTopM bDarkRed tWhite padAllXs boRadS pointer xBold shaCon block marAuto fs14">
+						className=" zinMenu bDarkRed tWhite padAllXxs boRadXxs pointer boldS padHorXl shaCon block marAuto fs8">
 						Zrušit úpravy
 					</button>
 				</div>
@@ -427,9 +423,9 @@ function Editor(props: any) {
 
 			{/* MENU BUTTON -------------------------------------------------*/}
 			{event && (
-				<editor-menu class={`zinMenu  marAuto marTopXs   block  ${modes.menu ? 'marBotXxxl' : ''}`}>
-					<menu-comp onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, menu: !prev.menu, invite: false })))} class={` flexCol w100`}>
-						<menu-button class={`${modes.menu ? 'bDarkBlue tWhite' : ''}  shaBlue  bHover pointer flexCen aliCen xBold textSha justCen fs12 boRadXxs miw32 mw60 marAuto bgTrans padVerXxxs zinMaXl  posRel padHorS bold`}>
+				<editor-menu class={`zinMenu  marAuto marTopM   block   ${modes.menu ? 'marBotXxxl' : ''}`}>
+					<menu-comp onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, menu: !prev.menu, invite: false })))} class={`  flexCol w100`}>
+						<menu-button class={`${modes.menu ? 'bDarkBlue tWhite' : ''} borWhite  shaBlue  bHover pointer flexCen aliCen xBold textSha justCen fs12 boRadXxs miw32 mw60 marAuto bgTrans padVerXxxs zinMaXl  posRel padHorS `}>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w100 marRigXs mw3">
 								<path fillRule="evenodd" d="M4 5h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2z" clipRule="evenodd" />
 							</svg>
@@ -497,7 +493,7 @@ function Editor(props: any) {
 
 							<blue-divider class="hr8 posAbs topCen zin1 block  bInsetBlueTopXs2  bgTrans w80 mw140 marAuto" />
 							<span className="xBold block textSha marBotXxs marTopXl opacityL fs16 tDarkBlue">Místo či oblast setkání</span>
-							<span className="fs10 inlineBlock marBotXxs textSha opacityL">
+							<span className="fs9 inlineBlock marBotXxs textSha opacityL">
 								<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
 							</span>
 
@@ -520,7 +516,7 @@ function Editor(props: any) {
 							{(!isQuick || data.locaMode) && <LocationPicker data={data} brain={brain} superMan={man} nowAt={'editor'} isEditing={!!event} isFriendly={data.type?.startsWith('a')} eventCity={event?.cityID} inform={inform} />}
 							{/* SAME CITY WARNING FOR RADIUS/EXACT MODES ------------------------------------------- */}
 							{!!event && data.type?.startsWith('a') && (event?.cityID || data.city) && (
-								<span className="tRed fs10  wAuto inlineBlock   marAuto padBotXxs marTopXs  xBold block marBotXxxs textAli">
+								<span className="tRed fs9  wAuto inlineBlock   marAuto padBotXxs marTopXs  xBold block marBotXxxs textAli">
 									{data.locaMode === 'city' ? 'U přátelských setkání nelze město měnit' : 'Vyhledávání je omezeno na město'} {data.locaMode === 'city' ? '' : brain.cities.find(c => c.cityID === event?.cityID || c.cityID === data.cityID || c.hashID === data.cityID)?.city || (typeof data.city === 'string' ? data.city : data.city?.city)}
 								</span>
 							)}
@@ -531,7 +527,7 @@ function Editor(props: any) {
 						<title-descrip ref={titleSectionRef} class="block w100     posRel">
 							<info-texts class="posRel  marTopXxxl  block">
 								<span className="xBold block textSha marBotXxs marTopM opacityL fs16 tDarkBlue">Titulek a úvodní slovo</span>
-								<span className="fs10 inlineBlock marBotXxs textSha opacityL">
+								<span className="fs9 inlineBlock marBotXxs textSha opacityL">
 									<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
 								</span>
 							</info-texts>
@@ -568,17 +564,17 @@ function Editor(props: any) {
 
 					{/* EXTRAS-ADD ---------------------------------------------- */}
 					{!isQuick && ((data.type?.startsWith('a') && (data.city || data.cityID)) || data.title) && (
-						<extrafields-add class="    posRel  block mw150 marAuto w100">
+						<extrafields-add class="  marTopXxl  posRel  block mw150 marAuto w100">
 							<info-texts class="posRel padTopS marBotXs block">
-								<span className="xBold block textSha   opacityL fs16 tDarkBlue marBotXxxs">Volitelné informace</span>
+								<span className="xBold block textSha   opacityL fs16 tDarkBlue marBotXxs">Volitelné informace</span>
 								{/* SHORT DESCRIPTION-------------------------------------------- */}
-								<span className="fs10 inlineBlock marBotXxxs textSha opacityL">
+								<span className="fs9 inlineBlock marBotXxxs textSha opacityL">
 									<strong>Doporučujeme:</strong> Vyber si, které další informace chceš do popisku své události přidat.
 								</span>
 							</info-texts>
 							<extras-toggles class="w100   posRel  flexCen  marAuto flexCen wrap">
 								{extraFieldsSrc.cz.map((item, i) => (
-									<button key={item} name={extraFieldsSrc.en[i]} className={`${selExtraFields.includes(extraFieldsSrc.en[i]) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'xBold'} grow  fs10  shaComment bHover padHorS shaBlue padVerXxs bgTrans  posRel  `} onClick={() => man('extraFields', extraFieldsSrc.en[i])}>
+									<button key={item} name={extraFieldsSrc.en[i]} className={`${selExtraFields.includes(extraFieldsSrc.en[i]) ? 'xBold tSha10 bInsetBlueBotXl borTop2  boRadXxxs tWhite' : 'xBold'} grow  fs9  shaComment bHover padHorS shaBlue padVerXxs bgTrans  posRel  `} onClick={() => man('extraFields', extraFieldsSrc.en[i])}>
 										{item}
 									</button>
 								))}
@@ -594,7 +590,7 @@ function Editor(props: any) {
 								{selExtraFields.includes('meet') && (
 									<city-meet class="flexCol w100  marAuto">
 										<span className="fs16 tDarkBlue textSha inlineBlock  lh1 xBold">Kde a jak se potkáme?</span>
-										<span className="  fs10  marAuto marBotXs">
+										<span className="  fs9  marAuto marBotXs">
 											<strong className="  ">Doporučujeme:</strong> níže popsat místo a způsob setkání, tedy i jak se poznáte.
 										</span>
 										<DateTimePicker {...{ superMan: man, starts: meetWhen, prop: 'meetWhen', maxDate: data.starts, mode: 'week' }} />
@@ -629,8 +625,8 @@ function Editor(props: any) {
 					{(data.type?.startsWith('a') || data.title) && !event && !isQuick && data.type !== null && data.type !== undefined && (
 						<privacy-settings class={'flexCol  w100 '}>
 							<span className="boldM block textSha marBotXxs  opacityL fs16 tDarkBlue">Kdo událost uvidí?</span>
-							<span className="fs10 inlineBlock marBotXxs textSha opacityL">
-								<strong>Doporučujeme:</strong> napiš stručně jak by sis setkání představoval, koho bys rád potkal apod. Je to nepovinné, ale zvýší to tvé události úspěšnost.
+							<span className="fs9 inlineBlock marBotXxs textSha mw100 marAuto opacityL">
+								<strong>Důležité:</strong> <strong className="xBold tRed">Viditelnost později NELZE ZMĚNIT!</strong> Bez ohledu na toto nastavení, bude událost viditelná všem pozvaným (lze pozvat kohokoliv, i když nepatří do cílové skupiny (spojenci/důvěrníci ....)).
 							</span>
 
 							<privacy-buttons class="flexCen w100  bPadXs mw150 marAuto marTopXs shaComment borderBot thickBors shaComment gapXxs posRel">
@@ -646,7 +642,7 @@ function Editor(props: any) {
 								<div className="marTopXxl mw150 marAuto w100">
 									<title-texts className="marBotXs block borBotLight">
 										<span className="boldM block textSha marBotXxs opacityL fs16 tDarkBlue">{`${data.type?.startsWith('a') ? 'Jak s účastí počítáš?' : 'Dorazíš? A kdo Tvou účast uvidí?'}`}</span>
-										<span className="fs10 inlineBlock marBotXxs textSha opacityL">
+										<span className="fs9 inlineBlock marBotXxs textSha opacityL">
 											<strong>Důležité:</strong> {`${data.type?.startsWith('a') ? 'Na přátelských setkáních tvou účast uvidí všichni z cílové skupiny uživatelů' : ''}`}
 										</span>
 									</title-texts>
@@ -669,9 +665,9 @@ function Editor(props: any) {
 
 					{/* PENDING INVITATIONS FOR NEW EVENTS */}
 					{!event && (data.city || data.cityID) && data.type !== null && data.type !== undefined && (data.type?.startsWith('a') || data.title) && (
-						<pending-invitations class=" block marBotM">
-							<span className={`boldM block textSha marBotXxs ${!isQuick ? 'marTopXl' : ''} opacityL fs16 tDarkBlue`}>Rozeslání pozvánek</span>
-							<span className="fs10 inlineBlock  textSha opacityL">
+						<pending-invitations class=" block bInsetBlueTopXs2 posRel mw140 marAuto marBotXl">
+							<span className={`boldM block textSha marBotXxs ${!isQuick ? 'marTopM' : ''} opacityL fs16 tDarkBlue`}>Rozeslání pozvánek</span>
+							<span className="fs9 inlineBlock  textSha opacityL">
 								<strong>Doporučujeme:</strong> Vyhledej spojence a nebo důvěrníky a pozvi je na svoji událost.
 							</span>
 							<Invitations
@@ -710,7 +706,7 @@ function Editor(props: any) {
 							<span className="inlineBlock fs12 marBotXxxs">
 								Chceš nastavit <strong className="xBold w100">soukromí a pokročilé volby?</strong>
 							</span>
-							<button onClick={() => ((brain.editorData = data), navigate('editor'))} className="bInsetBlueTopXs posRel bBor2 fs10 inline xBold padHorXs mw30 marAuto tGreen">
+							<button onClick={() => ((brain.editorData = data), navigate('editor'))} className="bInsetBlueTopXs posRel bBor2 fs9 inline xBold padHorXs mw30 marAuto tGreen">
 								Přejít na plný formulář.
 							</button>
 						</full-redirect>

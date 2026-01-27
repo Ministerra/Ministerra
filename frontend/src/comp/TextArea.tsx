@@ -62,7 +62,7 @@ function TextArea(props) {
 			},
 			comment: async () => {
 				await superMan({ mode: content ? 'edit' : 'post', content: curContent });
-				if (!id && textArea.current) (textArea.current.innerText = ''), setCurContent('');
+				if (!id && textArea.current) ((textArea.current.innerText = ''), setCurContent(''));
 				setModes(prev => ({ ...prev, replies: !content && !prev.replies ? true : prev.replies, textArea: false }));
 			},
 		},
@@ -71,17 +71,7 @@ function TextArea(props) {
 		left: { message: content ? 'Zrušit editaci' : 'Zrušit odpověď', comment: content ? 'Zrušit editaci' : 'Zrušit odpověď' },
 		right: {
 			message: 'Potvrdit editaci',
-			comment: !id
-				? emptyDiscussion && !curContent.length
-					? 'Rozjeď diskuzi! Napiš komentář ...'
-					: !curContent.length
-					? 'Přispěj k diskuzi!'
-					: 'Zveřejnit komentář'
-				: content
-				? 'Potvrdit editaci'
-				: id
-				? 'Vložit odpověď'
-				: 'Vložit komentář',
+			comment: !id ? (emptyDiscussion && !curContent.length ? 'Rozjeď diskuzi! Napiš komentář ...' : !curContent.length ? 'Přispěj k diskuzi!' : 'Zveřejnit komentář') : content ? 'Potvrdit editaci' : id ? 'Vložit odpověď' : 'Vložit komentář',
 		},
 	};
 
@@ -116,7 +106,7 @@ function TextArea(props) {
 	const getPlaceholder = () => (isChatSetup ? 'povinná první zpráva' : thisIs === 'newMessage' ? 'Napiš svou zprávu ...' : 'Zde napiš svůj komentář ...');
 	const handleInput = e => {
 		if (disable) return;
-		if (isEmpty.current && textArea.current.innerText.length > 1) (textArea.current.innerText = textArea.current.innerText.slice(1)), (isEmpty.current = false);
+		if (isEmpty.current && textArea.current.innerText.length > 1) ((textArea.current.innerText = textArea.current.innerText.slice(1)), (isEmpty.current = false));
 		else if (isEmpty.current && textArea.current.innerText.length === 1) isEmpty.current = false;
 		else if (thisIs === 'newMessage' && !e.target.innerText.trim().length) isEmpty.current = true;
 
@@ -151,9 +141,9 @@ function TextArea(props) {
 		}
 
 		if ((content || thisIs === 'comment' || thisIs === 'message') && id && textAreaEl) {
-			if (!isMobile) window.scrollTo({ top: textAreaEl.offsetTop - 100, behavior: 'smooth' }), textAreaEl.focus({ preventScroll: true }); // SKIP SCROLL+FOCUS ON MOBILE ---------------------------
+			if (!isMobile) (window.scrollTo({ top: textAreaEl.offsetTop - 100, behavior: 'smooth' }), textAreaEl.focus({ preventScroll: true })); // SKIP SCROLL+FOCUS ON MOBILE ---------------------------
 			const [range, selection] = [document.createRange(), window.getSelection()];
-			range.selectNodeContents(textAreaEl), range.collapse(false), selection.removeAllRanges(), selection.addRange(range);
+			(range.selectNodeContents(textAreaEl), range.collapse(false), selection.removeAllRanges(), selection.addRange(range));
 		}
 
 		const handleBackspace = event => {
@@ -163,23 +153,19 @@ function TextArea(props) {
 				const range = selection.getRangeAt(0);
 				const parentNode = range.startContainer.parentNode;
 				const parentElement = parentNode as HTMLElement | null;
-				if (parentElement?.classList?.contains('blue-rectangle')) event.preventDefault(), parentElement.remove?.();
+				if (parentElement?.classList?.contains('blue-rectangle')) (event.preventDefault(), parentElement.remove?.());
 			}
 		};
-		if ((thisIs === 'newMessage' || id) && !isMobile) textAreaEl.focus({ preventScroll: true }), textAreaEl.innerText === getPlaceholder() && setTimeout(() => (textAreaEl.innerText = ''), 100); // SKIP AUTOFOCUS ON MOBILE ---------------------------
+		if ((thisIs === 'newMessage' || id) && !isMobile) (textAreaEl.focus({ preventScroll: true }), textAreaEl.innerText === getPlaceholder() && setTimeout(() => (textAreaEl.innerText = ''), 100)); // SKIP AUTOFOCUS ON MOBILE ---------------------------
 		textAreaEl.addEventListener('keydown', handleBackspace);
 		return () => textAreaEl?.removeEventListener('keydown', handleBackspace);
 	}, [menuView]);
 
 	return (
-		<text-area
-			key={id || 0}
-			class={` ${fadedIn.includes('TextArea') ? 'fadedIn' : ''} fadingIn  ${thisIs === 'message' ? 'bInsetBlueTop' : ''} ${
-				thisIs === 'newMessage' ? 'bInsetBlueTopXs2 marBotXxxs borderTop flexRow  ' : 'flexCol  '
-			} ${thisIs === 'comment' && id ? ' boRadXs bInsetBlueTopXs shaBlue border marBotL  w100' : 'w100'}  posRel   mw170  aliStretch marAuto  `}>
+		<text-area key={id || 0} class={` ${fadedIn.includes('TextArea') ? 'fadedIn' : ''} fadingIn  ${thisIs === 'message' ? 'bInsetBlueTop' : 'bInsetBlueTopXs2 bBor'} ${thisIs === 'newMessage' ? 'bInsetBlueTopXs2 marBotXxxs borderTop flexRow  ' : 'flexCol  '} ${thisIs === 'comment' && id ? ' boRadXs bInsetBlueTopXs shaBlue border marBotL  w100' : 'w100 marTopXxxs  mw120'}  posRel    aliStretch marAuto  `}>
 			{showBackButton && (
-				<button onClick={() => viewSwitch('chatsList')} className='boRadXxs imw4 padHorXxxs borTop pointer h100 posRel'>
-					<img src={`/icons/back.png`} alt='arrow left' />
+				<button onClick={() => viewSwitch('chatsList')} className="boRadXxs imw4 padHorXxxs borTop pointer h100 posRel">
+					<img src={`/icons/back.png`} alt="arrow left" />
 				</button>
 			)}
 			<div
@@ -187,7 +173,7 @@ function TextArea(props) {
 				ref={textArea}
 				onKeyDown={e => {
 					if (e.key === 'Enter' && !curContent.trim().length) e.preventDefault();
-					if (e.key === 'Enter' && !isChatSetup && !e.shiftKey && curContent.length > 0) e.preventDefault(), bsActions.right[thisIs]();
+					if (e.key === 'Enter' && !isChatSetup && !e.shiftKey && curContent.length > 0) (e.preventDefault(), bsActions.right[thisIs]());
 				}}
 				contentEditable={true}
 				onFocus={() => {
@@ -197,11 +183,9 @@ function TextArea(props) {
 					}
 				}}
 				onBlur={() => !content && !textArea.current.innerText.trim().length && ((textArea.current.innerText = getPlaceholder()), textArea.current.classList.add('phBold'))}
-				dir='ltr'
+				dir="ltr"
 				onInput={handleInput}
-				className={`textArea lh1-2 preWrap   ${
-					thisIs === 'newMessage' ? 'fs12  w100 padTopXs textLeft' : isChatSetup ? 'fs14    mih8' : !id ? 'fs12  mw140 mih12 downLittle posRel textAli  boRadXs lh1-2' : 'fsD  mih10 lh1 '
-				} ${thisIs !== 'newMessage' ? (!id ? ' bor2White  noBackground padTopXs    padBotS ' : 'padTopXs  bgTrans') : 'padAllXxxs'}  boldXs textSha overAuto   w100   textAli padHorS `}
+				className={`textArea lh1-2 preWrap   ${thisIs === 'newMessage' ? 'fs12  w100 padTopXs textLeft' : isChatSetup ? 'fs14    mih8' : !id ? 'fs14   mw140 mih12  posRel textAli  boRadXs lh1-2' : 'fsD  mih10 lh1 '} ${thisIs !== 'newMessage' ? (!id ? ' bor2White  noBackground padTopS  posRel padBotS ' : 'padTopXs  bgTrans') : 'padAllXxxs'}  boldXs textSha overAuto      w100   textAli padHorS `}
 			/>
 
 			{thisIs === 'newMessage' && (
@@ -221,22 +205,20 @@ function TextArea(props) {
 						}
 					}}
 					className={` ${!curContent.length ? '' : 'bDarkGreen'} padHorXxxs tWhite imw4  fsC boldM  borTop selfStretch bHover  `}>
-					<img src={`/icons/back.png`} alt='arrow left' style={{ transform: 'rotate(180deg)', filter: `brightness(${curContent.length > 0 ? 10 : 1})` }} />
+					<img src={`/icons/back.png`} alt="arrow left" style={{ transform: 'rotate(180deg)', filter: `brightness(${curContent.length > 0 ? 10 : 1})` }} />
 				</button>
 			)}
 
 			{thisIs !== 'newMessage' && (
 				<area-bs class={`${!id ? '' : ' mw60'} flexCen marAuto growAll  marAuto    w100    `}>
 					{id && (
-						<button className={`marAuto padVerXxs bHover fsA bDarkRed boRadXxs mw40 zinMax tWhite xBold`} onClick={bsActions.left[thisIs]}>
+						<button className={`marAuto padVerXxs bHover fs10 tRed boRadXxs mw40 zinMax  boldM bInsetBlueTopXs posRel bBor2`} onClick={bsActions.left[thisIs]}>
 							{textAreaBs.left[thisIs]}
 						</button>
 					)}
 					{!isChatSetup && (!id || (id && curContent.length > 0 && content !== curContent)) && (
 						<button
-							className={` marAuto ${!curContent.length ? ' arrowUp' : 'bDarkGreen'} ${
-								!id ? 'hvw12 mh5  bDarkBlue bor2 shaStrong   tWhite  shaBlue    mw65 w60	  posRel   boRadXxs fs14' : 'padVerXxs tWhite fsA mw40'
-							}   zinMax  bHover  textSha  boldM`}
+							className={` marAuto  ${!id ? 'hvw12 mh5   bor2 shaStrong thickBors  tWhite  shaBlue    mw65 w60	     boRadXxs fs14' : 'padVerXxs tWhite fs10 mw40'} ${!curContent.length ? ' arrowUp bBlue' : !id ? 'bDarkGreen bsContentGlow arrowDown1Green' : 'bDarkGreen'} posRel  zinMax  bHover  tSha10  boldM`}
 							disabled={disable}
 							onClick={async e => {
 								e.stopPropagation();
@@ -249,7 +231,7 @@ function TextArea(props) {
 									setDisable(false);
 								}
 							}}>
-							<blue-divider class={` hr0-5  block bInsetBlueTopXl borTop bgTrans  posAbs botCen w100     marAuto   `} />
+							{!id && <blue-divider style={{ filter: `brightness(${curContent.length > 0 ? 1.1 : 0.5})` }} class={` hr1   block   bgTrans  posAbs       marAuto ${!curContent.length ? 'botCen downTinyBit w80 bInsetBlueTopXl' : 'topCen upTinyBit w100 bInsetGreenTop'}   `} />}
 
 							{textAreaBs.right[thisIs]}
 						</button>

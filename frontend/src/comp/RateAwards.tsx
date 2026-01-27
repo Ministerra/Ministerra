@@ -17,7 +17,7 @@ import { notifyGlobalError } from '../hooks/useErrorsMan';
 function RateAwards(props) {
 	const { obj, thisIs, brain: propsBrain, nowAt: propsNowAt, status, modes, setStatus, setModes, goBack, resetTimer } = props, // isCardOrStrip removed - unused ---------------------------
 		{ brain = propsBrain, nowAt = propsNowAt } = useOutletContext() || {},
-		[blinkAwards, setBlinkAwards] = useState(true),
+		[blinkAwards, setBlinkAwards] = useState(false),
 		[marks, powersOfTwo] = [{ event: [-4, 1, 3, 5], user: [1, 5], comment: [-2, 1, 3, 5] }, [1, 2, 4, 8, 16, 32]],
 		awardsSrc = ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.en.slice(0, ['comment', 'event'].includes(thisIs) ? undefined : obj.exps?.length > 0 ? 4 : 3),
 		bWidth = useCentralFlex('awards', [modes, status], nowAt, awardsSrc.length),
@@ -125,7 +125,7 @@ function RateAwards(props) {
 									if (thisIs === 'event' && goBack) goBack();
 								} else man('mark', buttMark);
 							}}
-							className={`${!isSelected && mark ? ` bold textSha  ${nowAt === 'event' ? 'fs16' : 'fs10'}` : `xBold ${nowAt === 'event' ? 'fs16' : 'fs16'}  tDarkBlue `}   ${nowAt === 'event' ? 'padVerXs ' : 'padVerXs'} textSha posRel       w25 bHover   noBackground flexCol aliCen`}>
+							className={`${!isSelected && mark ? ` bold textSha  ${nowAt === 'event' ? 'fs12' : 'fs10'}` : `xBold ${nowAt === 'event' ? 'fs20' : 'fs16'}  tDarkBlue `}   ${nowAt === 'event' ? 'padVerXs ' : 'padVerXs'} textSha posRel       w25 bHover   noBackground flexCol aliCen`}>
 							<button-texture style={{ filter: 'brightness(1.5)' }} class="noPoint padAllXxxs posAbs botCen zin1 w100 h100 bInsetBlueBotXs opacityM hr2" />
 							{button}
 						</button>
@@ -135,6 +135,8 @@ function RateAwards(props) {
 
 			{showAwards && (
 				<awards-bs class={`bInsetBlueTopXs flexCen posRel marBotXxxs   aliStretch  wrap w100`}>
+					<div className={`bgWhite topCen opacityXs shaCon hr2 posAbs w100 zinMaXl`} />
+
 					{awardsSrc.map((primB, i) => {
 						return (
 							<button
@@ -144,8 +146,8 @@ function RateAwards(props) {
 									if (resetTimer) resetTimer();
 									(awards.length < (thisIs === 'event' ? 4 : 3) || awards.includes(powersOfTwo[i])) && man('award', powersOfTwo[i]);
 								}}
-								className={`${awards.includes(powersOfTwo[i]) ? 'boRadS borRed' : ''}   ${nowAt !== 'event' ? 'padBotXs padTopL' : 'padTopXl '}   posRel hvw18 mh12 bHover grow `}>
-								<img src="/icons/placeholdergood.png" className={`posAbs topCen maskLow h80 grow w100`} alt="" />
+								className={`${awards.includes(powersOfTwo[i]) ? 'boRadS borRed' : ''}   ${nowAt !== 'event' ? 'padBotXs padTopL' : 'padTopS '}   posRel hvw8 bHover grow `}>
+								<img src="/icons/placeholdergood.png" className={`posAbs topCen maskLow h70 grow w100`} alt="" />
 								<img src="/icons/placeholdergood.png" className="blueGlass marBotXxxs zinMax mw6 w25 miw4" alt="" />
 								<span className=" fs8 tDarkBlue boldM zinMax   lh0-8 ">{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.cz[i]}</span>
 								<span className="fs6  mw30 zinMax   lh1">{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awardsTexts[i]}</span>

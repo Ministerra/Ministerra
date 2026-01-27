@@ -10,7 +10,7 @@ const attenVisibSrc = { [PRIVACIES.public]: 'všichni', [PRIVACIES.links]: 'spoj
 function IntersPrivsButtons(props) {
 	// TODO if user removes interest (there needs to be option to "unfollow", not "change interest") from past event remove the event from the user's past events
 
-	const { fadedIn = ['BsEvent'], status, brain, nowAt, obj, modes, setStatus, setModes, isPast, onPrivSelected, resetTimer, onUpdate } = props;
+	const { fadedIn = ['BsEvent'], status, brain, nowAt, obj, modes, setStatus, setModes, isPast, onPrivSelected, resetTimer, onUpdate, goBack } = props;
 	const isFriendly = obj.type && obj.type.startsWith('a');
 	const askPriv = brain.user.askPriv;
 	const errorMan = useErrorsMan();
@@ -177,46 +177,47 @@ function IntersPrivsButtons(props) {
 		onPrivSelected?.(); // NOTIFY PARENT PRIV SELECTED ---------------------------
 	};
 
-	const disableInters = (status.isMeeting && status.own) || isPast;
-	const intersSrc = isFriendly
-		? [
-				{ key: 'surely', short: 'sur', label: 'určitě přijdu' },
-				{ key: 'maybe', short: 'may', label: 'možná přijdu' },
-			]
-		: [
-				{ key: 'error', short: 'no', label: 'nepřijdu' },
-				{ key: 'surely', short: 'sur', label: 'určitě přijdu' },
-				{ key: 'maybe', short: 'may', label: 'možná přijdu' },
-			];
+	const intersSrc = [
+		{ key: 'interested', short: 'int', label: 'zajímá mě' },
+		{ key: 'surely', short: 'sur', label: 'určitě přijdu' },
+		{ key: 'maybe', short: 'may', label: 'možná přijdu' },
+	];
 
 	// INTERESTS BUTTONS ---
 	const inEditor = !!onUpdate;
 	const intersButtons = (
-		<inters-bs class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''}  flexCen   aliStretch zinMax gapXxxs w100 	 overHidden`}>
-			{intersSrc.map((btn, i) => {
-				const isNo = btn.short === 'no';
-				const isSelected = isNo ? !status.inter : status.inter === btn.short;
-				const widthClass = inEditor ? 'mw90' : isFriendly && !status.inter ? 'imw8' : isSelected ? 'imw10' : 'imw5';
-				const selectedClass = isSelected ? ' imw12 ' : ' imw6';
-				const fontClass = inEditor ? 'fs9' : 'fs5';
+		<inters-bs class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''}  flexCen   aliStretch zinMax gapXxxs ${inEditor ? 'mw150 marAuto' : 'w100'} 	 overHidden`}>
+			{intersSrc
+				.filter(btn => btn.short !== 'int' || !status.own)
+				.map((btn, i) => {
+					const isSelected = status.inter === btn.short;
+					const showAsNo = !isFriendly && isSelected;
+					const label = showAsNo ? 'nepřijdu' : btn.label;
+					const icon = showAsNo ? 'error' : btn.key === 'interested' ? 'eye' : btn.key;
 
-				return (
-					<button
-						key={btn.key}
-						onClick={() => {
-							if (disableInters) return;
-							if (isNo) {
-								if (status.inter) setEventInter({ inter: status.inter, priv: 'pub' });
-							} else {
-								setEventInter({ inter: btn.short, priv: isFriendly ? 'pub' : status.interPriv || brain.user.defPriv || 'pub' });
-							}
-						}}
-						className={`${widthClass} ${selectedClass} noBackground ${disableInters && !isSelected ? 'tDis opaque' : ''}  ${nowAt === 'event' ? `padTopXxs   padBotXxs` : nowAt === 'editor' ? 'padBotXxs bBor' : `padBotXxs  padTopXxs `} textSha posRel   zin10 grow bHover flexCol aliCen`}>
-						<img className=" aspect169 posRel downTiny maskLowXs  w80" src={`/icons/${btn.key === 'interested' ? 'eye' : btn.key}.png`} alt="" />
-						<span className={`textSha marTopXxxxs ${isSelected ? 'bold' : ''} ${fontClass}`}>{btn.label}</span>
-					</button>
-				);
-			})}
+					const widthClass = !status.inter ? 'imw8' : isSelected ? 'imw12' : 'imw6';
+					const selectedClass = isSelected ? ' bBor ' : '';
+					const fontClass = inEditor ? 'fs9' : 'fs5';
+
+					return (
+						<button
+							key={btn.key}
+							onClick={() => {
+								if (status.own && isFriendly && isSelected) return;
+								if (isSelected) setEventInter({ inter: btn.short, priv: 'pub' });
+								else setEventInter({ inter: btn.short, priv: isFriendly || status.own ? 'pub' : status.interPriv || brain.user.defPriv || 'pub' });
+
+								if (goBack) {
+									const willShowPrivsAfterClick = !isSelected && !isFriendly && !status.own;
+									if (!willShowPrivsAfterClick) goBack();
+								}
+							}}
+							className={`${widthClass} ${selectedClass} noBackground   ${nowAt === 'event' ? `padTopXxs   padBotXs` : nowAt === 'editor' ? 'padBotXxs' : `padVerXs `} textSha posRel   zin10 grow bHover flexCol aliCen`}>
+							<img className=" aspect169 posRel downTiny maskLowXs  w80" src={`/icons/${icon}.png`} alt="" />
+							<span className={`textSha marTopXxxxs ${isSelected ? 'bold' : ''} ${fontClass}`}>{label}</span>
+						</button>
+					);
+				})}
 		</inters-bs>
 	);
 
@@ -224,7 +225,7 @@ function IntersPrivsButtons(props) {
 	// Logic: For private events (not 'pub'/'ind'), we treat 'pub' attendance as "Visible to Participants"
 	// and hide the specific 'links' option to avoid confusion.
 	const isEventPrivate = obj.priv && !['pub', 'ind'].includes(obj.priv);
-	const showPrivs = !isFriendly && !!status.inter;
+	const showPrivs = !isFriendly && !status.own && !!status.inter;
 
 	const privsButtons = showPrivs && (
 		<privs-bs class="flexCen w100 marAuto zinMenu posRel mw150   ">

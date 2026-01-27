@@ -23,7 +23,7 @@ function ChatsList(props) {
 	// Automatically scrolls to and highlights a specific chat based on brain trigger.
 	useEffect(() => {
 		if (!brain.highlightChatId || brain.highlightChatId === highlightChatId) return;
-		setHighlightChatId(brain.highlightChatId), stripsWrapperRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+		(setHighlightChatId(brain.highlightChatId), stripsWrapperRef.current?.scrollTo({ top: 0, behavior: 'smooth' }));
 		if (highlightClearTimerRef.current) clearTimeout(highlightClearTimerRef.current);
 		highlightClearTimerRef.current = setTimeout(() => setHighlightChatId(null), 3000);
 		return () => clearTimeout(highlightClearTimerRef.current);
@@ -39,8 +39,7 @@ function ChatsList(props) {
 				entries.forEach(entry => {
 					if (entry.isIntersecting && chats.length >= 20 && !brain.user.noMore?.chats?.[curView]) {
 						if (infiniteInFlightRef.current) return;
-						(infiniteInFlightRef.current = true),
-							chatMan({ mode: curView === 'chats' ? 'getChats' : curView === 'inactive' ? 'getInactiveChats' : curView === 'hidden' ? 'getHiddenChats' : 'getArchivedChats' });
+						((infiniteInFlightRef.current = true), chatMan({ mode: curView === 'chats' ? 'getChats' : curView === 'inactive' ? 'getInactiveChats' : curView === 'hidden' ? 'getHiddenChats' : 'getArchivedChats' }));
 						setTimeout(() => (infiniteInFlightRef.current = false), 750);
 					}
 				}),
@@ -56,13 +55,7 @@ function ChatsList(props) {
 		() =>
 			chats.filter(chat => {
 				const memberFlag = chat.members?.find(m => String(m.id) === String(brain.user.id))?.flag;
-				return curView === 'chats'
-					? !chat.archived && ['ok', 'req'].includes(memberFlag) && (!chat.hidden || !chat.seen)
-					: curView === 'inactive'
-					? memberFlag === 'del' || chat.ended
-					: curView === 'hidden'
-					? chat.hidden
-					: chat.archived;
+				return curView === 'chats' ? !chat.archived && ['ok', 'req'].includes(memberFlag) && (!chat.hidden || !chat.seen) : curView === 'inactive' ? memberFlag === 'del' || chat.ended : curView === 'hidden' ? chat.hidden : chat.archived;
 			}),
 		[chats, curView]
 	);
@@ -75,22 +68,16 @@ function ChatsList(props) {
 				{/* LIST TITLE --- */}
 				{!modes.searchChats && (
 					<title-wrapper>
-						<span
-							className={`${
-								curView === 'chats' && !filteredChatsToShow.length ? 'fs25 marBotXxs' : openedChat ? 'fs17 marBotXxs' : 'fs25 marBotXs'
-							} xBold marAuto inlineBlock w100 padBotXxs textAli textSha`}>
-							{curView === 'chats' ? 'Poslední chaty' : curView === 'inactive' ? 'Neaktivní chaty' : curView === 'hidden' ? 'Skryté chaty' : 'Archivované chaty'}
-						</span>
+						<span className={`${curView === 'chats' && !filteredChatsToShow.length ? 'fs25 marBotXxs' : openedChat ? 'fs17 marBotXxs' : 'fs25 marBotXs'} xBold marAuto inlineBlock w100 padBotXxs textAli textSha`}>{curView === 'chats' ? 'Poslední chaty' : curView === 'inactive' ? 'Neaktivní chaty' : curView === 'hidden' ? 'Skryté chaty' : 'Archivované chaty'}</span>
 					</title-wrapper>
 				)}
 
 				{/* CHAT STRIPS LISTING --- */}
 				{!modes.searchChats && (
-					<strips-wrapper ref={stripsWrapperRef} style={{ direction: 'rtl' }} class='overAuto block padVerXs mhvh85'>
+					<strips-wrapper ref={stripsWrapperRef} style={{ direction: 'rtl' }} class="overAuto block padVerXs mhvh85">
 						<strips-content style={{ direction: 'ltr' }} class={'flexCol gapXs'}>
 							{filteredChatsToShow.map(chatObject => {
-								const { first, last } =
-									chatObject.type === 'private' ? chatObject.members?.find(member => String(member.id) !== String(brain.user.id)) || chatObject.members?.[0] || {} : {};
+								const { first, last } = chatObject.type === 'private' ? chatObject.members?.find(member => String(member.id) !== String(brain.user.id)) || chatObject.members?.[0] || {} : {};
 								const chatDisplayName = chatObject.name || `${first || ''} ${last || ''}`.trim() || 'Neznámý chat';
 								return (
 									<ChatStrip
@@ -124,17 +111,16 @@ function ChatsList(props) {
 				{/* INFINITE SCROLL TARGET --- */}
 				{(() => {
 					const viewKey = curView === 'chats' ? 'chats' : curView === 'hidden' ? 'hidden' : curView === 'inactive' ? 'inactive' : 'archive';
-					return chats.length >= 20 && !brain.user.noMore?.chats?.[viewKey] ? <infinity-trigger ref={infinityChatsTriggerRef} class='block mih1 bor2 selfEnd' /> : null;
+					return chats.length >= 20 && !brain.user.noMore?.chats?.[viewKey] ? <infinity-trigger ref={infinityChatsTriggerRef} class="block mih1 bor2 selfEnd" /> : null;
 				})()}
 			</content-wrapper>
 
 			{/* BOTTOM CHAT NAVIGATION --- */}
-			<chats-menu class='flexCol textAli posAbs zinMaXl botCen w100'>
+			<chats-menu class="flexCol textAli posAbs zinMaXl botCen w100">
 				{/* EMPTY STATE MESSAGES --- */}
-				{inform.includes('emptyChats') && <div className='bRed tWhite padAllXxs w100 xBold w100 fs9 '>Žádné aktivní chaty</div>}
-				{inform.includes('emptyArchive') && <div className='bRed tWhite padAllXxs w100 xBold w100 fs9 '>Tvůj archiv je prázdný</div>}
-				{inform.includes('emptyInactive') && <div className='bRed tWhite padAllXxs w100 xBold w100 fs9 '>Žádné neaktivní chaty</div>}
-				{inform.includes('emptyHidden') && <div className='bRed tWhite padAllXxs w100 xBold w100 fs9 '>Žádné skryté chaty</div>}
+				{inform.includes('emptyArchive') && <div className="bRed tWhite padAllXxs w100 xBold w100 fs9 ">Tvůj archiv je prázdný</div>}
+				{inform.includes('emptyInactive') && <div className="bRed tWhite padAllXxs w100 xBold w100 fs9 ">Žádné neaktivní chaty</div>}
+				{inform.includes('emptyHidden') && <div className="bRed tWhite padAllXxs w100 xBold w100 fs9 ">Žádné skryté chaty</div>}
 
 				{/* CATEGORY SELECTOR --- */}
 				{modes.chatsMenu && <ChatsListMenuStrip {...{ chatMan, setModes, notifDots }} />}
@@ -144,10 +130,7 @@ function ChatsList(props) {
 					(() => {
 						const activeChatsActions = {
 							Nový: () => chatMan({ mode: 'launchSetup' }),
-							menu: () => (
-								setModes(prev => ({ ...prev, chatsMenu: !prev.chatsMenu, searchChats: false })),
-								setTimeout(() => setModes(prev => ({ ...prev, chatsMenu: false, searchChats: false })), 3000)
-							),
+							menu: () => (setModes(prev => ({ ...prev, chatsMenu: !prev.chatsMenu, searchChats: false })), setTimeout(() => setModes(prev => ({ ...prev, chatsMenu: false, searchChats: false })), 3000)),
 							hledat: filteredChatsToShow.length > 1 ? () => setModes(prev => ({ ...prev, searchChats: !prev.searchChats, chatsMenu: false })) : null,
 						};
 						const secondaryViewActions = {
@@ -155,43 +138,23 @@ function ChatsList(props) {
 							hledat: filteredChatsToShow.length > 1 ? () => setModes(prev => ({ ...prev, searchChats: !prev.searchChats, chatsMenu: false })) : null,
 						};
 						return (
-							<menu-bs class=' w100 gapXxxs borTop mw100 bmw60 padAllXxxs bInsetBlueTopXs zinMax posRel marAuto flexCen'>
+							<menu-bs class=" w100 gapXxxs borTop mw100 bmw60 padAllXxxs bInsetBlueTopXs zinMax posRel marAuto flexCen">
 								{Object.entries(curView === 'chats' ? activeChatsActions : secondaryViewActions)
 									.filter(([, action]) => action)
 									.map(([label, action]) => (
-										<button
-											key={label}
-											onClick={action}
-											className={`${
-												(modes.chatsMenu && label === 'menu') || (modes.searchChats && label === 'hledat')
-													? 'bBlue fs11 tWhite '
-													: label === 'zpět'
-													? 'bRed fs11 tWhite '
-													: label === 'Nový' && chats.length === 0
-													? ' fs11 borBotGreen '
-													: ' fs11 borRed bgWhite hover'
-											} grow xBold h100 bHover hr4 textSha shaSubtle borderLight `}>
-											{notifDots?.archive > 0 && label === 'menu' && !modes.chatsMenu && <span className='miw2 hr2 bDarkRed upTiny round' />}
+										<button key={label} onClick={action} className={`${(modes.chatsMenu && label === 'menu') || (modes.searchChats && label === 'hledat') ? 'bBlue fs11 tWhite ' : label === 'zpět' ? 'bRed fs11 tWhite ' : label === 'Nový' && chats.length === 0 ? ' fs11 borBotGreen ' : ' fs11 borRed bgWhite hover'} grow xBold h100 bHover hr4 textSha shaSubtle borderLight `}>
+											{notifDots?.archive > 0 && label === 'menu' && !modes.chatsMenu && <span className="miw2 hr2 bDarkRed upTiny round" />}
 											{label}
 										</button>
 									))}
 							</menu-bs>
 						);
 					})()}
+				{inform.includes('emptyChats') && <div className="bRed tWhite padAllXs w100 xBold w100 fs12 ">Žádné aktivní chaty</div>}
 			</chats-menu>
 			<EmptyDiv height={`${!brain.user.noMore?.chats?.[curView === 'archive' ? 'archive' : curView] ? 'hvh40' : ''}`} />
 		</chat-list>
 	);
 }
 
-export default memo(
-	ChatsList,
-	(prev, next) =>
-		prev.chats === next.chats &&
-		prev.chats.length === next.chats.length &&
-		prev.curView === next.curView &&
-		prev.inform === next.inform &&
-		prev.modes === next.modes &&
-		prev.openedChat === next.openedChat &&
-		prev.notifDots === next.notifDots
-);
+export default memo(ChatsList, (prev, next) => prev.chats === next.chats && prev.chats.length === next.chats.length && prev.curView === next.curView && prev.inform === next.inform && prev.modes === next.modes && prev.openedChat === next.openedChat && prev.notifDots === next.notifDots);

@@ -70,9 +70,9 @@ function Event() {
 		<event-page key={obj.id} class="block">
 			<EventHeaderImage event={obj} nowAt={nowAt} brain={brain} fadedIn={fadedIn} maximizeImg={maximizeImg} onImageClick={() => setMaximizeImg(!maximizeImg)} isMobile={isMobile} />
 
-			<title-texts class={`${fadedIn.includes('TitleTexts') ? 'fadedIn' : ''}  zinMaxl fPadHorXs  marAuto   ${!status.isMeeting && !obj.imgVers ? 'padTopXxxl' : !maximizeImg ? 'padTopXxl' : 'padTopS'}   zinMax posRel  fadingIn flexCol  textAli  marAuto   w100`}>
+			<title-texts class={`${fadedIn.includes('TitleTexts') ? 'fadedIn' : ''} marBotM  zinMaxl fPadHorXs  marAuto   ${!status.isMeeting && !obj.imgVers ? 'padTopXxxl' : !maximizeImg ? 'padTopXxl' : 'padTopS'}   zinMax posRel  fadingIn flexCol  textAli  marAuto   w100`}>
 				{/*  DATE, CITY, PLACE, ADDRESS ------------------------------------------------------ */}
-				<date-time class="zinMax fitContent bgTrans maskLowXxs padTopXxs padBotXxxs borWhite tShaWhite  fPadHorXs      boRadXs    posRel   marAuto">
+				<date-time class="zinMax fitContent bgTrans maskLowXxs padTopXxs padBotXs borWhite maskLowXs  tShaWhite  fPadHorXs  downTinyBit    boRadXs    posRel   marAuto">
 					<span className={`${new Date(obj.starts) >= new Date() ? 'tDarkBlue ' : 'tRed'} fs18   xBold inline marRigS  imw3   textSha  wrap textAli`}>{`${humanizeDateTime({ dateInMs: obj.starts })}${obj.ends ? ` - ${humanizeDateTime({ dateInMs: obj.ends })}` : ''}`}</span>
 
 					{(obj.location?.startsWith('+') || (!obj.location && !obj.place)) && <span className={`bold marRigS fs18  inlineBlock tBlue bgTrans tSha10  flexRow textSha`}>{obj.location?.startsWith('+') ? 'někde v okolí ' : 'kdekoliv v'}</span>}
@@ -94,8 +94,8 @@ function Event() {
 				{obj.badges && <EventBadges obj={obj} nowAt={'event'} />}
 
 				{/* MENU BUTTON ---------------------------------------------------------------*/}
-				<menu-comp class={`${modes.menu ? 'marBotM' : ''} ${fadedIn.includes('Image') ? 'fadedIn' : ''} block fadingIn w100 fPadHorXs aliCen justCen    zinMaXl    block posRel  marAuto`}>
-					<menu-button onClick={() => setModes(prev => ({ ...prev, menu: !prev.menu, protocol: false }))} class={`${modes.menu ? 'posRel borRed bgWhite' : 'shaBlue'} flexInline wrap borderBot bgTransXs boRadXxs pointer miw12 fitContent marAuto justCen aliCen bHover zinMaXl padHorXxs`}>
+				<menu-comp class={`${modes.menu ? 'marBotM ' : ''} ${fadedIn.includes('Image') ? 'fadedIn' : ''} block fadingIn w100 fPadHorXs aliCen justCen    zinMaXl    block posRel  marAuto`}>
+					<menu-button onClick={() => setModes(prev => ({ ...prev, menu: !prev.menu, protocol: false }))} class={`${modes.menu ? 'posRel bsContentGlow marBotXxs bgWhite' : 'shaBlue'} flexInline wrap borderBot bgTransXs boRadXxs pointer miw12 fitContent marAuto justCen aliCen bHover zinMaXl padHorXxs`}>
 						{obj.starts < Date.now() && <span className="fs9 padVerXxxs boldM boRadXxs padHorXs bRed borBot8 tWhite tNoWrap">{humanizeDateTime({ dateInMs: obj.starts, getLabel: true, endsInMs: obj.ends })}</span>}
 
 						{/* INDICATORS ----------------------------------------------------------------*/}
@@ -155,7 +155,7 @@ function Event() {
 					</feedback-section>
 				)}
 
-				{obj.shortDesc && <span className={`${status.isMeeting ? 'marBotS' : ''} fs13 lh1-2  marTopXl marAuto textAli mw160  block fPadHorS  marAuto  `}>{obj.shortDesc}</span>}
+				{obj.shortDesc && <span className={`${status.isMeeting ? 'marBotS' : ''} fs13 lh1-2  marTopXl marAuto textAli mw160   textSha block fPadHorS  marAuto  `}>{obj.shortDesc}</span>}
 			</title-texts>
 
 			{/* USER CARDS ---------------------------------------------------------- */}
@@ -194,7 +194,7 @@ function Event() {
 						) : null}
 					</detail-section>
 				) : (
-					<empty-div class={'block hr4'} />
+					<empty-div class={'block hr2'} />
 				)}
 			</bottom-section>
 
@@ -207,6 +207,7 @@ function Event() {
 						<Map singleEvent={obj} brain={brain} map={true} />
 					</Suspense>
 				)}
+				<blue-divider class={` hr0-2 opacityL   block bInsetBlueTopXl  bgTrans   w80 mw80    marAuto   `} />
 			</buttons-section>
 
 			{/* DISCUSSION SECTION AND DYNAMIC BS --------------------------------------------------- */}

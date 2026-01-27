@@ -23,6 +23,9 @@ function MapLibre(props: any) {
 		mapContainer = useRef<any>(null),
 		mapInstanceRef = useRef<any>(null),
 		mapMarkersArr = useRef<any>(null),
+		activePopupRef = useRef<any>(null),
+		activePopupEventsRef = useRef<any[]>([]),
+		popupAnchorRef = useRef<any>(null),
 		features = useRef<any>(null),
 		snapItems = useRef<any>(null),
 		mapVisibilityRef = useRef<any>(null),
@@ -38,7 +41,7 @@ function MapLibre(props: any) {
 	// MAP REGENERATION TRIGGER ------------------------------------------------
 	// Re-calculates features and markers when filters or event selection change.
 	useEffect(() => {
-		(features.current = null), generateMap();
+		((features.current = null), generateMap());
 	}, [snap?.types, avail?.types, singleEvent]);
 
 	// MAP GENERATION CORE LOGIC -----------------------------------------------
@@ -53,6 +56,89 @@ function MapLibre(props: any) {
 				// Pull filtered data based on active search/filter criteria ---------------------------
 				snapItems.current = getFilteredContent({ what: 'content', brain, snap, avail, sherData, show, isForMap: true });
 				brain.itemsOnMap = snapItems.current.map(event => event.id).sort((a, b) => a - b);
+			}
+
+			// RECALCULATE POPUP IF OPEN ---------------------------------------
+			// Syncs current preview with filtered content to prevent showing removed items.
+			if (brain.eventPopup || clusterEventsRef.current.length > 0 || activePopupRef.current) {
+				const activeEventsMap = new Map(snapItems.current.map(i => [i.id, i]));
+				let nextPopupEvents = [];
+
+				// If we have an anchor, find all events at that location in the new snapItems
+				if (popupAnchorRef.current) {
+					nextPopupEvents = snapItems.current.filter(event => {
+						if (!event.lat || !event.lng) return false;
+						return getDistance(popupAnchorRef.current.lat, popupAnchorRef.current.lng, event.lat, event.lng) <= 0.01;
+					});
+				} else if (brain.eventPopup) {
+					// Fallback for single marker popups without an anchor ref yet
+					nextPopupEvents = activeEventsMap.has(brain.eventPopup.id) ? [activeEventsMap.get(brain.eventPopup.id)] : [];
+				}
+
+				// Step 2: React Popup Recalc ---
+				if (clusterEventsRef.current.length > 0 || brain.eventPopup) {
+					if (!nextPopupEvents.length || !snap?.types?.length || snapItems.current.length === 0) {
+						(delete brain.eventPopup, (clusterEventsRef.current = []), (popupAnchorRef.current = null));
+					} else {
+						clusterEventsRef.current = nextPopupEvents.length > 1 ? nextPopupEvents : [];
+						if (brain.eventPopup && !activeEventsMap.has(brain.eventPopup.id)) {
+							brain.eventPopup = nextPopupEvents[0];
+						} else if (brain.eventPopup) {
+							brain.eventPopup = activeEventsMap.get(brain.eventPopup.id);
+						}
+					}
+				}
+
+				// Step 1: Native Popup Recalc ---
+				if (activePopupRef.current && !brain.eventPopup) {
+					if (!nextPopupEvents.length || !snap?.types?.length || snapItems.current.length === 0) {
+						activePopupRef.current.remove();
+						activePopupRef.current = null;
+						activePopupEventsRef.current = [];
+						popupAnchorRef.current = null;
+					} else {
+						activePopupEventsRef.current = nextPopupEvents;
+						// If only one remains, automatically switch to EventCard view
+						if (nextPopupEvents.length === 1) {
+							const event = nextPopupEvents[0];
+							activePopupRef.current.remove();
+							activePopupRef.current = null;
+							activePopupEventsRef.current = [];
+							markerClick(event, [event]);
+						} else {
+							// Update HTML of existing native popup
+							const html = nextPopupEvents.map(event => generatePopupHTML(event)).join('');
+							const cols = Math.min(nextPopupEvents.length, 3);
+							activePopupRef.current.setHTML(`<thumbs-wrapper style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:8px;" class="boRadXs zinMax posRel">${html}</thumbs-wrapper>`);
+							setupNativePopupListeners(activePopupRef.current, nextPopupEvents);
+						}
+					}
+				}
+				setRecalc(prev => prev + 1);
+			}
+
+			// HELPER: POPUP HTML GENERATION -----------------------------------
+			function generatePopupHTML({ starts, type, inter, id }) {
+				const [upper, lower] = [humanizeDateTime({ dateInMs: starts, thumbRow: 'upper' }), humanizeDateTime({ dateInMs: starts, thumbRow: 'bottom' })];
+				const interChip = inter === 'sur' ? `<span class='bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite '>určitě</span>` : inter === 'may' ? `<span class='bBlue boldS fs6 flexCen boRadXxs padVerXxxxs tWhite padHorXxs '>možná</span>` : '';
+				return `<event-thumb id="eveMapThumbnail_${id}" class="flexInline bgWhite bHover padAllXs pointer shaLight posRel boRadXs bgTransXxs justStart"><img class='miw5 mw5 marRigS boRadXs' src="/icons/types/${type}.png" alt='' /><texts-wrapper class='flexCol justStart aliStart'><span class="${inter === 'sur' ? 'tGreen' : 'tBlue'} textSha boldM fsD lh1">${upper}</span><span class='boldXs tNoWrap fsA lh1 marTopXxxs'>${lower}</span>${interChip}</texts-wrapper></event-thumb>`;
+			}
+
+			// HELPER: ATTACH LISTENERS TO NATIVE POPUP ------------------------
+			function setupNativePopupListeners(popup, events) {
+				events.forEach(event => {
+					const element = document.getElementById(`eveMapThumbnail_${event.id}`);
+					if (element) {
+						element.addEventListener('click', async e => {
+							e.stopPropagation();
+							popup.remove();
+							activePopupRef.current = null;
+							activePopupEventsRef.current = [];
+							clusterEventsRef.current = events;
+							await markerClick(event, events);
+						});
+					}
+				});
 			}
 
 			const eventsMap = new Map(snapItems.current.map(event => [event.id, event]));
@@ -71,30 +157,14 @@ function MapLibre(props: any) {
 				if (!singleEvent) {
 					// SYNC SNAPSHOT STATE ---------------------------
 					// Manages 'changed' flag to trigger re-fetches when map viewport desyncs from feed.
-					if (currentMapVisibility === true) delete brain.stillShowingMapContent, delete brain.snapChangedWhileMapHidden;
-					else if (
-						currentMapVisibility !== true &&
-						currentMapVisibility !== prevMapVisibility.current &&
-						brain.lastFetchMapIDs &&
-						brain.lastFetchMapIDs?.length !== brain.totalMapContent &&
-						!snap?.changed
-					)
-						brain.stillShowingMapContent = true;
+					if (currentMapVisibility === true) (delete brain.stillShowingMapContent, delete brain.snapChangedWhileMapHidden);
+					else if (currentMapVisibility !== true && currentMapVisibility !== prevMapVisibility.current && brain.lastFetchMapIDs && brain.lastFetchMapIDs?.length !== brain.totalMapContent && !snap?.changed) brain.stillShowingMapContent = true;
 
-					const allowFetch =
-						brain.snapChangedWhileMapHidden || brain.stillShowingMapContent
-							? true
-							: currentMapVisibility !== true
-							? !brain.lastFetchMapIDs
-								? false
-								: brain.totalMapContent !== brain.itemsOnMap.length
-							: !brain.lastFetchMapIDs
-							? brain.itemsOnMap.length !== brain.totalMapContent
-							: !areEqual(brain.lastFetchMapIDs, brain.itemsOnMap);
+					const allowFetch = brain.snapChangedWhileMapHidden || brain.stillShowingMapContent ? true : currentMapVisibility !== true ? (!brain.lastFetchMapIDs ? false : brain.totalMapContent !== brain.itemsOnMap.length) : !brain.lastFetchMapIDs ? brain.itemsOnMap.length !== brain.totalMapContent : !areEqual(brain.lastFetchMapIDs, brain.itemsOnMap);
 					setSnap?.(prev => ({ ...prev, changed: allowFetch }));
 				}
 
-				(prevMapVisibility.current = currentMapVisibility), setRecalc(prev => prev + 1);
+				((prevMapVisibility.current = currentMapVisibility), setRecalc(prev => prev + 1));
 			}
 
 			// BOUNDS ADJUSTMENT -----------------------------------------------
@@ -136,7 +206,7 @@ function MapLibre(props: any) {
 			async function updateMapSource() {
 				if (mapBox.getSource('events')) {
 					await mapBox.getSource('events').setData({ type: 'FeatureCollection', features: features.current || getFeatures() });
-					createCustomMarkers(), updateVisibleEvents();
+					(createCustomMarkers(), updateVisibleEvents());
 				}
 			}
 
@@ -144,7 +214,7 @@ function MapLibre(props: any) {
 			// Processes clicks on individual event markers to show previews.
 			// clusterEvents: optional array of events in the same cluster for thumbnail switching
 			async function markerClick(eve, clusterEvents: any[] = []) {
-				if (brain.eventPopup) return delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1);
+				if (brain.eventPopup) return (delete brain.eventPopup, (clusterEventsRef.current = []), (popupAnchorRef.current = null), setRecalc(prev => prev + 1));
 				const event = brain.events[eve.id];
 				// ENSURE DATA AVAILABILITY ---------------------------
 				if (!event.state.includes('basi')) {
@@ -158,7 +228,8 @@ function MapLibre(props: any) {
 				}
 				window.scrollTo({ top: mapContainer.current.getBoundingClientRect().top + window.scrollY - 50, behavior: 'smooth' });
 				clusterEventsRef.current = clusterEvents;
-				(brain.eventPopup = event), setRecalc(prev => prev + 1);
+				popupAnchorRef.current = { lat: event.lat, lng: event.lng };
+				((brain.eventPopup = event), setRecalc(prev => prev + 1));
 			}
 
 			// CUSTOM MARKER FACTORY -------------------------------------------
@@ -359,7 +430,7 @@ function MapLibre(props: any) {
 					// Handles clicking on clusters to expand or show overlapping markers.
 					if (!singleEvent) {
 						mapBox.on('click', 'clusters', async e => {
-							if (brain.eventPopup) return delete brain.eventPopup, setRecalc(prev => prev + 1);
+							if (brain.eventPopup) return (delete brain.eventPopup, (clusterEventsRef.current = []), (popupAnchorRef.current = null), setRecalc(prev => prev + 1));
 							const features = mapBox.queryRenderedFeatures(e.point, { layers: ['clusters'] });
 							const clusterId = features[0].properties.cluster_id;
 							const expansionZoom = await mapBox.getSource('events').getClusterExpansionZoom(clusterId);
@@ -383,40 +454,22 @@ function MapLibre(props: any) {
 								// STEP 1: SHOW MAPLIBRE POPUP WITH THUMBNAILS ---------------------------
 								const clusterEvents = markers.map(marker => brain.events[marker.id]);
 
-								// GENERATE POPUP HTML FOR OVERLAPPING EVENTS ---------------------------
-								function generatePopupHTML({ starts, type, inter, id }) {
-									const [upper, lower] = [humanizeDateTime({ dateInMs: starts, thumbRow: 'upper' }), humanizeDateTime({ dateInMs: starts, thumbRow: 'bottom' })];
-									const interChip =
-										inter === 'sur'
-											? `<span class='bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite marTopXxs'>určitě</span>`
-											: inter === 'may'
-											? `<span class='bBlue boldS fs6 flexCen boRadXxs padVerXxxxs tWhite marTopXxs'>možná</span>`
-											: '';
-									return `<event-thumb id="eveMapThumbnail_${id}" class="flexInline bgWhite bHover padAllXs pointer shaLight posRel boRadXs bgTransXxs justStart"><img class='miw5 mw5 marRigS boRadXs' src="/icons/types/${type}.png" alt='' /><texts-wrapper class='flexCol justStart aliStart'><span class="${
-										inter === 'sur' ? 'tGreen' : 'tBlue'
-									} textSha boldM fsD lh1">${upper}</span><span class='boldXs tNoWrap fsA lh1 marTopXxxs'>${lower}</span>${interChip}</texts-wrapper></event-thumb>`;
-								}
-
 								const html = clusterEvents.map(event => generatePopupHTML(event)).join('');
 								const cols = Math.min(clusterEvents.length, 3);
-								const popup = new maplibregl.Popup({ className: 'fitContent noPoint transparent', maxWidth: 'none' })
-									.setLngLat(features[0].geometry.coordinates)
-									.setHTML(
-										`<thumbs-wrapper style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:8px; padding:8px;" class="boRadXs zinMax posRel">${html}</thumbs-wrapper>`
-									);
+								if (activePopupRef.current) activePopupRef.current.remove();
+								const popup = new maplibregl.Popup({ className: 'fitContent noPoint transparent', maxWidth: 'none' }).setLngLat(features[0].geometry.coordinates).setHTML(`<thumbs-wrapper style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:8px;" class="boRadXs zinMax posRel">${html}</thumbs-wrapper>`);
+								activePopupRef.current = popup;
+								activePopupEventsRef.current = clusterEvents;
+								popupAnchorRef.current = { lng: features[0].geometry.coordinates[0], lat: features[0].geometry.coordinates[1] };
 
 								// STEP 2 TRIGGER: on thumbnail click, show React thumbnail row + EventCard ---------------------------
-								popup.on('open', () => {
-									clusterEvents.forEach(event => {
-										const element = document.getElementById(`eveMapThumbnail_${event.id}`);
-										if (element)
-											element.addEventListener('click', async e => {
-												e.stopPropagation();
-												popup.remove();
-												clusterEventsRef.current = clusterEvents;
-												await markerClick(event, clusterEvents);
-											});
-									});
+								popup.on('open', () => setupNativePopupListeners(popup, clusterEvents));
+								popup.on('close', () => {
+									if (activePopupRef.current === popup) {
+										activePopupRef.current = null;
+										activePopupEventsRef.current = [];
+										popupAnchorRef.current = null;
+									}
 								});
 								popup.addTo(mapBox);
 							}
@@ -425,7 +478,7 @@ function MapLibre(props: any) {
 					}
 
 					// INTERACTION EVENT LISTENERS -------------------------------------
-					mapBox.on('click', () => (brain.eventPopup || clusterEventsRef.current.length > 0) && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1)));
+					mapBox.on('click', () => (brain.eventPopup || clusterEventsRef.current.length > 0 || activePopupRef.current) && (delete brain.eventPopup, (clusterEventsRef.current = []), (popupAnchorRef.current = null), activePopupRef.current?.remove(), setRecalc(prev => prev + 1)));
 					['clusters', 'unclustered-events'].forEach(layer => {
 						mapBox.on('mouseenter', layer, () => (mapBox.getCanvas().style.cursor = 'pointer'));
 						mapBox.on('mouseleave', layer, () => (mapBox.getCanvas().style.cursor = ''));
@@ -434,8 +487,8 @@ function MapLibre(props: any) {
 					// VIEWPORT SYNC ---------------------------
 					if (!singleEvent) {
 						mapBox.on('moveend', () => {
-							if (!inited.current) (inited.current = true), updateMapSource();
-							else clearTimeout(updateDebounce.current), (updateDebounce.current = setTimeout(() => updateMapSource(), 200));
+							if (!inited.current) ((inited.current = true), updateMapSource());
+							else (clearTimeout(updateDebounce.current), (updateDebounce.current = setTimeout(() => updateMapSource(), 200)));
 							if (show?.sherlock) setSnap?.(prev => ({ ...prev }));
 						});
 					}
@@ -448,7 +501,7 @@ function MapLibre(props: any) {
 					if (singleEvent) createCustomMarkers();
 					else fitMapToBounds();
 				});
-			} else await updateMapSource(), singleEvent ? null : fitMapToBounds();
+			} else (await updateMapSource(), singleEvent ? null : fitMapToBounds());
 		} catch (err) {
 			console.error(err);
 		}
@@ -488,7 +541,7 @@ function MapLibre(props: any) {
 				return;
 			}
 		}
-		(brain.eventPopup = event), setRecalc(prev => prev + 1);
+		((brain.eventPopup = event), setRecalc(prev => prev + 1));
 	}
 
 	// RENDER MAP UI -----------------------------------------------------------
@@ -496,42 +549,32 @@ function MapLibre(props: any) {
 		<map-libre class={`${map === 'hide' ? 'hide' : singleEvent ? 'hvh50' : 'hvh80'} ${show?.filter || singleEvent ? 'marTopXs' : 'marTopXxl'}   shaTop  posRel marAuto boRadS block zinMax  `}>
 			{/* HIDE MAP OVERLAY ----------------------------------------------------- */}
 			{map === true && (show?.filter || show?.history) && !singleEvent && (
-				<button onClick={() => showMan('map')} className='posAbs bgTransXs   tDarkBlue zinMenu topCen padAllXs boldM fs20 borTop  w40 marAuto mw30'>
-					<span className='xBold tRed fs8'>Skrýt mapu</span>
+				<button onClick={() => showMan('map')} className={`posAbs bgTransXs ${brain.eventPopup ? 'moveUp' : ''} bInsetBlueTopXs bBor2 tDarkBlue zinMenu topCen padAllXxs boldM fs20 borTop  w40 marAuto mw30`}>
+					<span className="xBold tRed fs10">Skrýt mapu</span>
 				</button>
 			)}
 
 			{/* CLUSTER POPUP CONTAINER ----------------------------------------------- */}
 			{/* Wraps thumbnails row + EventCard in vertical stack - only show when eventPopup is set (step 2) */}
 			{brain.eventPopup && nowAt === 'home' && !singleEvent && (
-				<cluster-popup
-					onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))}
-					class='posAbs topCen zinMenu flexCol aliCen w100 overHidden'
-					style={{ maxHeight: '95%' }}>
+				<cluster-popup onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))} class="posAbs topCen zin2500 flexCol marTopXxs   aliCen w100 overHidden" style={{ maxHeight: '95%' }}>
 					{/* CLUSTER EVENT THUMBNAILS ROW --- */}
 					{clusterEventsRef.current.length > 1 && brain.eventPopup && (
-						<cluster-thumbs
-							onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))}
-							class='flexRow gapXs  boRadXs wrap justCen w100 shrink0'>
+						<cluster-thumbs onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))} class="flexRow gapXs  boRadXs wrap justCen w100 zin2500 shrink0">
 							{clusterEventsRef.current.map(event => {
 								const isSelected = brain.eventPopup?.id === event.id;
 								const [upper, lower] = [humanizeDateTime({ dateInMs: event.starts, thumbRow: 'upper' }), humanizeDateTime({ dateInMs: event.starts, thumbRow: 'bottom' })];
 								return (
-									<event-thumb
-										key={event.id}
-										onClick={e => (e.stopPropagation(), handleClusterThumbnailClick(event))}
-										class={`flexInline bHover padAllXs pointer shaLight posRel boRadXs justStart ${
-											isSelected ? 'bDarkBlue arrowDown1 tWhite zinMaXl bsContentGlow' : 'bgWhite bgTransXxs'
-										}`}>
+									<event-thumb key={event.id} onClick={e => (e.stopPropagation(), handleClusterThumbnailClick(event))} class={`flexInline bHover padAllXxs pointer shaLight posRel boRadXs justStart ${isSelected ? 'bDarkBlue arrowDown1 tWhite zinMaXl bsContentGlow' : 'bgWhite bgTransXxs'}`}>
 										{/* TYPE ICON --- */}
-										<img className='miw5 mw5 marRigS boRadXs' src={`/icons/types/${event.type}.png`} alt='' />
+										<img className="miw5 mw5 marRigS boRadXs" src={`/icons/types/${event.type}.png`} alt="" />
 										{/* DATE/TIME TEXTS --- */}
-										<texts-wrapper class='flexCol justStart aliStart'>
+										<texts-wrapper class="flexCol justStart aliStart">
 											<span className={`${isSelected ? 'tWhite' : event.inter === 'sur' ? 'tGreen' : 'tBlue'} textSha boldM fsD lh1`}>{upper}</span>
 											<span className={`${isSelected ? 'tWhite' : ''} boldXs tNoWrap fsA lh1 marTopXxxs`}>{lower}</span>
 											{/* ATTENDANCE CHIPS --- */}
-											{!isSelected && event.inter === 'sur' && <span className='bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite marTopXxs'>určitě</span>}
-											{!isSelected && event.inter === 'may' && <span className='bBlue boldS fs6 flexCen boRadXxs padVerXxxxs tWhite marTopXxs'>možná</span>}
+											{event.inter === 'sur' && <span className="bDarkGreen flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite marTopXxs">určitě</span>}
+											{event.inter === 'may' && <span className="bBlue boldS fs6 flexCen boRadXxs padVerXxxxs padHorXxs tWhite marTopXxs">možná</span>}
 										</texts-wrapper>
 									</event-thumb>
 								);
@@ -541,68 +584,48 @@ function MapLibre(props: any) {
 
 					{/* EVENT PREVIEW POPUP --- */}
 					{brain.eventPopup && (
-						<scroll-wrapper
-							onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))}
-							class='overAuto w100 flexCol aliCen grow'>
+						<scroll-wrapper onClick={e => e.target === e.currentTarget && (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1))} class="overAuto w100 flexCol aliCen grow">
 							<EventCard isMapPopUp={true} brain={brain} nowAt={nowAt} obj={brain.eventPopup} />
 						</scroll-wrapper>
 					)}
 				</cluster-popup>
 			)}
 
-			<map-canvas ref={mapContainer} class='h100 block posRel w100' />
+			<map-canvas ref={mapContainer} class="h100 block posRel w100" />
 
 			{/* INTERACTIVE CONTROLS ------------------------------------------------- */}
 			<map-buttons class={`flexCen  boRadXs overHidden bInsetBlueTopXl zinMaXl gapXxxs posAbs marAuto botCen w70 mw90 `}>
-					<button
-						disabled={zoomLimits.current >= zoomLimits.max}
-						onClick={() => {
-							zoom.zoomIn();
-							mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-						}}
-						className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${
-							zoomLimits.current >= zoomLimits.max ? 'opacityS noPoint' : ''
-						}`}>
-						Přiblížit
-					</button>
-				
+				<button
+					disabled={zoomLimits.current >= zoomLimits.max}
+					onClick={() => {
+						zoom.zoomIn();
+						mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+					}}
+					className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${zoomLimits.current >= zoomLimits.max ? 'opacityS noPoint' : ''}`}>
+					Přiblížit
+				</button>
 
 				{/* NAVIGATION MESSAGES AND RESET --------------------------- */}
-				{!singleEvent &&
-					(brain.eventPopup ||
-						clusterEventsRef.current.length > 0 ||
-						!snap?.types?.some(type => avail?.types?.includes(type)) ||
-						(inited.current && snapItems.current?.length !== brain.itemsOnMap?.length)) && (
-						<button
-							onClick={() => {
-								if (brain.eventPopup || clusterEventsRef.current.length > 0) delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1);
-								else zoom.fitMap(), mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-							}}
-							className={`${brain.eventPopup || clusterEventsRef.current.length > 0 ? 'bDarkPurple' : 'bDarkRed'} grow boRadXxs textAli mw30 bHover tWhite padVerXxs fs8 xBold`}>
-							{`${
-								brain.eventPopup || clusterEventsRef.current.length > 0
-									? 'zavřít náhled'
-									: !snap?.types?.some(type => avail?.types?.includes(type))
-									? 'Nemáš zvolené typy událostí !!!'
-									: snapItems.current?.length !== brain.itemsOnMap?.length
-									? 'Nevidíš všechno'
-									: ''
-							}`}
-						</button>
-					)}
-
+				{!singleEvent && (brain.eventPopup || clusterEventsRef.current.length > 0 || !snap?.types?.some(type => avail?.types?.includes(type)) || (inited.current && snapItems.current?.length !== brain.itemsOnMap?.length)) && (
 					<button
-						disabled={zoomLimits.current <= zoomLimits.min}
 						onClick={() => {
-							zoom.zoomOut();
-							mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+							if (brain.eventPopup || clusterEventsRef.current.length > 0) (delete brain.eventPopup, (clusterEventsRef.current = []), setRecalc(prev => prev + 1));
+							else (zoom.fitMap(), mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }));
 						}}
-						className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${
-							zoomLimits.current <= zoomLimits.min ? 'opacityS noPoint' : ''
-						}`}>
-						Oddálit
+						className={`${brain.eventPopup || clusterEventsRef.current.length > 0 ? 'bDarkPurple' : 'bDarkRed'} grow boRadXxs textAli mw30 bHover tWhite padVerXxs fs8 xBold`}>
+						{`${brain.eventPopup || clusterEventsRef.current.length > 0 ? 'zavřít náhled' : !snap?.types?.some(type => avail?.types?.includes(type)) ? 'Nemáš zvolené typy událostí !!!' : snapItems.current?.length !== brain.itemsOnMap?.length ? 'Nevidíš všechno' : ''}`}
 					</button>
-				
+				)}
+
+				<button
+					disabled={zoomLimits.current <= zoomLimits.min}
+					onClick={() => {
+						zoom.zoomOut();
+						mapContainer.current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+					}}
+					className={`grow bHover textAli  padVerXxs mw25  bInsetBlueTopXs2 bBor2  fs8 opacityL xBold ${zoomLimits.current <= zoomLimits.min ? 'opacityS noPoint' : ''}`}>
+					Oddálit
+				</button>
 			</map-buttons>
 
 			<blue-divider class={` hr1 borTop block bInsetBlueTopXl borTop bgTrans posAbs botCen zinMax downTinyBit w100  mw160   marAuto   `} />

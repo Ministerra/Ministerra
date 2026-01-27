@@ -427,14 +427,14 @@ const ImageCropper = props => {
 	}, [zoom, rotation, aspect]);
 
 	return (
-		<image-cropper class={`w100 ${isIntroduction ? 'mw160 marAuto' : ''} ${nowAt === 'editor' ? 'marBotM' : ''}  boRadS overHidden marAuto  block posRel`}>
+		<image-cropper class={`w100 ${isIntroduction ? 'mw160 marAuto' : nowAt !== 'editor' ? 'mw140 marAuto' : ''}   boRadS overHidden marAuto  block posRel`}>
 			{!imageSrc ? (
 				<load-image name="image" className="w100 block   marAuto pointer posRel">
 					{/* TITLE TEXTS ------------------------------------------------- */}
 					{data.id && nowAt !== 'editor' && (
 						<title-texts class="posRel block">
-							<span className="xBold marBotXxxs fs10 block">Profilová fotka</span>
-							<p className="fs6 marBotXs mw160 lh1 marAuto">Však to znáš, s profilovkou budeš mít o dost větší šanci na úspěch.</p>
+							<span className="xBold marBotXxxs fs15 textSha block">Profilová fotka</span>
+							<p className="fs8 marBotXs mw160 lh1 marAuto">Však to znáš, s profilovkou budeš mít o dost větší šanci na úspěch.</p>
 						</title-texts>
 					)}
 
@@ -448,12 +448,12 @@ const ImageCropper = props => {
 					{/* REVERT BUTTON WHEN IMAGE IS REMOVED ------------------------- */}
 					{originalImageSrc && (
 						<button
-							className={'boldS fs8 textSha bInsetBlueTopXs posRel tWhite shaBlue bInsetBlue w100 mw20 padVerXxs boRadXs marTopXs block marAuto'}
+							className={'boldS fs8 textSha bInsetBlueTopXs posRel tDarkBlue thickBors shaBlue bInsetBlue w100 mw25 padVerXxs boRadXs moveUpMore block marAuto'}
 							onClick={() => {
 								setImageSrc(originalImageSrc);
 								fitImageToCanvas();
 							}}>
-							Vrátit obrázek
+							Vrátit původní obrázek
 						</button>
 					)}
 				</load-image>
@@ -475,24 +475,24 @@ const ImageCropper = props => {
 					</canvas-wrapper>
 
 					{/* CROP AREA NOT COVERED INFORM ------------------------------------------------ */}
-					{!isAreaCovered && <div className="padVerXxxs borTop 	 tWhite fs11 bBlue tSha10 boldS w100 mw120 inlineBlock">Plocha výřezu není zcela zakrytá (NEPOVINNÉ)</div>}
+					{!isAreaCovered && <div className="padVerXxxs borTop 	 tWhite fs9 bBlue textSha boldS w100 mw120 inlineBlock">Plocha výřezu není zcela zakrytá (NEPOVINNÉ)</div>}
 
 					{/* BASICS CONTROLS BS -------------------------------------------------------------- */}
 					<div style={{ filter: 'saturate(0.8)' }} className=" 	hvw8 mh5 growAll  gapXxxs flexCen posRel bInsetBlueTop  w100 mw120 marAuto">
 						<blue-divider style={{ filter: 'brightness(0.7)' }} class={`hr0-5 borTop block posAbs zinMaXl topCen bInsetBlueTopXl borTop bgTrans w100 marAuto`} />
 
-						<button className={'xBold fs10  textSha   bHover  h100 bgTrans  shaBlue '} onClick={() => document.querySelector('#file').click()}>
+						<button className={'boldM fs10  textSha   bHover  h100 bgTrans  shaBlue '} onClick={() => document.querySelector('#file').click()}>
 							Změnit obrázek
 						</button>
-						<button className={'xBold fs10  textSha   bHover h100 bgTrans  shaBlue '} onClick={fitImageToCanvas}>
+						<button className={'boldM fs10  textSha   bHover h100 bgTrans  shaBlue '} onClick={fitImageToCanvas}>
 							Reset pozice
 						</button>
-						<button className={'xBold fs10  textSha  bHover h100 bgTrans  shaBlue '} onClick={() => (setImageSrc(null), superMan('image', null))}>
+						<button className={'boldM fs10  textSha  bHover h100 bgTrans  shaBlue '} onClick={() => (setImageSrc(null), superMan('image', null))}>
 							Odstranit obrázek
 						</button>
 						{originalImageSrc && imageSrc !== originalImageSrc && (
 							<button
-								className={'xBold fs10 textSha bDarkBlue tWhite  shaBlue '}
+								className={'boldM fs10 textSha bDarkBlue tWhite  shaBlue '}
 								onClick={() => {
 									setImageSrc(originalImageSrc);
 									fitImageToCanvas();

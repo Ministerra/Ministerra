@@ -90,21 +90,14 @@ function FavouriteExpertTopics(p: any) {
 		setInputWarn([]);
 	};
 	const renderTopics = (topics, cat, colorClass) => (
-		<div className='flexRow hr3 aliStretch marBotXxs wrap gapXxs marRigS justCen '>
+		<div className="flexRow hr3 aliStretch marBotXxs wrap gapXxs marRigS justCen ">
 			<span className={`fs18 ${colorClass} textSha selfCen inlineBlock marRigS xBold`}>{cat === 'favs' ? 'Oblíbené:' : 'Expertní:'}</span>
 			{topics.map((val, i) => (
 				<div key={i} className={`${editing.cat === cat && editing.i === i ? 'bsContentGlow' : ''} sideBors borderBot marRigXxs boRadXxs flexRow`}>
 					{editing.cat === cat && editing.i === i ? (
-						<input
-							ref={editInputRef}
-							value={editingValue}
-							placeholder={topics[i]}
-							onChange={e => setEditingValue(e.target.value)}
-							onKeyDown={e => handleKeyPress(e, cat, i)}
-							className='shaBlue bHover w100 wAuto padHorXs h100 fs10 boldXs'
-						/>
+						<input ref={editInputRef} value={editingValue} placeholder={topics[i]} onChange={e => setEditingValue(e.target.value)} onKeyDown={e => handleKeyPress(e, cat, i)} className="shaBlue bHover w100 wAuto padHorXs h100 fs10 boldXs" />
 					) : (
-						<button className='pointer  bHover shaBlue h100 bHover padHorS fs10 boldXs' onClick={() => man('del', cat, i)}>
+						<button className="pointer  bHover shaBlue h100 bHover padHorS fs10 boldXs" onClick={() => man('del', cat, i)}>
 							{val}
 						</button>
 					)}
@@ -117,11 +110,7 @@ function FavouriteExpertTopics(p: any) {
 								setEditingValue(val);
 							}
 						}}>
-						<img
-							className={'mw2 '}
-							src={`/icons/${editing.cat === cat && editing.i === i ? 'surely.png' : 'edit.png'}`}
-							alt={editing.cat === cat && editing.i === i ? 'confirm' : 'edit'}
-						/>
+						<img className={'mw2 '} src={`/icons/${editing.cat === cat && editing.i === i ? 'surely.png' : 'edit.png'}`} alt={editing.cat === cat && editing.i === i ? 'confirm' : 'edit'} />
 					</button>
 				</div>
 			))}
@@ -129,14 +118,12 @@ function FavouriteExpertTopics(p: any) {
 	);
 
 	return (
-		<div className='marAuto wrap justCen fPadHorS w100'>
+		<div className="marAuto wrap justCen fPadHorS w100">
 			{data.id && (
 				<title-texts>
-					<span className='xBold marBotXxs inlineBlock fs15'>Vlastní témata</span>
-					<p className='fs8 marBotXs mw160 lh1 marAuto'>
-						Zadej alespoň 2 oblíbená konverzační témata a nebo odborná témata, v nichž rád obohatíš ostatní. Pro obě kategorie dohromady je maximální počet znaků {charsLimit}.
-					</p>
-					{totalChars >= charsLimit && <span className='fs16 tRed xBold inlineBlock'>Dosažen maximální počet znaků</span>}
+					<span className="xBold marBotXxs inlineBlock fs15">Vlastní témata</span>
+					<p className="fs8 marBotXs mw160 lh1 marAuto">Zadej alespoň 2 oblíbená konverzační témata a nebo odborná témata, v nichž rád obohatíš ostatní. Pro obě kategorie dohromady je maximální počet znaků {charsLimit}.</p>
+					{totalChars >= charsLimit && <span className="fs16 tRed xBold inlineBlock">Dosažen maximální počet znaků</span>}
 				</title-texts>
 			)}
 
@@ -154,14 +141,14 @@ function FavouriteExpertTopics(p: any) {
 					if (inform.length > 0) setInform([]);
 				}}
 				className={`${somethingsWrong ? 'borderRed' : ''} padAllS  arrowDown1 posRel fs18 bold grow shaComment textAli hr5 w100`}
-				placeholder='Zadej oblíbené či expertní téma ...'
+				placeholder="Zadej oblíbené či expertní téma ..."
 				maxLength={200}
 			/>
 
 			{informSrc.top.some(m => inputWarn.includes(m)) && (
-				<input-warnings className='marTopXxs marBotXxs block'>
+				<input-warnings className="marTopXxs marBotXxs block">
 					{inputWarn.map((m, i) => (
-						<span key={i} className='tRed fs8 bold'>
+						<span key={i} className="tRed fs8 bold">
 							{m === 'noTopic' && 'Nejdříve zadej téma'}
 							{m === 'invalidTopic' && 'První slovo nesmí obsahovat symbol.'}
 							{m === 'tooShort' && 'Téma musí mít alespoň 3 znaky.'}
@@ -173,13 +160,13 @@ function FavouriteExpertTopics(p: any) {
 				</input-warnings>
 			)}
 
-			{!somethingsWrong && <blue-divider className='hr0-5 borTop block bInsetBlueTopXl borTop bgTrans posRel w100  mw120 borTop marAuto' />}
+			{!somethingsWrong && <blue-divider className="hr0-5 borTop block bInsetBlueTopXl borTop bgTrans posRel w100  mw120 borTop marAuto" />}
 
-			{data.id && inform.includes('addFavs') && <span className='tRed fs8 marTopXxs inlineBlock xBold'>zadej alespoň 2 oblíbená konverzační témata</span>}
+			{data.id && inform.includes('addFavs') && <span className="tRed fs8 marTopXxs inlineBlock xBold">zadej alespoň 2 oblíbená konverzační témata</span>}
 			{data.favs?.length >= 2 && !inform.includes('addFavs') && informSrc.bottom.some(w => inform.includes(w)) && (
 				<topic-warnings>
 					{inform.map((m, i) => (
-						<span key={i} className='tRed marRigXs xBold fs8 marTopXs lh1 inlineBlock aliCen'>
+						<span key={i} className="tRed marRigXs xBold fs8 marTopXs lh1 inlineBlock aliCen">
 							{m === 'notSpecific' && 'Příliš mnoho jednoslovných témat. Zadej je kvalitněji.'}
 							{m === 'shortWords' && !inform.includes('notSpecific') && !inputWarn.includes('notSpecific') && 'témata obsahují příliš krátkých slov'}
 							{i < inform.length - (['notSpecific', 'shortWords'].every(k => inform.includes(k)) ? 2 : 1) ? ' + ' : ''}
@@ -188,19 +175,19 @@ function FavouriteExpertTopics(p: any) {
 				</topic-warnings>
 			)}
 			{inputValue.length > 1 && (
-				<addtopic-buttons className='flexCen w100 borBot gapXxs  posRel mw120 marAuto bw50'>
-					<button className='posRel shaBlue borderBot bInsetBlueTopXs bBor tBlue w80 padVerS marTopXxs boRadXxs miw10' onClick={() => man('addTopic', 'favs')}>
-						<span className='fs16 lh1 tBlue xBold'>Přidat do OBLÍBENÝCH</span>
-						<span className='fsA lh1 tDarkBlue'>O tomhle si strašně rád povídáš</span>
+				<addtopic-buttons className="flexCen w100 borBot gapXxs  posRel mw120 marAuto bw50">
+					<button className="posRel shaBlue borderBot bInsetBlueTopXs bBor tBlue w80 padVerS marTopXxs boRadXxs miw10" onClick={() => man('addTopic', 'favs')}>
+						<span className="fs16 lh1 tBlue xBold">Přidat do OBLÍBENÝCH</span>
+						<span className="fsA lh1 tDarkBlue">O tomhle si strašně rád povídáš</span>
 					</button>
-					<button className='posRel shaBlue bInsetBlueTopXs bBor borderBot w80 padVerS marTopXxs boRadXxs miw10' onClick={() => man('addTopic', 'exps')}>
-						<span className='fs16 lh1 tGreen xBold'>Přidat do EXPERTNÍCH</span>
-						<span className='fsA lh1 tDarkGreen'>V tomhle jsi odborník a rád vzděláš druhé.</span>
+					<button className="posRel shaBlue bInsetBlueTopXs bBor borderBot w80 padVerS marTopXxs boRadXxs miw10" onClick={() => man('addTopic', 'exps')}>
+						<span className="fs16 lh1 tGreen xBold">Přidat do EXPERTNÍCH</span>
+						<span className="fsA lh1 tDarkGreen">V tomhle jsi odborník a rád vzděláš druhé.</span>
 					</button>
 				</addtopic-buttons>
 			)}
 			{inputValue.length < 2 && [...(data.favs || []), ...(data.exps || [])].length > 0 && (
-				<existing-topics className='flexInline justCen marTopS  w100  wrap'>
+				<existing-topics className="flexInline justCen marTopS  w100  wrap">
 					{data.favs?.length > 0 && renderTopics(data.favs, 'favs', 'tBlue')}
 					{data.exps?.length > 0 && renderTopics(data.exps, 'exps', 'tGreen')}
 				</existing-topics>
@@ -213,7 +200,7 @@ function FavouriteExpertTopics(p: any) {
 				</span>
 			)}
 
-			<span ref={textMeasureRef} className='hide posAbs preWrap' />
+			<span ref={textMeasureRef} className="hide posAbs preWrap" />
 		</div>
 	);
 }

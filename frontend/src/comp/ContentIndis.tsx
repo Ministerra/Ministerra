@@ -58,10 +58,14 @@ function ContentIndis({ status, obj, isCardOrStrip, modes = {}, isSearch, isInvi
 	return (
 		<indicators-div class="flexInline  aliCen justCen noPoint" style={{ display: 'contents' }}>
 			{/* INTERREST INDI - CARD AND GALLERY ------------------------------------ */}
-			{((thisIs === 'alert' && status.inter) || (thisIs === 'event' && ['sur', 'may', 'int'].includes(status.inter) && (galleryMode !== 'futuInt' || status.inter !== 'int') && !hideAttenRating)) && (
+			{((thisIs === 'alert' && status.inter) || (thisIs === 'event' && ['sur', 'may', 'int'].includes(status.inter) && (galleryMode !== 'futuInt' || status.inter !== 'int'))) && (
 				<inter-indi class="flexInline aliCen marRigXxs" style={{ display: 'contents' }}>
 					<span className={`${status.inter === 'may' ? 'chipBlue' : status.inter === 'sur' ? 'chipGreen' : 'chipOrange'} ${isCardOrStrip ? chipClass : 'fs10 hr2 flexInline padHorS boldM tWhite'} marRigXxs`}>{status.inter === 'sur' ? 'určitě jdeš' : status.inter === 'may' ? 'možná jdeš' : 'zajímá tě'}</span>
-					{status.interPriv && status.interPriv !== 'pub' && <span className={`padHorXs ${chipFontClass} bold textSha opacityL noWrap`}>{{ lin: 'spojenci', own: 'jen autor', tru: 'důvěrníci' }[status.interPriv]}</span>}
+					{status.interPriv && status.interPriv !== 'pub' && (
+						<span className={`padHorXs ${chipFontClass} bold textSha fs10 opacityL noWrap`}>
+							vidí <strong>{{ lin: 'spojenci', own: 'jen autor', tru: 'důvěrníci' }[status.interPriv]}</strong>
+						</span>
+					)}
 				</inter-indi>
 			)}
 			{/* OPTIONAL INDIS --------------------------------------------- */}

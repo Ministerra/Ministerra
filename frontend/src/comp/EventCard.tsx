@@ -10,6 +10,7 @@ import EventBadges from './EventBadges';
 import { showUsersProfile } from '../utils/userProfileUtils';
 import EveActionsBs from './EveActionsBs';
 import UserCard from './UserCard';
+import Invitations from './Invitations';
 
 // TODO consider rendering more portrait pictures, but put clear indications where sur portraits end and maybe portraits start
 // TODO show number of comments in content indis
@@ -54,7 +55,7 @@ function EventCard(props: any) {
 			invite: false,
 		}),
 		hideMenu = modes.menu && (modes.protocol || modes.evePreview || modes.invites || modes.delete || modes.cancel || modes.inter || modes.feedback || modes.deletePast || modes.invitees || modes.invitors),
-		resetSubModes = (hideMenu = false) => setModes(prev => ({ ...prev, protocol: false, evePreview: false, invites: false, delete: false, cancel: false, inter: false, feedback: false, deletePast: false, invitees: false, invitors: false, menu: !hideMenu })),
+		resetSubModes = (hideMenu = false) => setModes(prev => ({ ...prev, protocol: false, evePreview: false, invites: false, delete: false, cancel: false, inter: false, feedback: false, deletePast: false, invitees: false, invitors: false, profile: false, menu: !hideMenu })),
 		isInactive = status.deleted || status.canceled,
 		imgVers = obj.imgVers?.toString().split('_')[0] || 0,
 		// IS PAST CHECK ---
@@ -67,7 +68,7 @@ function EventCard(props: any) {
 		<open-event
 			onClick={e => {
 				e.stopPropagation();
-				if (hideMenu) return resetSubModes(true);
+				if (hideMenu || modes.profile || modes.invites) return resetSubModes(true);
 				navigate(`/event/${obj.id}`);
 			}}
 			class="posAbs topLeft h100 w100 pointer"
@@ -122,8 +123,8 @@ function EventCard(props: any) {
 				setModes(prev => ({ ...prev, share: false, menu: !prev.menu, actions: false, protocol: false, profile: false, invites: false }));
 				setStatus(prev => ({ ...prev, copied: false }));
 			}}
-			class={`bHover  selfEnd aliCen point ${cardsView === 1 && !status.isMeeting ? 'floatLeft' : ''} ${!status.isMeeting || cardsView === 2 ? (cardsView !== 2 ? 'moveUp' : { 2: 'downLittle', 3: 'moveDown', 4: 'moveDownMore', 5: 'downEvenMore' }[cols] || '') : 'upTiny'} textAli     boRadXxs ${modes.menu ? 'bsContentGlow boRadL upLittle padHorXs borBot8' : ''} pointer marRigS posRel   zin2500`}>
-			<img className={`${cols === 2 ? 'miw6 mw14' : 'miw6 mw16'} aspect1611 selfEnd zinMaXl `} src={`/icons/types/${obj.type}.png`} alt="" />
+			class={`bHover mw16 selfEnd aliCen point ${cardsView === 1 && !status.isMeeting ? 'floatLeft' : ''} ${!status.isMeeting || cardsView === 2 ? (cardsView !== 2 ? 'moveUp' : { 2: 'downLittle', 3: 'moveDown', 4: 'moveDownMore', 5: 'downEvenMore' }[cols] || 'downLittle') : 'upTiny'} textAli     boRadXxs ${modes.menu ? 'bsContentGlow boRadL upTinyBit    borBot8' : ''} pointer marRigS posRel w20   zin2500`}>
+			<img className={`${cols === 2 || cardsView === 2 ? 'mw16' : ' mw16'} w100  aspect1611 selfEnd zinMaXl `} src={`/icons/types/${obj.type}.png`} alt="" />
 			{!hideMenu && !modes.menu && <span className="bold fs8 posRel posAbs padVerXxxxs bgTrans tShaWhiteXl padHorXs   w60 miw8 botCen textSha">{typesMap.get(obj.type)?.cz || 'NEEXISTUJUJÍCÍ TYP'}</span>}
 			{modes.menu && <span className="bold fs8 posRel posAbs padVerXxxxs bRed tWhite padHorXs w100 marBotXxxs miw8 botCen textSha">{hideMenu ? 'zpět na menu' : 'skrýt menu'}</span>}
 		</type-img>
@@ -170,7 +171,7 @@ function EventCard(props: any) {
 
 	// PARTICIPANT THUMBNAILS COMPONENT ---
 	const thumbsWrapper = (
-		<thumbs-wrapper class={`flexRow padVerXxxs bgTrans posRel boRadXs wrap grow shaTop noPoint`}>
+		<thumbs-wrapper class={`flexRow padVerXxxs  posRel boRadXs w100 wrap  shaTop noPoint`}>
 			{interUsers.map((user, i) => (
 				<img
 					key={user.id + i}
@@ -190,7 +191,7 @@ function EventCard(props: any) {
 	// DYNAMIC TEXT STYLING CLASSES ---
 	const titleClass = { 1: 'fs17', 2: 'fs15', 3: 'fs15', 4: 'fs12', 5: 'fs10' }[cols] || (status.embeded ? 'fs18 lh0-8 marBotXxxs' : 'fs14'),
 		subTitleClass = { 1: 'fs11', 2: 'fs10', 3: 'fs9', 4: 'fs8', 5: 'fs7' }[cols] || 'fs9',
-		shortClass = { 1: 'fs10', 2: 'fs9', 3: 'fs8', 4: 'fs7', 5: 'fs6' }[cols] || 'fs9';
+		shortClass = { 1: 'fs9', 2: 'fs9', 3: 'fs8', 4: 'fs7', 5: 'fs6' }[cols] || 'fs9';
 
 	// EVENT METADATA SUBTITLE COMPONENT ---
 	const subTitleElement = (centered = false) => (
@@ -225,9 +226,9 @@ function EventCard(props: any) {
 	// ICON AND TITLE SECTION ------------------------------------------------
 	// event type  icon on the left, title, subtitle, badges, shortDesc on the right
 	const iconTitle = (
-		<icon-title class={`${cardsView != 3 ? 'flexRow aliStart' : cardsView === 3 ? 'marTopS block' : ''} zinMaXl  noPoint `}>
+		<icon-title class={`${cardsView != 3 ? 'flexRow aliStart' : cardsView === 3 ? 'marTopS block' : ''} zinMaXl noBackground noPoint `}>
 			{typeImg}
-			<left-wrapper class={`${cardsView === 2 ? 'padTopXl posRel grow' : isPreview ? (obj.imgVers ? 'padTopXs ' : '') : ''} noPoint block ${!status.isMeeting ? 'padTopXs' : ''}`}>
+			<left-wrapper class={`${cardsView === 2 ? 'padTopXl posRel grow' : isPreview ? (obj.imgVers ? 'padTopXs ' : '') : ''} w85   noPoint block ${!status.isMeeting ? 'padTopXs' : ''}`}>
 				<text-wrapper class={`fPadHorXxxs block    w100`}>
 					{cardsView === 1 && obj.type.startsWith('a') && thumbsWrapper}
 
@@ -253,29 +254,31 @@ function EventCard(props: any) {
 				isMapPopUp ? 'mw100 shaBotLongDown bBor2 w95 boRadXxs textLeft marTopM posRel bgWhite shrink0' : 'mw160 bgTrans w100 posRel boRadXxs marAuto'
 			} ${modes.protocol ? 'borderLight ' : ''} marAuto zinMaXl block boRadXs block    posRel boRadXxs`}>
 			{cardsView === 2 && iconTitle}
-			{modes.menu && cardsView === 2 && <EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
+			{modes.menu && cardsView === 2 && !modes.invites && <EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
 
 			{/* MEDIA AND OVERLAYS SECTION --- */}
-			<main-images class={`posRel block maskTopXxs aliStart flexCol zinMaXl  `}>
+			<main-images class={`posRel block maskTopXxs aliStart flexCol zinMaXl   `}>
+				<div className={`bgWhite topCen opacityXs shaCon h4  posAbs w100 zinMaXl`} />
+
 				<InteractionHitboxes />
 				{/* INTERACTIVE HINTS --- */}
-				<hint-spans class={`posAbs zinMaXl textAli noPoint w100  `}>
-					{(modes.profile || modes.invites) && (
-						<info-strip
-							// CLOSE PROFILE (DO NOT NAVIGATE) ---
-							// This overlay is a "back" affordance; it must not bubble into the card's root click navigation.
-							onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, profile: false, invites: false })))}
-							class="posAbs topCen zinMaXl w100 textAli">
-							<arrow-down style={{ scale: '0.7', filter: 'brightness(1.2)' }} className="arrowDownRed posRel  zinMaXl  textAli   marAuto   inlineBlock   downLittle  s  xBold " />
-							<span className="  tRed tShaWhiteXl  padHorM padVerXxs marAuto posAbs topCen   textAli   padHorM marAuto  padVerXxxs inlineBlock borTop bInsetBlueTopXs  fs12  xBold ">zpět na událost</span>
-						</info-strip>
-					)}
-				</hint-spans>
+				{(modes.profile || modes.invites) && (
+					<info-strip
+						// CLOSE PROFILE (DO NOT NAVIGATE) ---
+						// This overlay is a "back" affordance; it must not bubble into the card's root click navigation.
+						onClick={e => (e.stopPropagation(), resetSubModes(true))}
+						class="posAbs topCen zin2500 w100 textAli">
+						<arrow-down style={{ scale: '0.7', filter: 'brightness(1.2)' }} className="arrowDownRed posRel  zinMaXl  textAli   marAuto   inlineBlock   downLittle  s  xBold " />
+						<span className="  tRed padTopXxs tShaWhiteXl  padHorM  marAuto posAbs topCen   textAli  zinMaXl padHorM marAuto   inlineBlock borTop bInsetBlueTopXs  fs10  xBold ">zpět na událost</span>
+					</info-strip>
+				)}
 
 				{/* COVER IMAGE AND PARTICIPANT THUMBNAILS SECTION -------------------------------- */}
 				{status.isMeeting ? (
-					<cover-portraits class={` posRel aliEnd flexCol ${cardsView === 2 ? 'hvw12' : 'hvw14'}  w100 boRadS zinMaXl noPoint`}>
-						<img decoding="async" className={`w100 cover  boRadXxs maskLowXs hvw11   h100 `} src={`/covers/friendlyMeetings/${obj.type}.png`} alt="" />
+					<cover-portraits class={` posRel aliEnd flexCol ${cardsView === 2 ? 'hvw12' : 'hvw14'}  mih25 w100 boRadS zinMaXl noPoint`}>
+						<div className={`bgWhite topCen opacityXs shaCon h10  posAbs w100 zinMaXl`} />
+
+						<img decoding="async" className={`w100 cover  boRadXxs maskLowXs hvw13  mih16  h100 `} src={`/covers/friendlyMeetings/${obj.type}.png`} alt="" />
 						{/* PARTICIPANT THUMBNAILS --- */}
 						{cardsView !== 3 && (
 							<portraits-pics class={` posRel posAbs  boRadS shaTop  botLeft w100  flexRow noPoint`}>
@@ -305,7 +308,9 @@ function EventCard(props: any) {
 
 				{cardsView === 2 && (
 					<view-two>
-						{obj.shortDesc && <p className={`posRel borLeftThick  marBotXs   ${shortClass} lh1-1`}>{obj.shortDesc}</p>}
+						{obj.shortDesc && !modes.invites && <p className={`posRel borLeftThick  marBotXs   ${shortClass} lh1-1`}>{obj.shortDesc}</p>}
+						{modes.invites && <Invitations {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
+
 						{obj.badges && <EventBadges obj={obj} />}
 					</view-two>
 				)}

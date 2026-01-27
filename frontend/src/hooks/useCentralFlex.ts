@@ -39,7 +39,7 @@ const useCentralFlex = (mode, dependencyArr = [], nowAt, numOfItems, wrapperRef 
 		// Steps: read container width, bail during overlays, compute minWidth from config and item count, pick onRow within bounds, optionally adjust to even distribution, then return final px width.
 		const width = elem?.offsetWidth || 0;
 		if (!width) return null; // NO WIDTH YET ---------------------------
-		if (mode !== 'galleryCats' && document.body.classList.contains('overHidden')) return null; // SKIP DURING MODAL/OVERLAY ---------------------------
+		if (mode !== 'galleryCats' && mode !== 'hours' && mode !== 'minutes' && mode !== 'days' && mode !== 'months' && mode !== 'decades' && document.body.classList.contains('overHidden')) return null; // SKIP DURING MODAL/OVERLAY ---------------------------
 		const safeNumItems = Math.max(numOfItems || 1, 1);
 		let minWidth = Math.max(config.minWidth || 0, Math.floor(360 / (config.minOnRow || 1)), Math.floor(width / safeNumItems));
 		let onRow = Math.min(Math.ceil(width / (minWidth || 1)), config.maxOnRow || 6);

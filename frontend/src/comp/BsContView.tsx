@@ -52,7 +52,7 @@ function BsContView({ fadedIn, brain, snapMan, map, fetchInProg, show, avail: { 
 						key={val}
 						disabled={!selExists && snap.contView !== val.toLowerCase()}
 						onClick={() => !fetchInProg && handleViewSelection(src.abb[val])}
-						className={`${val === 'Users' && !snap.changed && sherChanged ? 'bInsetPurpleTop borTopPurple8 padTopXl  fs29  xBold' : snap.changed ? ` fs29 bgTrans padTopXl xBold` : snap.contView === val.toLowerCase() && selExists ? ` fs29 padTopXl    bgTrans  tSha10 posRel   xBold ` : `${show.mode === 'expert' ? 'shaTopLight borTopLight' : ''}  padTopL posRel bgTransXs bold  fs23`}  flexCol  padBotM   maskLowXs   textSha bHover`}>
+						className={`${val === 'Users' && !snap.changed && sherChanged ? 'bInsetPurpleTop borTopPurple8 padTopXl  fs29  xBold' : snap.changed ? `sideBors fs29 bgTrans padTopXl xBold` : snap.contView === val.toLowerCase() && selExists ? ` fs29 padTopXl    bgTrans  tSha10 posRel   xBold ` : `${show.mode === 'expert' ? 'shaTopLight borTopLight' : ''}  padTopL posRel bgTransXs bold  fs23`}  flexCol  padBotM   maskLowXs   textSha bHover`}>
 						{/* BUTTON LABEL CONTENT --- */}
 						{/* Displays current state, loading progress, or navigational guidance */}
 						{fetchInProg && snap.contView === val.toLowerCase() ? 'Pracuji ...' : snap.changed ? `${selMeetings ? `${brain.stillShowingMapContent ? `Přepočítat ${src.bs[val] === 'Události' ? 'události' : 'účastníky'}` : val === 'Users' && !snap.changed && sherChanged ? 'Změna Sherlocka' : src.bs[val]}` : `${brain.stillShowingMapContent ? 'Přepočítat události' : 'Zobrazit události'} ${show.map === true ? 'z mapy' : brain.stillShowingMapContent ? '' : 'z filtru'}`}` : src.bs[val]}

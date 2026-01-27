@@ -37,9 +37,9 @@ function EventHeaderImage({ event, fadedIn = [], maximizeImg = false, onImageCli
 			{isMeeting ? (
 				// FRIENDLY MEETING --------------------------------------------------------------
 				<meeting-image class="posRel block w100 h100">
-					<img loading="lazy" className="w100 boRadXs maskLow  zinMin h100 hvh40  cover" src={`/covers/friendlyMeetings/${event.type}.png`} alt="" />
+					<img loading="lazy" className="w100 boRadXs maskLow  zinMin h100 hvh45  cover" src={`/covers/friendlyMeetings/${event.type}.png`} alt="" />
 					{/* EVENT TYPE ICON ----------------------------------------------------------------*/}
-					{!maximizeImg && <img className={` posAbs maskLowXs  boRadL  w70  ${!isMeeting ? 'botCen mw35' : 'topCen mw33 marTopS '}`} src={`/icons/types/${event.type}.png`} alt="" />}
+					{!maximizeImg && <img className={` posAbs   boRadL  w50 center mw33 marTopXxxl `} src={`/icons/types/${event.type}.png`} alt="" />}
 				</meeting-image>
 			) : (
 				// REGULAR EVENT --------------------------------------------------------------

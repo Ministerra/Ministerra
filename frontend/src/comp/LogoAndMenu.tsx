@@ -129,11 +129,11 @@ function LogoAndMenu(props) {
 	// FILTER MANAGEMENT ---------------------------
 	async function changeCities(inp) {
 		setFadedIn([]);
-		const [user, cities] = [brain.user, inp];
+		const [user, cities] = [brain.user, inp.map(c => c.cityID || c)];
 		const needCities = cities.filter(city => typeof city === 'object' || !brain.citiesEveTypesInTimes[city]);
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 		if (needCities.length) loader.load(`/?homeView=cityEvents&newCities=${encodeURIComponent(JSON.stringify(cities))}`);
-		else ((user.curCities = inp), setInitialize('cityEvents'));
+		else ((user.curCities = cities), setInitialize('cityEvents'));
 	}
 
 	// SHARED MENU PROPS ---------------------------
@@ -141,7 +141,7 @@ function LogoAndMenu(props) {
 	const prevMenuView = sessionStorage.getItem('menuView');
 
 	const hasNotifs = notifDots.chats > 0 || notifDots.alerts > 0 || notifDots.archive > 0;
-	const notifDot = <span className={`miw2 posAbs ${menuView ? 'botCen' : 'left'} hr2 zin2500 bDarkRed round`} />;
+	const notifDot = <span className={`miw2 posAbs ${menuView ? 'botCen' : 'left'} hr2  zin2500 bDarkRed round`} />;
 
 	return (
 		<logo-menu class={'posRel block bgTransXs mhvh100  zin3000'}>

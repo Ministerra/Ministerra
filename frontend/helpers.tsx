@@ -206,7 +206,6 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 				indis: splitNum(indis),
 				score: Number(score),
 				age,
-				priv,
 				gender,
 				imgVers: Number(imgVers),
 				eveInters,

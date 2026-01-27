@@ -25,6 +25,7 @@ function EveMenuStrip({
 	obj: eventObj = {}, // Renamed obj to eventObj
 	modes = {},
 	isCardOrStrip,
+	isStrip,
 	galleryMode = '',
 	isSearch,
 	brain = {},
@@ -230,12 +231,7 @@ function EveMenuStrip({
 	const menuSources = {
 		invitees: galleryMode === 'invitesOut' ? () => toggleMode('invitees') : null,
 		invitors: galleryMode === 'invitesIn' ? () => toggleMode('invitors') : null,
-		otevřít: isCardOrStrip
-			? () => {
-					if (menuView) storeMenuViewState(menuView, galleryMode, eventObj.id);
-					navigate(`/event/${eventObj.id}!${encodeURIComponent(eventObj.title).replace(/\./g, '-').replace(/%20/g, '_')}`);
-				}
-			: null,
+
 		náhled:
 			galleryMode || isSearch
 				? async () => {
@@ -243,17 +239,9 @@ function EveMenuStrip({
 						toggleMode('evePreview');
 					}
 				: null,
-		účast: !galleryMode.includes('past') && !isInactive && (!own || (own && !status.isMeeting)) && isCardOrStrip ? async () => toggleMode('inter') : null,
 		smazat: nowAt !== 'event' && !undeletable && !status.deleted && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.state !== 'del' ? () => toggleMode('delete') : null,
 		zrušit: nowAt !== 'event' && !isInactive && (galleryMode === 'futuOwn' || !isCardOrStrip) && own && eventObj.starts > Date.now() && !eventObj.canceled ? () => toggleMode('cancel') : null,
-		editovat:
-			!galleryMode.includes('past') && !isInactive && (galleryMode || nowAt === 'event') && own
-				? () => {
-						navigate(`/editor/${eventID}!${eventObj.title ? encodeURIComponent(eventObj.title.slice(0, 50)).replace(/\./g, '-').replace(/%20/g, '_') : ''}`);
-					}
-				: null,
-		sdílet: () => toggleMode('share'),
-		'zpětná vazba': allowFeedback && !isInactive ? () => toggleMode('feedback') : null,
+
 		kopírovat: () => copyTextsAndLink(),
 		skrýt: galleryMode === 'pastSurMay' ? () => toggleMode('deletePast') : null,
 		pozvat:
@@ -269,6 +257,12 @@ function EveMenuStrip({
 					}
 				: null,
 		nahlásit: !status.embeded && !isSearch && !own ? () => toggleMode('protocol', modes.protocol ? false : 'report') : null,
+		editovat:
+			!galleryMode.includes('past') && !isInactive && own
+				? () => {
+						navigate(`/editor/${eventID}!${eventObj.title ? encodeURIComponent(eventObj.title.slice(0, 50)).replace(/\./g, '-').replace(/%20/g, '_') : ''}`);
+					}
+				: null,
 	};
 
 	const hideMenu = modes.protocol || modes.evePreview || modes.invites || modes.delete || modes.cancel || modes.inter || modes.feedback || modes.deletePast || modes.invitees || modes.invitors;
@@ -370,7 +364,6 @@ function EveMenuStrip({
 			)}
 
 			{/* SUB-COMPONENTS (INTERESTS / PROTOCOL / FEEDBACK) */}
-			{modes.inter && <IntersPrivsButtons {...{ status, brain, nowAt, obj: eventObj, modes, setStatus, setModes }} />}
 			{modes.protocol && <SimpleProtocol setModes={setModes} obj={eventObj} target={eventObj.id} modes={modes} thisIs={'event'} brain={brain} nowAt={nowAt} setStatus={setStatus} />}
 			{modes.feedback && <EventFeedbackProtocol obj={eventObj} brain={brain} isOwner={own} mode={galleryMode || isCardOrStrip ? 'modal' : 'inline'} onClose={() => setModes(prev => ({ ...prev, feedback: false, menu: false }))} />}
 		</event-menu>
