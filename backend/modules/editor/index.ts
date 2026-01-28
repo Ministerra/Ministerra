@@ -72,7 +72,9 @@ async function Editor(req, res) {
 		// Steps: for edits/deletes, read cached owner from redis and reject early if caller isn’t the owner (avoids DB work on unauthorized requests).
 		if (eventID) {
 			const raw = await redis.hgetBuffer(REDIS_KEYS.eveTitleOwner, eventID);
-			const [, ownerVal] = raw ? decode(raw) : [];
+			// SAFE ARRAY DESTRUCTURING ---------------------------------------------
+			const decoded = raw ? decode(raw) : [];
+			const ownerVal = Array.isArray(decoded) && decoded.length >= 2 ? decoded[1] : undefined;
 			logger.debug('ownershipGate', { ownerVal, userID });
 			if (ownerVal !== userID) throw new Error('not owner');
 		}
@@ -100,7 +102,14 @@ async function Editor(req, res) {
 				throw new Error(reasons.join(' + '));
 			}
 
-			await Promise.all([con.execute('UPDATE events SET flag = "del", changed = NOW(), nextTask = "flagChanges", basiVers = basiVers + 1 WHERE id = ?', [eventID]), redis.hset(REDIS_KEYS.remEve, eventID, now)]);
+			// SEQUENTIAL SQL THEN REDIS ---------------------------------------------
+			// Steps: execute SQL first, only update Redis on success to maintain consistency; if Redis fails, log for reconciliation.
+			await con.execute('UPDATE events SET flag = "del", changed = NOW(), nextTask = "flagChanges", basiVers = basiVers + 1 WHERE id = ?', [eventID]);
+			try {
+				await redis.hset(REDIS_KEYS.remEve, eventID, now);
+			} catch (redisErr) {
+				logger.error('Editor.delete_redis_failed', { error: redisErr, eventID, message: 'RECONCILIATION_REQUIRED' });
+			}
 			invalidateEventCache(eventID);
 			return res.status(200).end();
 		}
@@ -113,14 +122,30 @@ async function Editor(req, res) {
 			if (ev.ends && Date.now() > new Date(ev.ends).getTime()) throw new Error('událost již skončila');
 			if (ev.starts && Date.now() > new Date(ev.starts).getTime() + 1800000) throw new Error('lze zrušit jen do 30 minut od začátku');
 
-			const meta = decode(await redis.hgetBuffer(REDIS_KEYS.eveMetas, eventID));
-			meta[eveBasiVersIdx]++,
-				await Promise.all([
-					redis.hset(REDIS_KEYS.eveMetas, eventID, encode(meta)),
-					redis.hset(`${REDIS_KEYS.eveBasics}:${eventID}`, 'canceled', true),
-					con.execute('UPDATE events SET flag = "can", changed = NOW(), nextTask = "flagChanges", basiVers = basiVers + 1 WHERE id = ?', [eventID]),
-					con.execute('DELETE FROM eve_inters WHERE event = ? AND user = ?', [eventID, userID]),
-				]);
+			// SEQUENTIAL SQL THEN REDIS FOR CANCEL (WITH WATCH/MULTI/EXEC) ----------
+			// Steps: execute SQL operations first, then update Redis with optimistic locking.
+			await con.execute('UPDATE events SET flag = "can", changed = NOW(), nextTask = "flagChanges", basiVers = basiVers + 1 WHERE id = ?', [eventID]);
+			await con.execute('DELETE FROM eve_inters WHERE event = ? AND user = ?', [eventID, userID]);
+			// REDIS ATOMIC UPDATE WITH WATCH ---
+			const metaKey = REDIS_KEYS.eveMetas;
+			for (let attempt = 0; attempt < 3; attempt++) {
+				await redis.watch(metaKey);
+				try {
+					const meta = decode(await redis.hgetBuffer(metaKey, eventID));
+					meta[eveBasiVersIdx]++;
+					const multi = redis.multi();
+					multi.hset(metaKey, eventID, encode(meta));
+					multi.hset(`${REDIS_KEYS.eveBasics}:${eventID}`, 'canceled', 'true');
+					const result = await multi.exec();
+					if (result !== null) break;
+					logger.info('Editor.cancel_redis_retry', { eventID, attempt: attempt + 1 });
+				} catch (redisErr) {
+					logger.error('Editor.cancel_redis_failed', { error: redisErr, eventID, message: 'RECONCILIATION_REQUIRED' });
+					break;
+				} finally {
+					await redis.unwatch();
+				}
+			}
 			invalidateEventCache(eventID);
 			return res.status(200).end();
 		}
@@ -201,65 +226,95 @@ async function Editor(req, res) {
 					const [[row]] = await con.execute('SELECT imgVers FROM events WHERE id = ?', [eventID]);
 					await saveImages(req.processedImages, eventID, row?.imgVers || 0, 'events');
 				}
-				if (imgVers === 0)
+				if (imgVers === '0') {
+					// PATH TRAVERSAL PREVENTION ---
+					// Steps: sanitize imgVers from DB to prevent directory traversal if corrupted value contains ../
+					const safeImgVers = String(ev.imgVers || 0).replace(/[^a-zA-Z0-9_-]/g, '');
 					for (const size of ['', 'S', 'L'])
-						await fs.unlink(`public/events/${eventID}_${ev.imgVers}${size}.webp`).catch(err => logger.alert('Editor.unlink_failed', { error: err, eventID }));
+						await fs.unlink(`public/events/${eventID}_${safeImgVers}${size}.webp`).catch(err => logger.alert('Editor.unlink_failed', { error: err, eventID }));
+				}
 			}
 
 			// UPDATE REDIS CACHE ----------------------------------------------
-			// Steps: update meta + basi/deta hashes, migrate city indexes when changed, refresh title/owner lookup, then invalidate local cache.
+			// Steps: use WATCH/MULTI/EXEC for optimistic locking to prevent read-modify-write race conditions when concurrent edits occur.
 			async function updateRedisCache() {
-				const [meta, multi] = [decode(await redis.hgetBuffer(REDIS_KEYS.eveMetas, eventID)), redis.multi()];
-				const [curPriv, curCity, curOwner] = [meta[evePrivIdx], meta[eveCityIDIdx], meta[eveOwnerIdx]];
-				const cityChanged = !!(vars.cityID && vars.cityID !== curCity);
+				const metaKey = REDIS_KEYS.eveMetas;
+				const maxRetries = 3;
 
-				// Handle city migration in Redis
-				if (cityChanged) {
-					multi.hset(REDIS_KEYS.eveCityIDs, eventID, vars.cityID);
-					multi.hdel(`${curPriv === 'pub' ? REDIS_KEYS.cityPubMetas : REDIS_KEYS.cityMetas}:${curCity}`, eventID);
-					multi.hdel(`${REDIS_KEYS.cityFiltering}:${curCity}`, eventID);
+				for (let attempt = 0; attempt < maxRetries; attempt++) {
+					// WATCH KEY FOR CONCURRENT MODIFICATION DETECTION ---
+					await redis.watch(metaKey);
+
+					try {
+						const meta = decode(await redis.hgetBuffer(metaKey, eventID));
+						const [curPriv, curCity, curOwner] = [meta[evePrivIdx], meta[eveCityIDIdx], meta[eveOwnerIdx]];
+						const cityChanged = !!(vars.cityID && vars.cityID !== curCity);
+
+						const multi = redis.multi();
+
+						// HANDLE CITY MIGRATION IN REDIS ---
+						if (cityChanged) {
+							multi.hset(REDIS_KEYS.eveCityIDs, eventID, vars.cityID);
+							multi.hdel(`${curPriv === 'pub' ? REDIS_KEYS.cityPubMetas : REDIS_KEYS.cityMetas}:${curCity}`, eventID);
+							multi.hdel(`${REDIS_KEYS.cityFiltering}:${curCity}`, eventID);
+						}
+
+						// UPDATE META ARRAY AND VERSION KEYS ---
+						geohash ??= getGeohash();
+						const metaUpdate = { ...vars } as any;
+						if (vars.starts) metaUpdate.starts = new Date(vars.starts).getTime().toString(36);
+						if (lat && lng && geohash?.encode) metaUpdate.geohash = geohash.encode(lat, lng, 9);
+						createEveMeta(metaUpdate).forEach((v, i) => v && (meta[i] = v));
+						(Object.entries({ basiVers: [EVENT_BASICS_KEYS, REDIS_KEYS.eveBasics, eveBasiVersIdx], detaVers: [EVENT_DETAILS_KEYS, REDIS_KEYS.eveDetails, eveDetailsVersIdx] }) as any).forEach(
+							([k, [cols, redisKey, metaIdx]]: any) =>
+								(cols as any[]).some((c: any) => (vars as any)[c]) &&
+								multi.hset(
+									`${redisKey}:${eventID}`,
+									...(cols as any[]).flatMap((c: any) => ((vars as any)[c] ? [c, (vars as any)[c]] : [])),
+									k,
+									(meta[metaIdx] = Number(meta[metaIdx] || 0) + 1)
+								)
+						);
+
+						const encodedMeta = encode(meta);
+						const finPriv = meta[evePrivIdx];
+						multi.hset(metaKey, eventID, encodedMeta);
+						const targetCityID = vars.cityID || curCity;
+						const targetCityMetas = `${finPriv === 'pub' ? REDIS_KEYS.cityPubMetas : REDIS_KEYS.cityMetas}:${targetCityID}`;
+						multi.hset(targetCityMetas, eventID, encodedMeta);
+						if (await redis.hexists(REDIS_KEYS.topEvents, eventID)) multi.hset(REDIS_KEYS.topEvents, eventID, encodedMeta);
+						multi.hset(`${REDIS_KEYS.cityFiltering}:${targetCityID}`, eventID, `${finPriv}:${curOwner || ''}`);
+
+						// UPDATE TITLE LOOKUP IF CHANGED ---
+						if (title) {
+							const rawTO = await redis.hgetBuffer(REDIS_KEYS.eveTitleOwner, eventID);
+							const decoded = rawTO ? decode(rawTO) : [null, curOwner];
+							const existingOwner = Array.isArray(decoded) && decoded.length >= 2 ? decoded[1] : curOwner;
+							const truncatedTitle = title.length > 40 ? title.slice(0, 39) + '…' : title;
+							multi.hset(REDIS_KEYS.eveTitleOwner, eventID, encode([truncatedTitle, existingOwner || userID]));
+						}
+
+						// EXEC RETURNS NULL IF WATCHED KEY WAS MODIFIED ---
+						const result = await multi.exec();
+						if (result !== null) {
+							// SUCCESS - INVALIDATE LOCAL CACHE ---
+							invalidateEventCache(eventID);
+							return;
+						}
+						// CONCURRENT MODIFICATION DETECTED - RETRY WITH FRESH DATA ---
+						logger.info('Editor.updateRedisCache retry', { eventID, attempt: attempt + 1 });
+					} finally {
+						// ALWAYS UNWATCH ON FAILURE/RETRY ---
+						await redis.unwatch();
+					}
 				}
-
-				// Update meta array and version keys
-				geohash ??= getGeohash();
-				const metaUpdate = { ...vars } as any;
-				if (vars.starts) metaUpdate.starts = new Date(vars.starts).getTime().toString(36);
-				if (lat && lng && geohash?.encode) metaUpdate.geohash = geohash.encode(lat, lng, 9);
-				createEveMeta(metaUpdate).forEach((v, i) => v && (meta[i] = v));
-				(Object.entries({ basiVers: [EVENT_BASICS_KEYS, REDIS_KEYS.eveBasics, eveBasiVersIdx], detaVers: [EVENT_DETAILS_KEYS, REDIS_KEYS.eveDetails, eveDetailsVersIdx] }) as any).forEach(
-					([k, [cols, redisKey, metaIdx]]: any) =>
-						(cols as any[]).some((c: any) => (vars as any)[c]) &&
-						multi.hset(
-							`${redisKey}:${eventID}`,
-							...(cols as any[]).flatMap((c: any) => ((vars as any)[c] ? [c, (vars as any)[c]] : [])),
-							k,
-							(meta[metaIdx] = Number(meta[metaIdx] || 0) + 1)
-						)
-				);
-
-				const encodedMeta = encode(meta);
-				const finPriv = meta[evePrivIdx];
-				multi.hset(REDIS_KEYS.eveMetas, eventID, encodedMeta);
-				const targetCityID = vars.cityID || curCity;
-				const targetCityMetas = `${finPriv === 'pub' ? REDIS_KEYS.cityPubMetas : REDIS_KEYS.cityMetas}:${targetCityID}`;
-				multi.hset(targetCityMetas, eventID, encodedMeta);
-				if (await redis.hexists(REDIS_KEYS.topEvents, eventID)) multi.hset(REDIS_KEYS.topEvents, eventID, encodedMeta);
-				multi.hset(`${REDIS_KEYS.cityFiltering}:${targetCityID}`, eventID, `${finPriv}:${curOwner || ''}`);
-
-				// Update title lookup if changed
-				if (title) {
-					const rawTO = await redis.hgetBuffer(REDIS_KEYS.eveTitleOwner, eventID);
-					const [, existingOwner] = rawTO ? decode(rawTO) : [null, curOwner];
-					const truncatedTitle = title.length > 40 ? title.slice(0, 39) + '…' : title;
-					multi.hset(REDIS_KEYS.eveTitleOwner, eventID, encode([truncatedTitle, existingOwner || userID]));
-				}
-				await multi.exec();
-
-				// INVALIDATE LOCAL CACHE --------------------------------------
-				// Steps: drop in-process cache so subsequent reads observe the freshly updated redis values.
-				invalidateEventCache(eventID);
+				// ALL RETRIES EXHAUSTED ---
+				throw new Error('concurrentModification');
 			}
-			await Promise.all([editEventInSQL(), updateRedisCache()]);
+			// SEQUENTIAL EXECUTION: SQL FIRST, THEN REDIS ---
+			// Steps: ensure SQL commits before Redis cache update to maintain consistency on partial failures.
+			await editEventInSQL();
+			await updateRedisCache();
 		}
 		res.status(200).json(delFalsy({ cityData, createdID, imgVers: req.body.imgVers }));
 	} catch (error) {

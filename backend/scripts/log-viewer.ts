@@ -19,7 +19,7 @@ const LOG_BASE = path.resolve(__dirname, '../../logging');
 // CLI ARG PARSING --------------------------------------------------------------
 // Steps: accept [type] and [lines], defaulting to alert/100 so the tool is usable with zero args.
 const TYPE = process.argv[2] || 'alert'; // alert, error, slow
-const LINES = parseInt(process.argv[3]) || 100;
+const LINES = parseInt(process.argv[3], 10) || 100;
 
 const DIRS = {
 	alert: path.join(LOG_BASE, 'alert'),

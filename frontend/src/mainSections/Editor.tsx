@@ -423,7 +423,7 @@ function Editor(props: any) {
 
 			{/* MENU BUTTON -------------------------------------------------*/}
 			{event && (
-				<editor-menu class={`zinMenu  marAuto marTopM   block   ${modes.menu ? 'marBotXxxl' : ''}`}>
+				<editor-menu class={`zinMenu  marAuto ${data.type?.startsWith('a') ? 'marTopXxl' : 'marTopM'} mw180 marAuto   block   ${modes.menu ? 'marBotM' : ''}`}>
 					<menu-comp onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, menu: !prev.menu, invite: false })))} class={`  flexCol w100`}>
 						<menu-button class={`${modes.menu ? 'bDarkBlue tWhite' : ''} borWhite  shaBlue  bHover pointer flexCen aliCen xBold textSha justCen fs12 boRadXxs miw32 mw60 marAuto bgTrans padVerXxxs zinMaXl  posRel padHorS `}>
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w100 marRigXs mw3">
@@ -489,7 +489,7 @@ function Editor(props: any) {
 					{/* LOCATION, CITY, PLACE ---------------------------------- */}
 					{data.starts && (
 						<place-wrapper ref={placeSectionRef} class={`flexCol   posRel   posRel  padTopXl    marAuto w100`}>
-							{!isQuick && <blue-divider class={` hr0-3  block bInsetBlueTopXl borTop bgTrans posAbs topCen   w100 mw60    marAuto   `} />}
+							{!isQuick && <blue-divider class={` hr0-2 opacityS  block bInsetBlueTopXl borTop bgTrans posAbs topCen   w100     marAuto   `} />}
 
 							<blue-divider class="hr8 posAbs topCen zin1 block  bInsetBlueTopXs2  bgTrans w80 mw140 marAuto" />
 							<span className="xBold block textSha marBotXxs marTopXl opacityL fs16 tDarkBlue">Místo či oblast setkání</span>

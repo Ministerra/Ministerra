@@ -62,17 +62,17 @@ function CatFilter(props) {
 				const [isSel, isAvail, isInTime] = [cats.includes(cat), avaCats.includes(cat), avaCatsInTime.includes(cat)];
 				const notInTimeButAvail = isAvail && !isInTime && snap.time !== 'anytime';
 				return (
-					<img-wrapper key={cat} style={{ width: '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }} class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 hvw22 mh18'} ${nowAt === 'editor' && isSel ? 'bsContentGlow' : ''} noBackground  flexCol  posRel  grow bHover  marBotXxxxs  `} onClick={() => handleCategorySelection(cat)}>
+					<img-wrapper key={cat} style={{ width: '100%', ...(catWidth && { maxWidth: `${catWidth}px` }) }} class={` ${nowAt === 'editor' ? 'hvw30 mh28' : 'aspect165 hvw22 mh12'} ${nowAt === 'editor' && isSel ? 'bsContentGlow' : ''} noBackground  flexCol  posRel  grow bHover  marBotXxxxs  `} onClick={() => handleCategorySelection(cat)}>
 						{/* CATEGORY IMAGE DISPLAY --- */}
 						{/* Visual representation of the category with desaturation when inactive */}
-						<img title={catsSrc.cz[i]} style={{ filter: 'brightness(1)' }} draggable="false" src={`/covers/eventCategories/${['meet.jpg', 'public.jpg', 'proffesional.jpg', 'volunteers.jpg'][i]}`} className={`${nowAt === 'editor' && isSel ? ' arrowDown   bsContentGlow zinMax' : ''} ${!isSel && nowAt !== 'editor' ? 'desaturated' : ''} h100     boRadXxs  grow }  cover posRel   w100`} />
+						<img title={catsSrc.cz[i]} style={{ filter: 'brightness(1)' }} draggable="false" src={`/covers/eventCategories/${catsSrc.en[i].toLowerCase()}.jpg`} className={`${nowAt === 'editor' && isSel ? ' arrowDown   bsContentGlow zinMax' : ''} ${!isSel && nowAt !== 'editor' ? 'desaturated' : ''} h100     boRadXxs  grow }  cover posRel   w100`} />
 
 						{/* CATEGORY TEXT OVERLAY --- */}
 						{/* Contains the category name and status indicators (availability, counts) */}
-						<span-wrapper style={{ bottom: '-0px' }} class={` 	 posAbs   marAuto  ${nowAt === 'editor' && isSel ? 'padVerS' : 'padVerXxxxs'} bgTrans  textAli  zinMaXl   hvw10 mh1-5  flexCol aliCen justCen              botCen ${nowAt === 'editor' ? 'w100' : 'mw16  '}`}>
+						<span-wrapper class={` 	 posAbs   marAuto  ${nowAt === 'editor' && isSel ? 'padVerS' : 'padVerXxxxs'} bgTrans  textAli  zinMaXl   hvw10 mh1-5  flexCol aliCen justCen               botCen ${nowAt === 'editor' ? 'w100' : 'mw16  '}`}>
 							<span
 								className={`inlineBlock ${
-									nowAt !== 'editor' ? (isInTime ? 'fs14 xBold     tShaWhiteXl    ' : notInTimeButAvail ? `fs12 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bOrange bgTrans bold  lh1` : `fs8 ${isSel ? 'opacityM' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `) : nowAt === 'editor' && isSel ? 'boldM fs15 tWhite w100  posRel bBlue tWhite arrowDown1  tSha10 padVerXxs ' : 'fs12    tShaWhiteXl   xBold'
+									nowAt !== 'editor' ? (isInTime ? 'fs16 marBotXxxs xBold     tShaWhiteXl    ' : notInTimeButAvail ? `fs12 ${isSel ? 'opacityL' : 'opacityS'} tSha10 tWhite bOrange bgTrans bold  lh1` : `fs8 ${isSel ? 'opacityM' : 'opacityS'} tSha10 tWhite bRed  bgTrans      lh1 `) : nowAt === 'editor' && isSel ? 'boldM fs15 tWhite w100  posRel bBlue tWhite arrowDown1  tSha10 padVerXxs ' : 'fs12    tShaWhiteXl   xBold'
 								}        posRel    textAli        w100    marAuto      zinMax      `}>
 								{nowAt !== 'editor' && notInTimeButAvail ? `${timeLabel[snap.time][0].toUpperCase() + timeLabel[snap.time].slice(1)} nic` : `${catsSrc.cz[i]}${nowAt !== 'editor' && !isInTime ? ' (0)' : ''}`}
 							</span>

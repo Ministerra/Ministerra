@@ -32,7 +32,7 @@ interface CommentRow {
 	created: Date | string;
 	first: string;
 	last: string;
-	imgVers: number;
+	imgVers: number | string;
 	pos: number;
 	mark?: number;
 	awards?: any;
@@ -85,7 +85,10 @@ const getComments = async ({ firstID, lastID, target, selSort, cursOrOffset, dev
 	}
 
 	const curCond = canOrder && cursOrOffset ? `AND c.id ${selSort === 'recent' ? '<' : '>'} ?` : '';
-	const limit = `LIMIT 20${!canOrder ? ` OFFSET ${Math.min(Number(cursOrOffset) || 0, 10000)}` : ''}`;
+	// PARAMETERIZED OFFSET -----------------------------------------------------
+	// Steps: use parameterized query for OFFSET to prevent SQL injection; clamp offset to safe range.
+	const safeOffset = Math.min(Math.max(0, Number(cursOrOffset) || 0), 10000);
+	const limit = `LIMIT 20${!canOrder ? ` OFFSET ?` : ''}`;
 	const orderBy = `ORDER BY ${sort} ${order}`;
 
 	// QUERY CONSTRUCTION ---
@@ -102,7 +105,9 @@ const getComments = async ({ firstID, lastID, target, selSort, cursOrOffset, dev
 	const fullSelect = `SELECT s.id, c.user, c.replies, c.score, c.flag, CASE WHEN c.flag != 'del' THEN c.content ELSE NULL END AS content, c.created, u.first, u.last, u.imgVers${ratingColsFull}, s.pos FROM Selected s JOIN comments c ON c.id = s.id JOIN users u ON c.user = u.id ${ratingJoin}`;
 	const FULL = (baseFilter: boolean) => `${fullSelect}${baseFilter ? ' WHERE s.isBase = 0' : ''}`;
 
-	const qParams = [eventID, ...(target ? [target] : []), ...(canOrder && cursOrOffset ? [cursOrOffset] : [])];
+	// PARAMETERIZED OFFSET INJECTION -------------------------------------------
+	// Steps: add offset parameter only when needed (non-ordered pagination).
+	const qParams = [eventID, ...(target ? [target] : []), ...(canOrder && cursOrOffset ? [cursOrOffset] : []), ...(!canOrder ? [safeOffset] : [])];
 	// QUERY ASSEMBLY ---
 	// Fresh load: use FULL directly; delta load: UNION BASE (skeleton) with FULL filtered to non-base rows
 	const query = !hasFirst && !hasLast ? `${CTE} ${FULL(false)} ORDER BY s.pos` : `${CTE} SELECT * FROM (${BASE} UNION ALL ${FULL(true)}) x ORDER BY pos`;

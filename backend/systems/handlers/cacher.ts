@@ -93,29 +93,27 @@ export async function Cacher(redis: any): Promise<void> {
 			REDIS_KEYS.eveCityIDs,
 			REDIS_KEYS.topEvents,
 			REDIS_KEYS.eveTitleOwner,
-			REDIS_KEYS.friendlyEveScoredUserIDs,
-			REDIS_KEYS.eveMetas,
-			REDIS_KEYS.eveBasics,
-			REDIS_KEYS.eveDetails,
-			REDIS_KEYS.userMetas,
-			REDIS_KEYS.userBasics,
 			REDIS_KEYS.refreshTokens,
-			REDIS_KEYS.userChatRoles,
 			REDIS_KEYS.lastMembChangeAt,
 			REDIS_KEYS.serverStarted,
 			REDIS_KEYS.lastNewCommAt,
 			REDIS_KEYS.eveLastAttendChangeAt,
 			REDIS_KEYS.userNameImage,
+			REDIS_KEYS.pastEveCachedAt,
+			REDIS_KEYS.last100BestEventsRecalc,
+
 		];
 		await redis.del(...simpleKeys);
 
 		// PREFIX PATTERNS ---
 		// Steps: use SCAN to find and delete prefixed keys without blocking Redis.
-		const prefixPatterns = ['blocks:*', 'links:*', 'trusts:*', 'invites:*', 'userSummary:*', 'userSetsLastChange:*', 'chatMembers:*'];
+		const prefixPatterns = ['pastEve:*', 'blocks:*', 'links:*', 'trusts:*', 'invites:*', 'userSummary:*', 'userSetsLastChange:*', 'chatMembers:*', `${REDIS_KEYS.cityFiltering}:*`, `${REDIS_KEYS.friendlyEveScoredUserIDs}:*`,  `${REDIS_KEYS.cityPubMetas}:*`, `${REDIS_KEYS.cityMetas}:*`, `${REDIS_KEYS.userBasics}:*`, `${REDIS_KEYS.userMetas}:*`, `${REDIS_KEYS.eveMetas}:*`, `${REDIS_KEYS.eveBasics}:*`, `${REDIS_KEYS.eveDetails}:*`, 			`${REDIS_KEYS.userChatRoles}:*`,
+		];
+
 		for (const pattern of prefixPatterns) {
 			let cursor = '0';
 			do {
-				const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+				const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 10000);
 				cursor = nextCursor;
 				if (keys.length) await redis.del(...keys);
 			} while (cursor !== '0');
@@ -410,7 +408,7 @@ export async function Cacher(redis: any): Promise<void> {
 
 		loadMetaPipes(state, metasPipe, attenPipe, 'serverStart');
 		loadBasicsDetailsPipe(state, basiDetaPipe);
-		await Promise.all([metasPipe.exec(), basiDetaPipe.exec(), attenPipe.exec(), clearState(state), redis.set(REDIS_KEYS.serverStarted, Date.now())]);
+		await Promise.all([metasPipe.exec(), basiDetaPipe.exec(), attenPipe.exec(), clearState(state), redis.set(REDIS_KEYS.serverStarted, Date.now()), redis.set(REDIS_KEYS.last100BestEventsRecalc, Date.now())]);
 
 		// SEQUENTIAL CONNECTION CLEANUP ---
 		// Steps: must be sequential as they share the single 'con' instance; concurrently executing on one connection throws.

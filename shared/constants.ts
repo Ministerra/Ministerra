@@ -414,6 +414,7 @@ export const MAX_COUNTS = {
 	indis: 5,
 	basics: 8,
 	traits: 10,
+	linkRequestsPerDay: 20,
 } as const;
 
 export const FOUNDATION_LOADS = { init: 'init', fast: 'fast', auth: 'auth', cities: 'cities', topEvents: 'topEvents' } as const;

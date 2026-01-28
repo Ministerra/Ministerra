@@ -1,5 +1,5 @@
 import { ratingSrc } from '../../sources';
-const marks = { event: [-2, 1, 3, 5], user: [1, 5], comment: [-2, 1, 3, 5] };
+const marks = { event: [-4, 1, 3, 5], user: [1, 5], comment: [-2, 1, 3, 5] };
 
 // TODO pass sort, if its badges, display možná, určitě, tvoje atd.
 // CONTENT INDICATORS COMPONENT DEFINITION ---
@@ -27,7 +27,7 @@ function ContentIndis({ status, obj, isCardOrStrip, modes = {}, isSearch, isInvi
 		opuštěná: { val: galleryMode && thisIs === 'event' && !obj.owner, class: 'chipRed' },
 		'trest skončil': { val: thisIs === 'chat' && punish !== 'kick' && expired, class: 'chipGreen' },
 		'tvoje událost': { val: thisIs === 'event' && status.own && !galleryMode?.includes('Own'), class: 'chipDarkBlue' },
-		mark: { val: isCardOrStrip && status.mark && ratingSrc[thisIs].rating[marks[thisIs].indexOf(status.mark)] && !hideAttenRating, class: 'chipLime' },
+		mark: { val: isCardOrStrip && !hideAttenRating && status.mark && ratingSrc[thisIs].rating[marks[thisIs].indexOf(status.mark)], class: 'chipLime' },
 		vykopnut: { val: isChats && punish === 'kick', class: 'chipDarkRed' },
 		[thisIs === 'comment' ? 'tvůj' : 'tvoje']: { val: thisIs !== 'event' && !galleryMode && status.own, class: 'chipGreen' },
 		viděls: { val: !isSearch && status.opened && !galleryMode && !isLast, class: 'chipOrange' },

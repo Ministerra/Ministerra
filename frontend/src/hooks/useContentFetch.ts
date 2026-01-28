@@ -11,7 +11,15 @@ import { notifyGlobalError } from './useErrorsMan';
 export function useContentFetch({ brain, snap, avail, event, show, sherData, nowAt, contView, isPast, content, setContent, setCardsToContent, contentRef, setSnap, map, provideSnap, eveInter }) {
 	const contQueue = useRef([]),
 		disableInfinite = useRef(false),
-		firstBatchReady = useRef(false);
+		firstBatchReady = useRef(false),
+		mountedRef = useRef(true);
+
+	// MOUNT TRACKING -----------------------------------------------------------
+	// Steps: track component mount state to prevent state updates on unmounted components.
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => { mountedRef.current = false; };
+	}, []);
 
 	// TRIGGER FETCH / REORDER ---------------------------------------------------
 	// Steps: when snap.fetch or page context demands, reset flags and run contentMan; for event attendee lists, just reorder current content to keep "me" pinned when attending.
@@ -112,6 +120,9 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 
 			if (brain.canScroll) (contentRef.current.scrollIntoView({ behavior: 'smooth' }), delete brain.canScroll);
 			usableItems = contQueue.current.slice(0, firstUnusable);
+			// MOUNT CHECK BEFORE STATE UPDATE --------------------------------------
+			// Steps: only update state if component is still mounted to prevent memory leaks and React warnings.
+			if (!mountedRef.current) return;
 			setCardsToContent([infinite ? content || [] : [], usableItems].flat());
 
 			// SNAP FINALIZATION + HISTORY -------------------------------------
@@ -127,10 +138,11 @@ export function useContentFetch({ brain, snap, avail, event, show, sherData, now
 
 			contQueue.current = contQueue.current.slice(firstUnusable || contQueue.current.length);
 			if (!infinite) firstBatchReady.current = true;
-			if (snap.fetch) setSnap(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !['changed', 'fetch'].includes(key))));
+			// MOUNT CHECK BEFORE STATE UPDATE --------------------------------------
+			if (mountedRef.current && snap.fetch) setSnap(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !['changed', 'fetch'].includes(key))));
 			if (storeUser) forage({ mode: 'set', what: 'user', val: brain.user });
 		} catch (err) {
-			if (snap.fetch) setSnap(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !['fetch'].includes(key))));
+			if (mountedRef.current && snap.fetch) setSnap(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !['fetch'].includes(key))));
 			if (import.meta.env.DEV) console.error('Content fetch error:', err);
 		}
 	}

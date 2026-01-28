@@ -3,6 +3,7 @@ import { memo } from 'react';
 // CONTENT VIEW SELECTOR COMPONENT ---
 // Toggles between events and users display based on available data and map state
 function BsContView({ fadedIn, brain, snapMan, map, fetchInProg, show, avail: { types: avaTypes }, snap = {} as any, noFriendly }) {
+	console.log('🚀 ~ BsContView ~ noFriendly:', noFriendly);
 	// EFFECTIVE TYPE SELECTION ------------------------------------------------------
 	// Raw `snap.types` can include types unavailable for current cats/time/cities. Only intersection should count as selected.
 	const effectiveSelectedTypeCount = (snap.types || []).filter(type => avaTypes.includes(type)).length;
@@ -78,6 +79,6 @@ function BsContView({ fadedIn, brain, snapMan, map, fetchInProg, show, avail: { 
 // PROPS COMPARISON LOGIC ---
 // Optimizes re-rendering by checking specific property changes
 function areEqual(prevProps, nextProps) {
-	return prevProps.snap === nextProps.snap && prevProps.fadedIn === nextProps.fadedIn && prevProps.fetchInProg === nextProps.fetchInProg && prevProps.show.sherlock === nextProps.show.sherlock && prevProps.snap.changed === nextProps.snap.changed && prevProps.brain.stillShowingMapContent === nextProps.brain.stillShowingMapContent && prevProps.map === nextProps.map;
+	return prevProps.snap === nextProps.snap && prevProps.fadedIn === nextProps.fadedIn && prevProps.fetchInProg === nextProps.fetchInProg && prevProps.show.sherlock === nextProps.show.sherlock && prevProps.snap.changed === nextProps.snap.changed && prevProps.brain.stillShowingMapContent === nextProps.brain.stillShowingMapContent && prevProps.map === nextProps.map && prevProps.noFriendly === nextProps.noFriendly;
 }
 export default memo(BsContView, areEqual);

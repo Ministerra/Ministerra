@@ -15,8 +15,8 @@ let brain;
 // Steps: keep tiny helpers as expressions to minimize callsite noise; these functions mostly gate early exits and normalize inputs before the heavy loader path runs.
 const ensureBrainRef = brainParam => ((brain = brainParam || brain || { ...emptyBrain }), brain),
 	parseUrlOverrides = url => (url ? Object.fromEntries(['newCities', 'homeView'].map(key => [key, new URL(url).searchParams.get(key)])) : { newCities: null, homeView: null }),
-	createCityFinder = brain => city => brain.cities.find(c => (city?.hashID ? city.hashID === c.hashID : (city?.cityID || city) === c.cityID)),
-	shouldSkipLoad = (path, params, brainRef) => (params.size && ['/entrance', '/setup'].some(str => path.startsWith(str))) || brainRef.user.isUnintroduced || (path !== '/' && brainRef.fastLoaded),
+	createCityFinder = brain => city => brain.cities.find(c => (city?.hashID ? city.hashID === c.hashID || city.hashID === c.originalHashID : (city?.cityID || city) === c.cityID)),
+	shouldSkipLoad = (path, params, brainRef) => (params.size && ['/entrance', '/setup'].some(str => path.startsWith(str))) || brainRef.user.isUnintroduced || (path !== '/' && brainRef.fastLoaded) || (brainRef.navigationAborted && delete brainRef.navigationAborted && true),
 	handleMissingToken = (path, brainRef) => (path.startsWith('/event') ? brainRef : redirect('/entrance')),
 	pruneCitySync = miscel => {
 		if (miscel.citiesContSync) {
@@ -54,7 +54,7 @@ const hydrateFromDevice = async (brainRef, flags) => {
 // BUILD AXIOS PLAN -------------------------------------------------------------
 // Steps: decide foundation load mode based on route/homeView/newCities, compute which cities need cityData and which need contentMetas, then construct payload with epoch so backend can bind salts and deltas. devID comes from JWT via attachSession.
 const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
-	const plan: any = { citiesGetCityData: undefined, citiesGetContentMetas: [], axiosPayload: { load: FOUNDATION_LOADS.auth } };
+	const plan: any = { citiesGetContentMetas: [], axiosPayload: { load: FOUNDATION_LOADS.auth } };
 	const { homeView, newCities, cities, lastDevSync, lastLinksSync, clientEpoch } = meta;
 	if (homeView) brainRef.homeView = homeView;
 	if (homeView === 'topEvents') ((plan.axiosPayload = { load: FOUNDATION_LOADS.topEvents, clientEpoch }), (plan.citiesGetContentMetas = ['topEvents']));
@@ -62,26 +62,53 @@ const buildAxiosPlan = ({ brainRef, path, meta, flags, findCity }) => {
 	else if (path !== '/') plan.axiosPayload = { load: FOUNDATION_LOADS.auth, clientEpoch };
 	else {
 		(delete brainRef.fastLoaded, delete brainRef.isAfterLoginInit);
-		plan.citiesGetCityData = cities?.filter(city => !findCity(city));
-		plan.citiesGetContentMetas = cities?.map(city => city.cityID || city.hashID || city).filter(id => id && typeof id !== 'object' && !brainRef.citiesContSync[id]) || [];
-		plan.axiosPayload = plan.citiesGetContentMetas.length
-			? delUndef({
-					getCities: plan.citiesGetCityData,
-					cities: plan.citiesGetContentMetas,
-					lastDevSync,
-					lastLinksSync,
-					load: newCities ? FOUNDATION_LOADS.cities : FOUNDATION_LOADS.init,
-					gotAuth: flags.gotAuth,
-					clientEpoch,
-				})
-			: { load: FOUNDATION_LOADS.auth, clientEpoch };
+
+		// RESOLVE CITIES ---
+		// Steps: for each input city, check if we have its data; separate into IDs for content and cities needing data
+		const resolved = (cities || []).map(city => {
+			const isNumeric = typeof city === 'number';
+			const existingCity = findCity(city);
+			const cityID = isNumeric ? city : existingCity?.cityID || city?.cityID;
+			return { raw: city, cityID, needsData: !existingCity };
+		});
+
+		const cityIDs = resolved.map(r => r.cityID).filter(id => typeof id === 'number');
+		const getCities = resolved.filter(r => r.needsData).map(r => r.raw);
+
+		plan.citiesGetContentMetas = cityIDs.length ? cityIDs : resolved.map(r => r.raw);
+
+		plan.axiosPayload = {
+			cities: cityIDs,
+			getCities: getCities.length ? getCities : undefined,
+			lastDevSync,
+			lastLinksSync,
+			load: meta.parsedNewCities ? FOUNDATION_LOADS.cities : FOUNDATION_LOADS.init,
+			gotAuth: flags.gotAuth,
+			clientEpoch,
+		};
 	}
 	return plan;
 };
 
 // FETCH FOUNDATION DATA --------------------------------------------------------
 // Steps: POST `/foundation` and always return a plain object so the caller can treat missing fields as “auth-only”.
-const fetchFoundationData = async (payload: any): Promise<any> => ((await axios.post('/foundation', payload as any)) as any)?.data || {};
+const fetchFoundationData = async (payload: any): Promise<any> => {
+	try {
+		const response = await axios.post('/foundation', payload);
+		// RESPONSE VALIDATION ----------------------------------------------------
+		// Steps: validate response structure to prevent undefined access downstream; throw on invalid response.
+		if (!response || typeof response.data !== 'object') {
+			console.warn('Foundation loader received invalid response structure');
+			return {};
+		}
+		return response.data;
+	} catch (error: any) {
+		// NETWORK ERROR HANDLING ------------------------------------------------
+		// Steps: log error and rethrow so caller can show appropriate error state; don't silently mask failures.
+		console.error('Foundation data fetch failed:', error?.message || error);
+		throw error;
+	}
+};
 
 // RESET GALLERY “NO MORE” ------------------------------------------------------
 // Steps: clear per-mode “noMore” throttles after a cool-down so the user can fetch more items without manually reloading.
@@ -238,8 +265,26 @@ const storeCitiesAndContent = async (ctx, data) => {
 	const { brainRef, plan, meta, findCity } = ctx;
 	const { citiesData, contentMetas, contSync } = data;
 	if (ctx.isFastLoad) return;
-	if (citiesData) citiesData.forEach(city => brainRef.cities.push(city));
-	if (meta.cities) brainRef.user.curCities = meta.cities.map(city => city?.cityID || findCity(city)?.cityID || (typeof city === 'number' ? city : 1)).sort((a, b) => a - b);
+	if (citiesData) {
+		citiesData.forEach(city => {
+			if (city?.cityID) {
+				const idx = brainRef.cities.findIndex(c => c.cityID === city.cityID);
+				if (idx > -1) Object.assign(brainRef.cities[idx], city);
+				else brainRef.cities.push(city);
+			}
+		});
+	}
+	if (meta.cities) {
+		const resolvedCities = meta.cities
+			.map(city => {
+				if (typeof city === 'number') return city;
+				if (city?.cityID) return city.cityID;
+				return findCity(city)?.cityID;
+			})
+			.filter(id => typeof id === 'number');
+
+		if (resolvedCities.length) brainRef.user.curCities = resolvedCities.sort((a, b) => a - b);
+	}
 	if (!contentMetas) return;
 	const receivedEventIDs = new Set();
 	const receivedUserIDs = new Set();
@@ -397,10 +442,20 @@ export async function foundationLoader({ url, isFastLoad = false, brain: brainPa
 		await hydrateFromDevice(brainRef, ctx.flags as any);
 		ctx.findCity = createCityFinder(brainRef);
 		const { newCities, homeView } = parseUrlOverrides(url);
-		const base: any = newCities ? { cities: JSON.parse(decodeURIComponent(newCities)) } : brainRef.initLoadData || brainRef.user;
+		// SAFE URL PARSING -----------------------------------------------------
+		// Steps: wrap JSON.parse + decodeURIComponent in try/catch to prevent app crash on malformed URL parameters.
+		let parsedNewCities = null;
+		if (newCities) {
+			try {
+				parsedNewCities = JSON.parse(decodeURIComponent(newCities));
+			} catch {
+				console.warn('Failed to parse newCities URL parameter');
+			}
+		}
+		const base: any = parsedNewCities ? { cities: parsedNewCities } : brainRef.initLoadData || brainRef.user;
 		const { cities, lastDevSync, lastLinksSync } = base || {};
 		const clientEpoch = await localforage.getItem('authEpoch');
-		ctx.meta = { newCities, homeView, cities, lastDevSync, lastLinksSync, clientEpoch, now: Date.now() } as any;
+		ctx.meta = { newCities: parsedNewCities, parsedNewCities, homeView, cities, lastDevSync, lastLinksSync, clientEpoch, now: Date.now() } as any;
 		ctx.plan = buildAxiosPlan({ brainRef, path, meta: ctx.meta, flags: ctx.flags, findCity: ctx.findCity }) as any;
 		const foundationData = await fetchFoundationData((ctx.plan as any).axiosPayload);
 

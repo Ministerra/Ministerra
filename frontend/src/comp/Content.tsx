@@ -72,11 +72,13 @@ function Content(props) {
 	const Comp = contView === 'events' ? EventCard : UserCard;
 	const cardProps = { brain, cols: numOfCols, cardsView: brain.user.cardsView[contView] || 1, selTypes: new Set(snap.types), isPast, eveInter, showAllThumbs, nowAt, isMobile };
 
+	console.log(content, 'CONTENT');
+
 	// MAIN JSX RENDER ---
 	return (
-		<content-comp id="content" class={`fadingIn ${fadedIn.includes('Content') ? 'fadedIn' : ''} ${nowAt !== 'event' ? 'mihvh140' : ''} fPadHorXxs posRel w100 posRel block marAuto`} ref={contentRef}>
+		<content-comp id="content" class={`fadingIn ${fadedIn.includes('Content') ? 'fadedIn' : ''} ${nowAt !== 'event' ? 'mihvh140' : ''}  fPadHorXxs posRel w100 posRel block marAuto`} ref={contentRef}>
 			{/* SECTION DIVIDER --- */}
-			{nowAt !== 'event' && <blue-divider style={{ filter: 'saturate(0.7) hue-rotate(0deg)' }} class="hr4 marBotL noPoint block zin0 maskLowXs w70 opacityS marAuto" />}
+			{nowAt !== 'event' && <blue-divider style={{ filter: 'saturate(0.7) hue-rotate(0deg)' }} class="hr4  noPoint block zin0 maskLowXs w70 opacityS marAuto" />}
 
 			{/* CONTENT CONTROLS --- */}
 			{nowAt === 'home' && show.view !== 'topEvents' && <ContentControls brain={brain} snap={snap} avail={avail} contView={contView} numOfCols={numOfCols} maxCols={maxCols} viewCols={viewCols} setViewCols={setViewCols} showAllThumbs={showAllThumbs} setCardsToContent={setCardsToContent} contentLength={content?.length || 0} />}

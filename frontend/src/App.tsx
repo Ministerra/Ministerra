@@ -56,11 +56,7 @@ import { normalizeIncomingDateFieldsToMs, normalizeOutgoingDateFieldsToMs } from
 let brain;
 window.__wipeInProgress ||= false;
 const backendUrl = import.meta.env.VITE_BACK_END?.replace('127.0.0.1', 'localhost');
-(axios.defaults.baseURL = backendUrl),
-	(axios.defaults.withCredentials = true),
-	(axios.defaults.timeout = 8000),
-	(axios.defaults.headers.common['Accept'] = 'application/cbor, application/json'),
-	(axios.defaults.responseType = 'arraybuffer');
+((axios.defaults.baseURL = backendUrl), (axios.defaults.withCredentials = true), (axios.defaults.timeout = 8000), (axios.defaults.headers.common['Accept'] = 'application/cbor, application/json'), (axios.defaults.responseType = 'arraybuffer'));
 const throttleMap = (window.__throttleMap ||= new Map());
 
 // VIEWPORT SCALING LOGIC ---
@@ -192,7 +188,7 @@ function App() {
 
 	useEffect(() => {
 		// DYNAMIC SCALING ACTIVATION ---
-		if (!scalingActivated.current) (scalingActivated.current = true), activateDynamicScaling();
+		if (!scalingActivated.current) ((scalingActivated.current = true), activateDynamicScaling());
 
 		// AXIOS INTERCEPTOR CONFIGURATION ---
 		if (!window.__axiosInterceptorsInstalled) {
@@ -220,17 +216,17 @@ function App() {
 
 					// REQUEST THROTTLING ---
 					const urlKey = `${(request.method || 'get').toLowerCase()}:${request.url}`,
-						signature = JSON.stringify({ data: { ...request.data, useAuthToken: undefined } ?? null, params: request.params ?? null });
+						signature = JSON.stringify({ data: request.data ? { ...request.data, useAuthToken: undefined } : null, params: request.params ?? null });
 					let sigSet = throttleMap.get(urlKey);
-					if (!sigSet) (sigSet = new Set()), throttleMap.set(urlKey, sigSet);
+					if (!sigSet) ((sigSet = new Set()), throttleMap.set(urlKey, sigSet));
 					if (sigSet.has(signature)) return Promise.reject(new Error('Request throttled'));
-					sigSet.add(signature), (request.__throttle = { urlKey, signature });
+					(sigSet.add(signature), (request.__throttle = { urlKey, signature }));
 
 					// SAFETY VALVE ---
 					// Steps: clear throttle after a long timeout (10s) in case request hangs without completing.
 					setTimeout(() => clearThrottle(request), 10000);
 
-					(request.__requestStart = Date.now()), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'start', source: 'axios' } }));
+					((request.__requestStart = Date.now()), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'start', source: 'axios' } })));
 
 					console.log('🟢 REQUEST TO:', request.url, request.data);
 					return request;
@@ -255,7 +251,7 @@ function App() {
 			// AXIOS RESPONSE INTERCEPTOR ---
 			const resId = axios.interceptors.response.use(
 				async response => {
-					clearThrottle(response.config), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'end', source: 'axios' } }));
+					(clearThrottle(response.config), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'end', source: 'axios' } })));
 					if (response.headers?.authorization) {
 						const parts = String(response.headers.authorization).split(':'),
 							token = parts[0].split(' ')[1],
@@ -278,7 +274,7 @@ function App() {
 					return Promise.resolve(response);
 				},
 				async error => {
-					clearThrottle(error.config), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'end', source: 'axios' } }));
+					(clearThrottle(error.config), window.dispatchEvent(new CustomEvent('requestActivity', { detail: { type: 'end', source: 'axios' } })));
 					if (typeof window !== 'undefined' && window.__wipeInProgress) return Promise.reject(error);
 					if (error.response?.data) error.response.data = decodeResponseData(error.response.data, error.response?.headers?.['content-type'] || 'application/json');
 
@@ -295,15 +291,14 @@ function App() {
 						return Promise.reject(error);
 					}
 
-					if (!(error?.code === 'ERR_CANCELED' || error?.message === 'canceled') && !error?.config?.__skipGlobalErrorBanner)
-						notifyGlobalError(error, typeof errorData === 'object' ? errorData?.message : undefined);
+					if (!(error?.code === 'ERR_CANCELED' || error?.message === 'canceled') && !error?.config?.__skipGlobalErrorBanner) notifyGlobalError(error, typeof errorData === 'object' ? errorData?.message : undefined);
 					return Promise.reject(error);
 				}
 			);
 			window.__axiosInterceptorsInstalled = { reqId, resId };
 			if (import.meta?.hot)
 				import.meta.hot.dispose(() => {
-					axios.interceptors.request.eject(reqId), axios.interceptors.response.eject(resId), (window.__axiosInterceptorsInstalled = null);
+					(axios.interceptors.request.eject(reqId), axios.interceptors.response.eject(resId), (window.__axiosInterceptorsInstalled = null));
 				});
 		}
 
@@ -326,7 +321,7 @@ function App() {
 		(async () => {
 			try {
 				await foundationLoader({ isFastLoad: true, brain });
-				if (mounted) (brain.fastLoaded = true), setWaitForFoundationLoad(false);
+				if (mounted) ((brain.fastLoaded = true), setWaitForFoundationLoad(false));
 			} catch (err) {
 				console.error('Foundation fast load failed', err);
 				if (mounted) setWaitForFoundationLoad(false);

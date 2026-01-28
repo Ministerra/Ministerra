@@ -272,6 +272,12 @@
 .wr0-3 {
 	width: 0.3rem;
 }
+.wr0-5 {
+	width: 0.5rem;
+}
+.wr0-6 {
+	width: 0.6rem;
+}
 .wr1 {
 	width: 1rem;
 }

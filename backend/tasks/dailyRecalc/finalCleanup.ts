@@ -48,7 +48,7 @@ export async function executeFinalQueries({ con, redis, inaUse }) {
 		...(inaUse.size ? [`UPDATE logins SET inactive = TRUE WHERE user IN (${getIDsString(inaUse)})`] : []),
 		`UPDATE users SET status = "user" WHERE status = "newUser" AND created < CURDATE() - INTERVAL ${EXPIRATIONS.newUserStatusExpiration} MONTH`,
 		`UPDATE changes_tracking SET changed_name = FALSE WHERE changed_name = TRUE`,
-		`DELETE FROM rjwt_tokens WHERE created < NOW() - INTERVAL ${parseInt(EXPIRATIONS.refreshToken)} DAY`,
+		`DELETE FROM rjwt_tokens WHERE created < NOW() - INTERVAL ${parseInt(EXPIRATIONS.refreshToken, 10)} DAY`,
 		`DELETE FROM user_alerts WHERE created < NOW() - INTERVAL ${INTERVALS.userAlertsCleanup} MONTH`,
 		`DELETE FROM user_links WHERE changed < NOW() - INTERVAL ${INTERVALS.userLinksRequestsCleanup} MONTH AND link = 'req'`,
 	];

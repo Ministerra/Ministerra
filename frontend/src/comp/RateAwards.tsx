@@ -23,7 +23,7 @@ function RateAwards(props) {
 		bWidth = useCentralFlex('awards', [modes, status], nowAt, awardsSrc.length),
 		{ mark, awards = [] } = status;
 
-	const showAwards = thisIs === 'event' || modes.awards;
+	const showAwards = thisIs === 'event' || thisIs === 'user' || modes.awards;
 
 	useEffect(() => {
 		if (modes.autoSelectRating && !mark) {
@@ -98,7 +98,7 @@ function RateAwards(props) {
 								Object.assign(brain, { rateInProg: {} });
 								setStatus(prev => ({ ...prev, mark: obj.mark || 0, awards: obj.awards || [] }));
 							}
-						}, 3000),
+						}, 4000),
 					},
 				});
 			}
@@ -146,8 +146,8 @@ function RateAwards(props) {
 									if (resetTimer) resetTimer();
 									(awards.length < (thisIs === 'event' ? 4 : 3) || awards.includes(powersOfTwo[i])) && man('award', powersOfTwo[i]);
 								}}
-								className={`${awards.includes(powersOfTwo[i]) ? 'boRadS borRed' : ''}   ${nowAt !== 'event' ? 'padBotXs padTopL' : 'padTopS '}   posRel hvw8 bHover grow `}>
-								<img src="/icons/placeholdergood.png" className={`posAbs topCen maskLow h70 grow w100`} alt="" />
+								className={`${awards.includes(powersOfTwo[i]) ? 'boRadS borRed' : ''}   ${nowAt !== 'event' ? 'padBotXs padTopL' : 'padTopS '}   posRel hvw6 bHover grow `}>
+								<img src="/icons/placeholdergood.png" className={`posAbs topCen maskLow h60 grow w100`} alt="" />
 								<img src="/icons/placeholdergood.png" className="blueGlass marBotXxxs zinMax mw6 w25 miw4" alt="" />
 								<span className=" fs8 tDarkBlue boldM zinMax   lh0-8 ">{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awards.cz[i]}</span>
 								<span className="fs6  mw30 zinMax   lh1">{ratingSrc[thisIs === 'event' && obj.type.startsWith('a') ? 'meeting' : thisIs].awardsTexts[i]}</span>

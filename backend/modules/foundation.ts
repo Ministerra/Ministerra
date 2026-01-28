@@ -1,9 +1,3 @@
-// FOUNDATION MODULE ------------------------------------------------------------
-// Provides a single "bootstrap" endpoint for clients to load:
-// - auth rotation + device salt
-// - notification dots
-// - user interaction deltas
-// - content metas for visible cities
 
 // IMPORTS ----------------------------------------------------------------------
 import { Sql, Catcher } from '../systems/systems.ts';
@@ -23,12 +17,13 @@ const logger = getLogger('Foundation');
 // Foundation delegates redis usage to submodules; this keeps wiring centralized.
 const ioRedisSetter = redisClient => setRedis(redisClient);
 
-// FOUNDATION HANDLER ----------------------------------------------------------
+// TODO probably move all user specific metadata into userSummary (current link request count, current messages to non-linked users count etc)
+// IDEA separate private events into a new homeView and treat the lin or tru events as "Setkán kámošů ${user name}". event basics would contain the owners name directly, so that the main event card element would be the owner. These events would be more about "This dude is great, i wanna go out with his social circle."
 
-// FOUNDATION ---
+
+// FOUNDATION HANDLER ----------------------------------------------------------
 // Steps: derive auth/security material first, then resolve + persist sync watermarks, then fetch content metas for the requested cities, then assemble one response payload (including notif dots) so the client can render immediately.
-// FOUNDATION DISPATCHER --------------------------------------------------------
-// Orchestrates the full load flow; keeps ordering explicit so sync watermarks are correct.
+
 async function Foundation(req, res) {
 	const { userID, is, devID, devIsStable, load, getCities = [], cities = [], gotAuth, clientEpoch } = req.body;
 	const authLoads = new Set(['init', 'fast', 'auth']);

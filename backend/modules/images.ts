@@ -69,9 +69,25 @@ const processImages = async (buffer: Buffer, imgFolder: 'events' | 'users'): Pro
 	return { processedImages, height: height || originalMeta.height || 0 };
 };
 
+// SANITIZE PATH ID -------------------------------------------------------------
+// Steps: strip any path traversal characters from IDs to prevent directory escape attacks; only allow alphanumeric, underscore, and hyphen.
+const sanitizePathID = (id: number | string): string => {
+	const strID = String(id);
+	const sanitized = strID.replace(/[^a-zA-Z0-9_-]/g, '');
+	if (!sanitized || sanitized !== strID) throw new Error('invalidID');
+	return sanitized;
+};
+
 // SAVE IMAGES ------------------------------------------------------------------
 // Writes processed images to `public/<folder>/<id>_<imgVers><size>.webp`.
 const saveImages = async (images: ProcessedImage[], targetID: number | string, imgVers: number | string, imgFolder: string): Promise<void> => {
+	// PATH TRAVERSAL PROTECTION -----------------------------------------------
+	// Steps: sanitize targetID and imgVers to prevent path traversal attacks; validate imgFolder against whitelist.
+	const safeTargetID = sanitizePathID(targetID);
+	const safeImgVers = sanitizePathID(imgVers);
+	const allowedFolders = ['events', 'users'];
+	if (!allowedFolders.includes(imgFolder)) throw new Error('invalidImageFolder');
+
 	const directoryPath = `public/${imgFolder}/`;
 	try {
 		await fs.access(directoryPath);
@@ -81,7 +97,7 @@ const saveImages = async (images: ProcessedImage[], targetID: number | string, i
 
 	// BOUNDED WRITE LOOP ------------------------------------------------------
 	// Steps: write serially to avoid FD exhaustion and disk spikes on multi-image uploads.
-	for (const img of images) await fs.writeFile(`${directoryPath}${targetID}_${imgVers}${img.size}.webp`, img.buffer);
+	for (const img of images) await fs.writeFile(`${directoryPath}${safeTargetID}_${safeImgVers}${img.size}.webp`, img.buffer);
 };
 
 // IMAGES MIDDLEWARE -----------------------------------------------------------
@@ -109,9 +125,13 @@ const Images = async (req: ImagesRequest, res: Response, next: NextFunction) => 
 				const [rows]: [any[], any] = await con.execute(`SELECT imgVers FROM users WHERE id = ?`, [userID]);
 				imgVers = rows?.[0]?.imgVers || 0;
 				if (imgVers) {
+					// PATH TRAVERSAL PROTECTION -------------------------------------------
+					// Steps: sanitize userID and imgVers before using in file path to prevent directory escape attacks.
+					const safeUserID = sanitizePathID(userID);
+					const safeImgVers = sanitizePathID(imgVers);
 					for (const size of ['', 'S']) {
 						try {
-							await fs.unlink(`public/users/${userID}_${imgVers}${size}.webp`);
+							await fs.unlink(`public/users/${safeUserID}_${safeImgVers}${size}.webp`);
 						} catch (error) {
 							logger.error('removeUserImage', { error, userID, size });
 						}
@@ -162,16 +182,18 @@ const Images = async (req: ImagesRequest, res: Response, next: NextFunction) => 
 			if (!eventID) {
 				// New event: defer saving to Editor after event is created
 				req.processedImages = processedImages;
-				req.body.imgVers = 1;
+				req.body.imgVers = `1_${height}`;
 			} else {
 				// Editing existing event: defer saving until authorization in Editor
-				const newVImg = Number(imgVers) + 1;
+				const [version] = String(imgVers).split('_');
+				const newVImg = `${Number(version) + 1}_${height}`;
 				req.processedImages = processedImages;
 				req.body.imgVers = newVImg;
 			}
 		} else {
 			// User images can be saved immediately
-			const newVImg = Number(imgVers) + 1;
+			const [version] = String(imgVers).split('_');
+			const newVImg = `${Number(version) + 1}`;
 			await saveImages(processedImages, targetID!, newVImg, imgFolder);
 			req.body.imgVers = newVImg;
 		}

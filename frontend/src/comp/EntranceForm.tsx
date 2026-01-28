@@ -152,7 +152,7 @@ function EntranceForm(props: any) {
 		emailRef = useRef<any>(null),
 		passRef = useRef<any>(null),
 		repassRef = useRef<any>(null),
-		passStrengthRef = useRef<any>(null),
+		passStrengthRef = useRef<any>(environment === 'dev' && import.meta.env.VITE_LOGIN_PASS ? getPasswordStrengthScore(false, import.meta.env.VITE_LOGIN_PASS) : null),
 		repassStrengthRef = useRef<any>(null),
 		bSubmitRef = useRef<any>(null),
 		infoMessagesRef = useRef<any>(null),
@@ -200,7 +200,7 @@ function EntranceForm(props: any) {
 		[capsActive, setCapsActive] = useState(false),
 		showBackToLoginBtn = ['unauthorized', 'changeSuccess', 'emailReverted', 'newMailVerified', 'userFrozen', 'emailChangeActive', 'mailTaken', () => inform.mailSent && !isRegister, 'mailResent', 'registerLimited'].some(what => (typeof what === 'function' ? what() : inform[what])),
 		[mounted, setMounted] = useState(false),
-		[emailValidated, setEmailValidated] = useState(false),
+		[emailValidated, setEmailValidated] = useState(emailCheck.test(data.email)),
 		emailValidationTimeout = useRef(null),
 		[resendRetryCount, setResendRetryCount] = useState(0),
 		[resendJustSuccess, setResendJustSuccess] = useState(false);
@@ -311,6 +311,8 @@ function EntranceForm(props: any) {
 			console.log('🟡 VALIDATION CHECK:', { what, dataValidity, informs, allPassed: dataValidity.every(Boolean) });
 
 			// FINAL SUBMISSION EXECUTION ---
+			// DOUBLE-SUBMIT GUARD ---
+			if (axiosInProg) return;
 			if (dataValidity.every(Boolean)) {
 				setAxiosInProg(true);
 				setInform({});
@@ -448,14 +450,14 @@ function EntranceForm(props: any) {
 	// Dynamically shows/hides submission button based on form validity
 	useEffect(() => {
 		clearTimeout(showSubmitTimeout.current);
+		if (pass.length && !refs.passStrength.current) refs.passStrength.current = getPasswordStrengthScore(false, pass);
 		if (isResetPass) return setShowSubmitBtn(refs.passStrength.current === 7 && pass === rePass);
 		if (formMode === 'register') return setShowSubmitBtn(emailCheck.test(email) && refs.passStrength.current === 7 && pass === rePass && agreed);
 		if (formMode === 'login') return setShowSubmitBtn(emailCheck.test(email) && refs.passStrength.current === 7);
-		if (pass.length && !refs.passStrength.current) refs.passStrength.current = getPasswordStrengthScore(false, pass);
 		if (!isChange || infoMessageShown) return setShowSubmitBtn(true);
 		const condition = (isChangeMail && emailCheck.test(email) && (isChangeMail ? getPasswordStrengthScore(false, curPass) : refs.passStrength.current) >= 7) || ((isChangeBoth || isChangePass) && refs.passStrength.current >= 7 && pass === rePass && curPass && getPasswordStrengthScore(false, curPass) >= 7);
 		showSubmitTimeout.current = setTimeout(() => setShowSubmitBtn(condition), !condition ? 0 : 1000);
-	}, [email, pass, rePass, inform, curPass]);
+	}, [email, pass, rePass, infoMessageShown, curPass, formMode, agreed]);
 
 	// KEYBOARD INTERACTION HANDLERS ---
 	// Monitors CapsLock state and Enter key submissions
@@ -495,9 +497,9 @@ function EntranceForm(props: any) {
 
 	// PASSWORD FIELD AUTOFOCUS AFTER EMAIL VALIDATION ---
 	useEffect(() => {
-		if (!refs.emailRef.current?.length) refs.emailRef.current?.focus();
+		if (!email.length) refs.emailRef.current?.focus();
 		if (emailValidated && !pass && refs.passRef.current) refs.passRef.current.focus({ preventScroll: true });
-	}, [emailValidated, formMode]);
+	}, [emailValidated, formMode, email, pass]);
 
 	if (!mounted) return null;
 	return (
@@ -713,7 +715,7 @@ function EntranceForm(props: any) {
 									if (infoMessageShown) return (setFormMode('login'), setInform({}));
 									else man({ what: formMode, submit: true });
 								}}
-								className={` ${isInitializing ? 'bDarkGreen' : showBackToLoginBtn ? 'bRed' : isChange || inform.mailSent ? 'bInsetBlueBotXl   ' : inform.changeSuccess || inform.emailReverted ? 'bGreen' : isResetPass || isRevertEmail || inform.mailTaken || inform.verifyMail || inform.wrongPass || inform.wrongLogin ? 'bRed' : 'bBlue borBot2'} tWhite marAuto posRel  hvw8 mh4  w50 tSha10  boRadXxs xBold fs12`}>
+								className={` ${isInitializing ? 'bGreen bInsetGreenTop' : showBackToLoginBtn ? 'bRed' : isChange || inform.mailSent ? 'bInsetBlueBotXl   ' : inform.changeSuccess || inform.emailReverted ? 'bGreen' : isResetPass || isRevertEmail || inform.mailTaken || inform.verifyMail || inform.wrongPass || inform.wrongLogin ? 'bRed' : 'bBlue borBot2'} tWhite marAuto posRel  hvw8 mh4  w50 tSha10  boRadXxs xBold fs12`}>
 								{isInitializing
 									? 'Probíhá inicializace ...'
 									: inform.changeSuccess || (inform.mailSent && !isRegister) || inform.emailReverted

@@ -31,7 +31,7 @@ interface SanitizeOptions {
 
 const DEFAULTS: SanitizeOptions = {
 	maxString: 10_000,
-	maxDepth: 3,
+	maxDepth: 4,
 	maxArrayItems: 50,
 	maxObjectKeys: 32,
 	// PERMISSIVE STRING OPTIONS ---

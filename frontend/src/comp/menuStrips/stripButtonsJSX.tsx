@@ -38,7 +38,7 @@ const MenuButtons = props => {
 			message: 'w16 mw2-5',
 			chat: 'mw3-5 miw2-5 w40',
 			chatsList: 'mw3-5 w80',
-			event: isCardOrStrip || nowAt === 'home' ? 'mw2-5 w40' : 'mw5 w40',
+			event: isCardOrStrip || nowAt === 'home' ? 'mw3 w80' : 'mw5 w80',
 			chatsMenu: 'mw6 w33',
 			comment: 'mw2-5 w25',
 		},
@@ -46,7 +46,7 @@ const MenuButtons = props => {
 			user: ' w100 hvh6 mh5',
 			chat: 'hvh6 mh6',
 			chatsList: 'hvh6 mh6',
-			event: isCardOrStrip || nowAt === 'home' ? 'hvh6 mh5' : 'hvh25 mh9',
+			event: isCardOrStrip || nowAt === 'home' ? 'hvh6 mh6' : 'hvh25 mh9',
 			chatsMenu: 'hvh6 mh5 ',
 			message: 'hvh6 mh5',
 		},
@@ -86,7 +86,7 @@ const MenuButtons = props => {
 								: b === 'kopírovat' && copied
 									? 'xBold fs10 shaBot  bInsetBlueTopS'
 									: ' bInsetBlueTopXs bBor bold   '
-					} ${nowAt === 'event' && thisIs === 'event' ? 'fs8' : nowAt === 'editor' ? 'fs8' : 'fs5'} posRel zinMaXl miw2 grow  h100 bHover`}>
+					} ${nowAt === 'event' && thisIs === 'event' ? 'fs8' : nowAt === 'editor' ? 'fs8' : 'fs7'} posRel zinMaXl miw2 grow  h100 bHover`}>
 					<img className={`${classes.img[thisIs]}`} src={`/icons/indicators/${index + 1}.png`} alt="" />
 					{b === 'archiv' && notifDots?.archive > 0 && <span className="miw2 hr2 bDarkRed round posAbs upLittle" />}
 					{b === 'kopírovat' ? (!copied ? 'kopírovat' : copied === 'info' ? 'Užij CTRL + V' : 'zkopírováno') : b}

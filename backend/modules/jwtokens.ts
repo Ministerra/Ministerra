@@ -8,9 +8,42 @@ import { EXPIRATIONS, REDIS_KEYS } from '../../shared/constants.ts';
 // TODO we need to thoroughly check what happens if unintroduced user tries to do any non-entrance requests. how does the app handle this? How to handle this in general (there will more limited types of users in the future)
 
 let redis: any;
+let redisSub: any; // SUBSCRIBER CONNECTION FOR CACHE INVALIDATION ---
 // REDIS CLIENT SETTER ----------------------------------------------------------
 // Injects the shared redis client for refresh token persistence and revocation checks.
-const ioRedisSetter = (redisClient: any): any => (redis = redisClient);
+const ioRedisSetter = async (redisClient: any): Promise<any> => {
+	redis = redisClient;
+	// PUB/SUB SETUP FOR CACHE INVALIDATION ------------------------------------
+	// Steps: create subscriber connection to receive cache invalidation messages from other workers.
+	if (redis && !redisSub) {
+		try {
+			redisSub = await redis.duplicate();
+			await redisSub.subscribe('jwt:invalidate');
+			redisSub.on('message', (channel: string, message: string) => {
+				if (channel === 'jwt:invalidate') {
+					try {
+						const { userID, devID } = JSON.parse(message);
+						if (userID && devID) invalidateCacheForDevice(userID, devID);
+					} catch {}
+				}
+			});
+		} catch (err: any) {
+			console.error('JWT pub/sub setup failed:', err?.message);
+		}
+	}
+	return redis;
+};
+// JWT MODULE CLEANUP -----------------------------------------------------------
+// Steps: close Redis subscriber connection on shutdown to prevent resource leaks.
+async function cleanupJWTModule(): Promise<void> {
+	if (redisSub) {
+		try {
+			await redisSub.unsubscribe('jwt:invalidate');
+			await redisSub.quit();
+		} catch {}
+		redisSub = null;
+	}
+}
 const logger = getLogger('JWTokens');
 const ONE_WEEK_MS: number = 7 * 24 * 60 * 60 * 1000;
 
@@ -44,6 +77,15 @@ function invalidateCacheForDevice(userID: string | number, devID: string): void 
 			jwtCache.delete(token);
 		}
 	}
+}
+
+// BROADCAST CACHE INVALIDATION -------------------------------------------------
+// Steps: publish invalidation message to all workers so they clear their local JWT cache for this device.
+async function broadcastCacheInvalidation(userID: string | number, devID: string): Promise<void> {
+	try {
+		if (redis) await redis.publish('jwt:invalidate', JSON.stringify({ userID, devID }));
+		invalidateCacheForDevice(userID, devID); // Also invalidate locally
+	} catch {}
 }
 
 // TOKEN CONFIGURATION ---------------------------------------------------------
@@ -279,8 +321,9 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
 	if (storedRJWT !== refreshToken) throw new Error('logout');
 
 	const providedPrint: string | undefined = originalPrint;
-	// Print Mismatch (except explicit renewal) -> Potential Session Hijacking -> Logout
-	if (req.body.mode !== 'renewAccessToken' && providedPrint && storedPrint && storedPrint !== providedPrint) throw new Error('logout');
+	// FINGERPRINT VALIDATION --------------------------------------------------
+	// Steps: always validate fingerprint when stored; no bypass for renewal mode to prevent session hijacking.
+	if (storedPrint && providedPrint && storedPrint !== providedPrint) throw new Error('logout');
 	const normalizedPrint: string = providedPrint || storedPrint;
 
 	const deviceInfo: any = { logins: accessDecoded.logins, lastLogin: accessDecoded.lastLogin, devID };
@@ -338,7 +381,9 @@ async function refreshAccessToken(req: any, res: any, accessToken: string, expir
  * Steps: accept token from header/body, bypass for explicitly public routes, use LRU cache fast-path, otherwise verify signature; on expiry run refresh flow and attach session.
  * -------------------------------------------------------------------------- */
 async function jwtVerify(req: any, res: any, next: any): Promise<void> {
-	let accessToken: string | undefined = req.headers.authorization?.split(' ')[1] || req.body.auth || req.query.auth;
+	// TOKEN SOURCE RESTRICTION -------------------------------------------------
+	// Steps: accept tokens only from Authorization header to prevent URL/log exposure; req.body.auth for backwards compat only.
+	let accessToken: string | undefined = req.headers.authorization?.split(' ')[1] || req.body.auth;
 
 	if (!accessToken) {
 		// PUBLIC ROUTES (Bypass Auth) -----------------------------------------
@@ -356,16 +401,21 @@ async function jwtVerify(req: any, res: any, next: any): Promise<void> {
 	// else if (!req.signedCookies.rJWT) return Catcher({ origin: 'jwtVerify', error: new Error('logout'), res });
 
 	// FAST PATH: LRU CACHE ----------------------------------------------------
-	// If we've recently verified this token, skip crypto operations.
+	// If we've recently verified this token, skip crypto operations but still check revocation.
 	const cachedDecoded: JWTPayload | undefined = jwtCache.get(accessToken);
 	if (cachedDecoded) {
 		const now: number = Math.floor(Date.now() / 1000);
 		if (cachedDecoded.exp && cachedDecoded.exp > now) {
+			// REVOCATION CHECK FOR CACHED TOKENS ----------------------------------
+			// Steps: verify session still exists in Redis to catch revoked tokens that are still cached.
+			const redisKey: string = `${cachedDecoded.userID}_${cachedDecoded.devID}`;
+			const sessionExists: string | null = await redis?.hget(REDIS_KEYS.refreshTokens, redisKey);
+			if (!sessionExists) {
+				jwtCache.delete(accessToken);
+				return Catcher({ origin: 'jwtVerify', error: new Error('unauthorized'), res });
+			}
 			attachSession(req, cachedDecoded);
-			logger.debug('REQUEST CACHED', {
-				url: req.url,
-				body: req.body,
-			});
+			logger.debug('REQUEST CACHED', { url: req.url, body: req.body });
 			return next();
 		} else {
 			jwtCache.delete(accessToken);
@@ -436,4 +486,4 @@ function jwtQuickies({ mode, payload, expiresIn = null }: JwtQuickiesProps): any
 	}
 }
 
-export { jwtVerify, jwtCreate, jwtQuickies, ioRedisSetter, invalidateCacheForDevice };
+export { jwtVerify, jwtCreate, jwtQuickies, ioRedisSetter, invalidateCacheForDevice, broadcastCacheInvalidation, cleanupJWTModule };

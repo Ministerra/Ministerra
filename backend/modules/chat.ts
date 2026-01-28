@@ -479,7 +479,9 @@ export async function Chat(request: ChatRequest, response: any = null) {
 		return response?.status(200)[payload ? 'json' : 'end'](payload) || payload;
 	} catch (error) {
 		Catcher({ origin: 'Chat', error: error as Error, res: response, context: request.body });
+		// ENSURE HTTP RESPONSE IS SENT ---
 		if (!response) throw error;
+		if (!response.headersSent) response.status(500).end();
 	} finally {
 		connection?.release();
 	}

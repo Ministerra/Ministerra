@@ -39,8 +39,10 @@ const buildBooleanFTS = raw => {
 // Toggles between FTS (MATCH...AGAINST) and LIKE based on mode/query availability.
 // GET QUERY --------------------------------------------------------------------
 // Steps: select the minimal SQL template per mode, toggle between FTS vs LIKE, and always clamp offset so deep paging can’t be used for resource exhaustion.
-const getQuery = (mode, useFullText, offset) => {
-	const limOff = `LIMIT 20 OFFSET ${Math.min(offset, MAX_OFFSET)}`;
+// PARAMETERIZED OFFSET ---------------------------------------------------------
+// Steps: use placeholder for OFFSET to prevent SQL injection; actual value passed via params.
+const getQuery = (mode, useFullText) => {
+	const limOff = `LIMIT 20 OFFSET ?`;
 	if (mode === 'chats')
 		return /*sql*/ `SELECT c.id, c.name, c.type, cm.role, cm.flag, c.imgVers, CASE WHEN c.type = 'private' THEN CONCAT(other_u.id, ',', other_u.first, ',', other_u.last) ELSE c.name END AS userOrName FROM chats c JOIN chat_members cm ON c.id = cm.chat LEFT JOIN chat_members other_cm ON c.id = other_cm.chat AND other_cm.id != cm.id LEFT JOIN users other_u ON other_u.id = other_cm.id WHERE cm.id = ? AND ((c.type != 'private' AND c.name ${likeConc}) OR (c.type = 'private' AND (other_u.first ${likeConc} OR other_u.last ${likeConc}))) ORDER BY cm.seen DESC ${limOff}`;
 	if (['events', 'pastEvents'].includes(mode)) {
@@ -123,8 +125,12 @@ async function Search(req, res) {
 				? [boolFTS]
 				: [safeQ];
 
+		// OFFSET PARAMETER --------------------------------------------------------
+		// Steps: add offset as final parameter for parameterized query.
+		params.push(numOffset);
+
 		logger.info('search.query', {
-			query: getQuery(mode, useFullText, numOffset),
+			query: getQuery(mode, useFullText),
 			params,
 			useFullText,
 			mode,
@@ -134,7 +140,7 @@ async function Search(req, res) {
 
 		// EXECUTE & FILTER ----------------------------------------------------
 		// Steps: execute query, then privacy-filter only users/events/pastEvents; other modes return raw rows.
-		const [searchResults] = await con.execute(getQuery(mode, useFullText, numOffset), params);
+		const [searchResults] = await con.execute(getQuery(mode, useFullText), params);
 		if (!['users', 'events', 'pastEvents'].includes(mode)) res.status(200).json(searchResults);
 		else res.status(200).json(await checkRedisAccess({ items: searchResults, userID }));
 	} catch (error) {

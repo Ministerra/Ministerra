@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import Search from './bottomMenu/Search';
 import Gallery from './bottomMenu/Gallery';
@@ -34,11 +34,23 @@ function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'ev
 	// Cap selected events to 3 for userToEvents, keep previous limits otherwise
 	const itemLimit = isUserToEvents ? 3 : 20; // set higher for paying users in other modes
 	const StripComp = isUserToEvents ? EventStrip : UserStrip;
+	const linkUsers = (brain.user.unstableObj || brain.user).linkUsers || [];
+
+	const availableSources = useMemo(() => {
+		return ['gallery', 'search', 'other'].filter(s => {
+			if (s === 'gallery' && !isUserToEvents) return linkUsers.length > 0;
+			return true;
+		});
+	}, [isUserToEvents, linkUsers]);
 
 	useLayoutEffect(() => {
 		if (!tabMode) setSelectedItems([]);
 		else if (isUserToEvents) setSearchCat('events');
 	}, [isUserToEvents, tabMode]);
+
+	useEffect(() => {
+		if (!tabMode && availableSources.length === 1) setTabMode(availableSources[0] as any);
+	}, [availableSources, tabMode]);
 
 	async function man({ mode: actionMode, obj: item, userObj }: any) {
 		item = item || userObj;
@@ -100,21 +112,19 @@ function Invitations({ brain, obj, onSuccess, downMargin = undefined, mode = 'ev
 
 						{!tabMode && (
 							<menu-bs class={`w100 flexCen wrap marAuto gapXxxs aliStretch  zinMax  posRel `}>
-								{['gallery', 'search', 'other']
-									.filter(b => !tabMode || b === tabMode)
-									.map(m => (
-										<button
-											key={m}
-											onClick={e => {
-												e.stopPropagation();
-												if (m === 'search' && !isUserToEvents) setSearchCat(null);
-												setTabMode(prev => (prev === m ? '' : m));
-											}}
-											className={` bHover  bBor  padAllS imw6   iw80   bInsetBlueTopXs2   borderTop      ${tabMode === m ? 'marAuto boRadM posAbs topCen maskLowXs upTiny bgTransXs  mw40  w100 bInsetBlueTopXs fs9    zinMaXl bgTransXs padHorM      xBold ' : 'grow  fs9    posRel   '}`}>
-											<img src={`/icons/${m === 'search' ? 'search' : m === 'gallery' ? (mode === 'userToEvents' ? 'event' : 'people') : 'email'}.png`} style={{ aspectRatio: '16/10' }} className={`${!tabMode || tabMode === m ? '' : 'opacityS'}`} alt={`${m} icon`} />
-											{!tabMode && <span className=" bold fs8">{m === 'search' ? 'Vyhledat' : m === 'gallery' ? 'Galerie' : 'Ostatní'}</span>}
-										</button>
-									))}
+								{availableSources.map(m => (
+									<button
+										key={m}
+										onClick={e => {
+											e.stopPropagation();
+											if (m === 'search' && !isUserToEvents) setSearchCat(null);
+											setTabMode(m as any);
+										}}
+										className={` bHover  bBor  padAllS imw6   iw80   bInsetBlueTopXs2   borderTop      ${tabMode === m ? 'marAuto boRadM posAbs topCen maskLowXs upTiny bgTransXs  mw40  w100 bInsetBlueTopXs fs9    zinMaXl bgTransXs padHorM      xBold ' : 'grow  fs9    posRel   '}`}>
+										<img src={`/icons/${m === 'search' ? 'search' : m === 'gallery' ? (mode === 'userToEvents' ? 'event' : 'people') : 'email'}.png`} style={{ aspectRatio: '16/10' }} className={`${!tabMode || tabMode === m ? '' : 'opacityS'}`} alt={`${m} icon`} />
+										{!tabMode && <span className=" bold fs8">{m === 'search' ? 'Vyhledat' : m === 'gallery' ? 'Galerie' : 'Ostatní'}</span>}
+									</button>
+								))}
 							</menu-bs>
 						)}
 

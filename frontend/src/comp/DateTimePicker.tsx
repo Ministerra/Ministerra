@@ -337,7 +337,6 @@ const DateTimePicker = props => {
 	return (
 		<date-time ref={scrollTarget} class={` flexCen  w100 mw180  textAli zinMaXl ${nowAt === 'editor' ? (dateMode ? 'marBotXxl' : '') : ''}  posRel marAuto wrap`}>
 			{/* DATE MODE CONTROLS --- */}
-			{/* Provides toggles between selecting start and end times for events */}
 			{/* In edit mode (isEditing), always show buttons even if starts is null */}
 			{(starts || isEditing || prop === 'meetWhen') && (mode !== 'week' || (prop === 'meetWhen' && dateMode !== prop)) && !noAutoHide && (
 				<starts-ends class={`flexCen aliStretch w100 boRadXs textAli  posRel   ${dateMode ? 'marBotM' : ''}     marAuto  `}>
@@ -354,9 +353,9 @@ const DateTimePicker = props => {
 									{field === dateMode && <blue-divider class="hr1   block  bInsetBlueTopXl  posAbs botCen bgTrans w100 marAuto" />}
 
 									<texts-wrapper class="flexCol w100 selfCen">
-										<span className={`${showStartsWarning ? 'tRed fs30 xBold' : prop === 'meetWhen' ? 'fs20 xBold' : field === dateMode ? 'fs30   xBold ' : !dateMode && mode !== 'week' ? 'boldM fs26' : 'bold   fs25'} lh1 `}>
+										<span className={`${showStartsWarning ? 'tRed fs30 xBold' : prop === 'meetWhen' ? 'fs20 xBold' : field === dateMode ? 'fs30   xBold ' : !dateMode && mode !== 'week' ? 'boldM fs30' : 'bold   fs25'} lh1 `}>
 											{showStartsWarning
-												? 'Vyber začátek'
+												? 'Vyber úplné datum'
 												: field === 'starts' && !starts
 													? prop === 'meetWhen'
 														? 'Vybrat čas srazu'
@@ -373,7 +372,7 @@ const DateTimePicker = props => {
 										{/* Contextual guidance for date/time selection requirements */}
 										{Boolean(field !== 'ends' || !ends) && mode !== 'week' && (
 											<span className={` fs14	 w100 ${showStartsWarning ? 'tRed xBold' : dateMode === field ? ((field === 'starts' && !starts) || (field === 'ends' && !ends) ? 'tRed xBold' : 'tRed xBold') : 'tBlue'}  noPoint  `}>
-												{showStartsWarning ? 'Není zvolené úplné datum' : dateMode === field ? ((field === 'starts' && !starts) || (field === 'ends' && !ends) ? 'skrýt datumář konce' : `skrýt datumář ${field === 'starts' ? 'začátku' : 'konce'}`) : field === 'starts' ? (starts ? (prop === 'meetWhen' ? 'změnit čas' : 'změnit začátek') : prop === 'meetWhen' ? 'nepovinné' : 'začátek povinný') : field === 'ends' ? (ends ? 'změnit konec' : 'konec nepovinný') : ''}
+												{showStartsWarning ? 'klikni pro původní' : dateMode === field ? ((field === 'starts' && !starts) || (field === 'ends' && !ends) ? 'skrýt datumář konce' : `skrýt datumář ${field === 'starts' ? 'začátku' : 'konce'}`) : field === 'starts' ? (starts ? (prop === 'meetWhen' ? 'změnit čas' : 'změnit začátek') : prop === 'meetWhen' ? 'nepovinné' : 'začátek povinný') : field === 'ends' ? (ends ? 'změnit konec' : 'konec nepovinný') : ''}
 											</span>
 										)}
 										{field === 'ends' && ends && (
@@ -500,7 +499,7 @@ const DateTimePicker = props => {
 					{/* Handles hours and minutes input with support for AM/PM or 24h formats */}
 					{/* For meetWhen, only show after user explicitly selects a day */}
 					{!noTime && (day || mode === 'week') && (prop !== 'meetWhen' || meetWhenDaySelected) && (
-						<time-section class={` marAuto block  ${mode === 'week' ? 'bInsetBlueTopXs' : ''}  posRel  posRel     flexCol w100`}>
+						<time-section class={` marAuto block  ${mode === 'week' ? '' : ''}  posRel  posRel     flexCol w100`}>
 							{mode === 'week' && <blue-divider class={` hr0-5  block bInsetBlueTopXxs  bgTrans   w90  ${(!isToday || nowDate.getHours() < 12) && !noAmPm ? 'marBotL' : ''}   marAuto   `} />}
 
 							{/* DAY PART SELECTOR --- */}

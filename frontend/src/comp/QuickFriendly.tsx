@@ -38,18 +38,18 @@ const QuickFriendly = forwardRef(function QuickFriendly(props: any, ref: any) {
 						.map(([type, { people, events }]: any, i) => {
 							return (
 								// SINGLE MEETING WRAPPER --------------------------------
-								<single-meeting key={type} style={{ width: '100%', ...(meetWidth && { maxWidth: `${meetWidth}px` }) }} className={`  flexCol aliCen bHover pointer ${showMore ? 'aspect167 mih14 ' : 'aspect167 hvw25 mh18'} marBotXs    posRel`}>
-									<img onClick={() => showMan('quick', type)} className={`boRadXxs posAbs topCen cover w100 h80 maskLowXs `} src={`/covers/friendlyMeetings/a${i + 1}.png`} alt="" />
+								<single-meeting key={type} style={{ width: '100%', ...(meetWidth && { maxWidth: `${meetWidth}px` }) }} className={`  flexCol aliCen bHover pointer ${showMore ? 'aspect167 mih14 ' : 'aspect167 hvw25 mh25'}     posRel`}>
+									<img onClick={() => showMan('quick', type)} className={`boRadXxs posAbs topCen cover w100 h90 maskLowXs `} src={`/covers/friendlyMeetings/a${i + 1}.png`} alt="" />
 									{/* QUICK CREATE / SHOW EVENTS OR ATTENDEES BUTTONS -------------------------------- */}
 									<action-buttons class="posAbs botCen flexCen  w100">
 										{['events', 'editor', 'people'].map((b, i) => {
 											const disable = (b === 'people' && people === 0) || (b === 'events' && events === 0);
 											if (b === 'editor')
 												return (
-													<create-button key={b} onClick={() => showMan('quick', type)} className={` maskTopXs posRel flexCol bHover aliCen marBotXs textAli justCen `}>
-														<img style={{ filter: 'brightness(1) saturate(0.95) hue-rotate(-0deg)' }} className={` ${showMore ? 'w80 mw10' : 'w60 mw12'}  bgTrans padHorXxs padTopS  maskLowXxs   `} src={`/icons/types/${type}.png`} alt="" />
+													<create-button key={b} onClick={() => showMan('quick', type)} className={` maskTopXs marBotXs posRel flexCol bHover aliCen  textAli justCen `}>
+														<img style={{ filter: 'brightness(1) saturate(0.95) hue-rotate(-0deg)' }} className={` ${showMore ? 'w80 moveDown posRel mw14' : 'w60 mw18'} marBotXs maskLowXs opacityXl  padHorXxs padTopS     `} src={`/icons/types/${type}.png`} alt="" />
 
-														<span className={`${showMore ? 'fs12' : 'fs12'} upTiny xBold    bgTrans   textSha posRel tSha lh1 noWrap`}>{FRIENDLY_MEETINGS.get(type).quick}</span>
+														<span className={`${showMore ? 'fs12 upLittle' : 'fs14 moveUpMore'}  boldXs    bgTrans   textSha posRel tSha lh1 noWrap`}>{FRIENDLY_MEETINGS.get(type).quick}</span>
 													</create-button>
 												);
 											return (
@@ -81,8 +81,8 @@ const QuickFriendly = forwardRef(function QuickFriendly(props: any, ref: any) {
 																		}
 																	}));
 													}}
-													class={`${disable ? 'opacityS' : showMore ? 'fs10 boldXs textSha' : 'fs10 boldXs textSha'} flexCol posRel justCen selfEnd borWhite bHover w20 aliCen maskTopXs bgTrans padHorXs ${showMore ? 'padTopXs bgTrans padHorXs  marBotXs' : 'padTopM marBotXs'}`}>
-													<img className={`mw6 miw4 marBotXxxs w100  `} src={`/icons/${i === 0 ? 'event' : 'people'}.png`} alt="" />
+													class={`${disable ? 'opacityS' : showMore ? 'fs10 boldXs textSha' : 'fs16 boldM textSha'} flexCol posRel justCen selfEnd borWhite bHover w20 aliCen maskTopXs bgTrans padHorXs ${showMore ? 'padTopXs bgTrans padHorXs  marBotXs' : 'padTopM marBotXs'}`}>
+													<img className={`mw4 miw4 marBotXxxs w100  `} src={`/icons/${i === 0 ? 'event' : 'people'}.png`} alt="" />
 													{b === 'events' ? events : people}
 												</events-people>
 											);
@@ -99,7 +99,7 @@ const QuickFriendly = forwardRef(function QuickFriendly(props: any, ref: any) {
 						setShowMore(next);
 						requestAnimationFrame(() => setTimeout(() => ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50));
 					}}
-					className={`${showMore ? 'tRed fs12  borderRed' : ' borderBot  arrowDown1 opacityL fs10'}  bgTrans  shaBlueLight  bold       hover  zinMax  posRel padAllXxs   marTopS  boRadXxs w50 marAuto mw30`}>
+					className={`${showMore ? 'tRed fs12  borderRed' : ' borderBot  arrowDown1 opacityL fs10'}  bgTrans  shaBlueLight  bold       hover  zinMax  posRel padAllXxs     boRadXxs w50 marAuto mw30`}>
 					{!showMore ? 'zobrazit více' : 'zobrazit méně'}
 				</button>
 			)}

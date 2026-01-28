@@ -25,7 +25,6 @@ function EveMenuStrip({
 	obj: eventObj = {}, // Renamed obj to eventObj
 	modes = {},
 	isCardOrStrip,
-	isStrip,
 	galleryMode = '',
 	isSearch,
 	brain = {},
@@ -38,7 +37,6 @@ function EveMenuStrip({
 }: any) {
 	const navigate = useNavigate();
 	const { id: eventID } = eventObj;
-	const { menuView, setMenuView } = useContext(globalContext);
 
 	// STATE MANAGEMENT ----------------------------------------------------------
 	const [selectedButton, setSelectedButton] = useState(null);
@@ -275,9 +273,9 @@ function EveMenuStrip({
 		past2: 'Skrytí účasti je nevratnou akcí!',
 	};
 
-	// RENDER --------------------------------------------------------------------
+	// RENDER ----------------------------------z----------------------------------
 	return (
-		<event-menu onClick={e => e.stopPropagation()} class={'zin3000 point posRel borTopLight '}>
+		<event-menu onClick={e => e.stopPropagation()} class={'zin3000 point block marTopXs posRel borTopLight '}>
 			{/* STANDARD MENU BUTTONS */}
 			{!hideMenu && (
 				<MenuButtons

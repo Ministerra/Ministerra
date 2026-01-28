@@ -20,7 +20,7 @@
 
 import localforage from 'localforage';
 
-const delEveProps = ['own', 'inter', 'mark', 'awards', 'commsData', 'commsSyncedAt', 'cursors', 'userIDs', 'invited', 'invites', 'distance'],
+const delEveProps = ['own', 'inter', 'mark', 'awards', 'commsData', 'commsSyncedAt', 'cursors', 'userIDs', 'invited', 'invites', 'distance', 'notFound'],
 	delUserProps = ['mark', 'awards', 'linked', 'trusts', 'note', 'message', 'unavail', 'distance'],
 	needEncryption = new Set(['user', 'chat', 'comms', 'alerts', 'past']), // PDK-encrypted (user-bound)
 	deviceBoundItems = new Set(['events', 'eve', 'users', 'use']), // DEK-encrypted (device-bound) - includes aliases
@@ -74,7 +74,7 @@ const encryptGCM = async (keyString, plaintext) => {
 		ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(plaintext)),
 		combined = new Uint8Array(iv.length + ciphertext.byteLength);
 
-	combined.set(iv), combined.set(new Uint8Array(ciphertext), iv.length);
+	(combined.set(iv), combined.set(new Uint8Array(ciphertext), iv.length));
 	const chunks: string[] = [];
 	for (let offset = 0; offset < combined.length; offset += 8192) chunks.push(String.fromCharCode.apply(null, Array.from(combined.subarray(offset, offset + 8192))));
 	return btoa(chunks.join(''));
@@ -234,13 +234,7 @@ const decrypt = async (what, data) => {
 const trimAfterCursor = (data, cursors, syncedAt?) => {
 	if (!data) return [];
 	if (cursors === 'gotAll') return data;
-	return data.filter(
-		({ id, own, created }) =>
-			id >= cursors[1] ||
-			(cursors.recent && id >= (cursors.recent[0] !== 'new' ? cursors.recent[2] : cursors.recent[1])) ||
-			(cursors.oldest && id <= (cursors.oldest[0] !== 'old' ? cursors.oldest[2] : cursors.oldest[1])) ||
-			(own && created > syncedAt)
-	);
+	return data.filter(({ id, own, created }) => id >= cursors[1] || (cursors.recent && id >= (cursors.recent[0] !== 'new' ? cursors.recent[2] : cursors.recent[1])) || (cursors.oldest && id <= (cursors.oldest[0] !== 'old' ? cursors.oldest[2] : cursors.oldest[1])) || (own && created > syncedAt));
 };
 
 // DELETE SENSITIVE PROPS ------------------------------------------------------------
@@ -285,9 +279,9 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 	const respond = payload => self.postMessage({ ...payload, reqId });
 	try {
 		if (mode === 'init') return self.postMessage({ inited: true });
-		if (mode === 'wipe') return (wipeMode = Boolean(val)), respond({ data: wipeMode });
-		if (mode === 'clearPDK') return await clearPDKEncrypted(), (pdk = null), (pdkSalt = null), respond({ data: true });
-		if (mode === 'clearDEK') return await pruneDeviceBoundData(), respond({ data: true });
+		if (mode === 'wipe') return ((wipeMode = Boolean(val)), respond({ data: wipeMode }));
+		if (mode === 'clearPDK') return (await clearPDKEncrypted(), (pdk = null), (pdkSalt = null), respond({ data: true }));
+		if (mode === 'clearDEK') return (await pruneDeviceBoundData(), respond({ data: true }));
 		if (mode === 'status') {
 			const keys = await localforage.keys();
 			return respond({
@@ -345,7 +339,7 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 				else if (!pdkSalt) return respond({ error: 'noPdkSalt' });
 
 				// PDK LIFECYCLE - encrypted with print + pdkSalt for device-binding ---
-				if (newPdk) (pdk = newPdk), await storePDKEncrypted(newPdk, print, pdkSalt);
+				if (newPdk) ((pdk = newPdk), await storePDKEncrypted(newPdk, print, pdkSalt));
 				else {
 					try {
 						pdk = await loadPDKEncrypted(print, pdkSalt);
@@ -358,9 +352,9 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 				// DEK LIFECYCLE - encrypted with print, shared across all users on device ---
 				// Print change: DEK can't be decrypted locally, backend sends fresh DEK on next foundation call.
 				// HEARTBEAT: newDek from server refreshes TTL; expired local DEK requires server refresh.
-				if (newDek) (dek = newDek), await storeDEKEncrypted(newDek, print);
+				if (newDek) ((dek = newDek), await storeDEKEncrypted(newDek, print));
 				else if (newDek === null) {
-					console.warn('DEK revoked, pruning device-bound data'), await pruneDeviceBoundData();
+					(console.warn('DEK revoked, pruning device-bound data'), await pruneDeviceBoundData());
 					return respond({ status: 'device_revoked' });
 				} else {
 					dek = await loadDEKEncrypted(print);
@@ -378,7 +372,7 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 					if (userKeys.length > 0) {
 						respond({ status: 'reencrypting', count: userKeys.length });
 						try {
-							await reEncryptStores(oldAuthHash, newAuthHash), respond({ status: 'reencrypted' });
+							(await reEncryptStores(oldAuthHash, newAuthHash), respond({ status: 'reencrypted' }));
 						} catch (e) {
 							console.warn('Re-encryption failed, clearing stale data');
 							await Promise.all(userKeys.map(key => localforage.removeItem(key)));
@@ -409,11 +403,11 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 
 			// DELETE DATA -------------------------------------------------------------------
 		} else if (mode === 'del') {
-			if (what === 'everything') await localforage.clear(), (auth = userID = devicePrint = pdkSalt = pdk = dek = null);
+			if (what === 'everything') (await localforage.clear(), (auth = userID = devicePrint = pdkSalt = pdk = dek = null));
 			else if (what === 'user') {
 				const keys = (await localforage.keys()).filter(k => userID && k.startsWith(userID));
 				for (const key of keys) await localforage.removeItem(key);
-				await clearPDKEncrypted(), await clearDEKEncrypted(), (auth = userID = pdkSalt = pdk = dek = null);
+				(await clearPDKEncrypted(), await clearDEKEncrypted(), (auth = userID = pdkSalt = pdk = dek = null));
 			} else {
 				const ids = Array.isArray(id) ? id : [id];
 				for (const itemId of ids) await localforage.removeItem(getStorageKey(what, itemId));
@@ -423,6 +417,6 @@ self.addEventListener('message', async ({ data: { mode, what, id, val, reqId } }
 		if (needEncryption.has(what)) await localforage.setItem(`${userID}_Last`, Date.now());
 		respond({ data });
 	} catch (error) {
-		console.error('ForageWorker error:', error), respond({ error: error.message });
+		(console.error('ForageWorker error:', error), respond({ error: error.message }));
 	}
 });

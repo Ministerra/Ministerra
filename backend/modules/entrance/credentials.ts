@@ -19,21 +19,29 @@ interface ForgotPassProps {
 
 // FORGOT PASSWORD ---------------------------
 /** Two-step password reset: send link or finalize new password */
-// Steps: if request is unauthenticated, verify email exists and send reset token; if request is via JWT (is=resetPass), update password and notify via email.
-async function forgotPass({ email, newPass, userID, is }: ForgotPassProps, con: any): Promise<void> {
+// Steps: if request is unauthenticated, verify email exists and send reset token; if request is via JWT (is=resetPass), validate token and update password.
+async function forgotPass({ email, newPass, userID, is, tokenTimestamp, tokenHash }: ForgotPassProps & { tokenTimestamp?: number; tokenHash?: string }, con: any, redis?: any): Promise<void> {
 	if (is !== 'resetPass') {
 		const [[userExists]]: [any[], any] = await con.execute(`SELECT id FROM users WHERE email = ? AND flag NOT IN ('del', 'fro') LIMIT 1`, [email]);
 		if (!userExists) throw new Error('userNotFound');
-		await sendEmail({
-			token: `${jwtQuickies({ mode: 'create', payload: { userID: userExists.id, is: 'resetPass', expiresIn: EXPIRATIONS.authToken } })}:${
-				Date.now() + parseInt(EXPIRATIONS.authToken) * 60 * 1000
-			}`,
-			email,
-			mode: 'resetPass',
-		});
+		const timestamp = Date.now() + parseInt(EXPIRATIONS.authToken, 10) * 60 * 1000;
+		const jwtToken = jwtQuickies({ mode: 'create', payload: { userID: userExists.id, is: 'resetPass' } });
+		await sendEmail({ token: `${jwtToken}:${timestamp}`, email, mode: 'resetPass' });
 	} else {
+		// PASSWORD RESET TOKEN VALIDATION -----------------------------------------
+		// Steps: validate timestamp is not expired, check single-use via Redis, then update password.
+		if (tokenTimestamp && Date.now() > tokenTimestamp) throw new Error('tokenExpired');
+		// SINGLE-USE TOKEN CHECK --------------------------------------------------
+		// Steps: check if token was already used; mark as used to prevent replay attacks.
+		if (redis && tokenHash) {
+			const usedKey = `usedResetToken:${userID}:${tokenHash}`;
+			const alreadyUsed = await redis.get(usedKey);
+			if (alreadyUsed) throw new Error('tokenAlreadyUsed');
+			await redis.setex(usedKey, 3600, '1'); // Mark as used for 1 hour
+		}
 		const [[{ email: userEmail } = {}]]: [any[], any] = await con.execute('SELECT email FROM users WHERE id = ?', [userID]);
-		await con.execute('UPDATE users SET pass = ? WHERE id = ?', [await bcrypt.hash(newPass, 10), userID]);
+		if (!userEmail) throw new Error('userNotFound');
+		await con.execute('UPDATE users SET pass = ? WHERE id = ?', [await bcrypt.hash(newPass, 12), userID]); // Increased to 12 rounds
 		await sendEmail({ mode: 'passChanged', email: userEmail });
 	}
 }
@@ -50,7 +58,7 @@ interface ChangeCredentialsProps {
 
 // CHANGE CREDENTIALS (EMAIL/PASSWORD) ---------------------------
 // Steps: verify password, validate new email if present, then either (a) send verification mail(s) for the requested mode, or (b) commit changes after JWT-confirmed second step.
-const getAuthToken = (payload: any): string => `${jwtQuickies({ mode: 'create', payload })}:${Date.now() + parseInt(EXPIRATIONS.authToken) * 60 * 1000}`;
+const getAuthToken = (payload: any): string => `${jwtQuickies({ mode: 'create', payload })}:${Date.now() + parseInt(EXPIRATIONS.authToken, 10) * 60 * 1000}`;
 async function changeCredentials({ is, userID, mode, pass, newPass, newEmail, hasAccessToCurMail }: ChangeCredentialsProps, con: any): Promise<{ payload: string }> {
 	const [[{ email: currentEmail, pass: storedPass } = {}]]: [any[], any] = await con.execute(/*sql*/ `SELECT email, pass FROM users WHERE id = ?`, [userID]);
 	if (!(await bcrypt.compare(pass, storedPass))) throw new Error('wrongPass');
@@ -64,31 +72,37 @@ async function changeCredentials({ is, userID, mode, pass, newPass, newEmail, ha
 	if (mode !== is) {
 		if (mode === 'changeMail') {
 			if (!newEmail) throw new Error('badRequest'); // newEmail is required ---
-			// EMAIL CHANGE COOLDOWN ---------------------------------------------
-			// Steps: block repeat changes within window to reduce account takeover surface and support revert semantics.
-			const [tracking]: [any[], any] = await con.execute(/*sql*/ `SELECT prev_mail FROM changes_tracking WHERE user = ? AND mail_at > DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1`, [userID]);
-			if (tracking[0]?.prev_mail) throw new Error('emailChangeActive');
-			await con.execute(/*sql*/ `INSERT INTO changes_tracking (user, prev_mail, new_mail) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE prev_mail = VALUES(prev_mail), new_mail = VALUES(new_mail)`, [
-				userID,
-				currentEmail,
-				newEmail,
-			]);
+			// EMAIL CHANGE COOLDOWN (ATOMIC CHECK-AND-INSERT) -----------------------
+			// Steps: use INSERT ... SELECT with NOT EXISTS to atomically check cooldown and insert in one query; prevents TOCTOU race.
+			const [insertResult]: [any, any] = await con.execute(
+				/*sql*/ `INSERT INTO changes_tracking (user, prev_mail, new_mail)
+				SELECT ?, ?, ?
+				FROM dual
+				WHERE NOT EXISTS (
+					SELECT 1 FROM changes_tracking WHERE user = ? AND mail_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+				)
+				ON DUPLICATE KEY UPDATE prev_mail = IF(mail_at > DATE_SUB(NOW(), INTERVAL 7 DAY), prev_mail, VALUES(prev_mail)), new_mail = IF(mail_at > DATE_SUB(NOW(), INTERVAL 7 DAY), new_mail, VALUES(new_mail))`,
+				[userID, currentEmail, newEmail, userID]
+			);
+			if (insertResult.affectedRows === 0) throw new Error('emailChangeActive');
 			// VERIFICATION ROUTING ----------------------------------------------
 			// Steps: send to the email the user can currently access; this prevents lockout when current email is compromised.
 			const targetEmail: string = hasAccessToCurMail ? currentEmail : newEmail;
 			await sendEmail({ mode: 'verifyNewMail', token: getAuthToken({ userID, is: mode }), email: targetEmail });
 		} else if (mode === 'changePass') await sendEmail({ mode, token: getAuthToken({ userID, is: mode }), email: currentEmail });
 		else if (mode === 'changeBoth') {
-			const [tracking]: [any[], any] = await con.execute(
-				/*sql*/ `SELECT prev_mail FROM changes_tracking WHERE user = ? AND mail_at > DATE_SUB(NOW(), INTERVAL ${REVERT_EMAIL_DAYS} DAY) LIMIT 1`,
-				[userID]
+			// ATOMIC CHECK-AND-INSERT FOR CHANGEBOTH ---
+			const [insertResult]: [any, any] = await con.execute(
+				/*sql*/ `INSERT INTO changes_tracking (user, prev_mail, new_mail)
+				SELECT ?, ?, ?
+				FROM dual
+				WHERE NOT EXISTS (
+					SELECT 1 FROM changes_tracking WHERE user = ? AND mail_at > DATE_SUB(NOW(), INTERVAL ${REVERT_EMAIL_DAYS} DAY)
+				)
+				ON DUPLICATE KEY UPDATE prev_mail = IF(mail_at > DATE_SUB(NOW(), INTERVAL ${REVERT_EMAIL_DAYS} DAY), prev_mail, VALUES(prev_mail)), new_mail = IF(mail_at > DATE_SUB(NOW(), INTERVAL ${REVERT_EMAIL_DAYS} DAY), new_mail, VALUES(new_mail))`,
+				[userID, currentEmail, newEmail, userID]
 			);
-			if (tracking[0]?.prev_mail) throw new Error('emailChangeActive');
-			await con.execute(/*sql*/ `INSERT INTO changes_tracking (user, prev_mail, new_mail) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE prev_mail = VALUES(prev_mail), new_mail = VALUES(new_mail)`, [
-				userID,
-				currentEmail,
-				newEmail,
-			]);
+			if (insertResult.affectedRows === 0) throw new Error('emailChangeActive');
 			await sendEmail({ mode, token: getAuthToken({ userID, is: mode }), email: currentEmail });
 		}
 		return { payload: 'mailSent' };

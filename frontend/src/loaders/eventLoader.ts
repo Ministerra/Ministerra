@@ -98,13 +98,19 @@ export async function eventLoader(brain, params) {
 	} catch (error: any) {
 		const errorData = error.response?.data;
 		const errorCode = typeof errorData === 'string' ? errorData : errorData?.code;
+
 		if (errorCode === 'unauthorized' || error.response?.status === 401) {
 			await forage({ mode: 'del', what: 'token' });
 			return redirect('/entrance');
 		}
 		if (error.response?.status === 404 || errorCode === 'notFound' || error.message === 'notFound') {
-			delete brain.events[eventID];
-			if (brain.user.eveUserIDs) delete brain.user.eveUserIDs[eventID];
+			if (brain.events[eventID]) Object.assign(brain.events[eventID], { state: 'del', notFound: true });
+			if (brain.user.prevLoadedContIDs?.[cityID]?.events) brain.user.prevLoadedContIDs[cityID].events = brain.user.prevLoadedContIDs[cityID].events?.filter(id => id !== eventID);
+
+			// HANDLE NOT FOUND REDIRECT ONLY IF NOT ALREADY HOME ---
+			// Steps: Only redirect to home if the user is not already at the homepage. Prevent endless redirect loop.
+			console.log(window.location.pathname, brain.user.prevLoadedContIDs);
+			if (window.location.pathname === '/') brain.navigationAborted = true;
 			return redirect('/');
 		}
 		notifyGlobalError(error, 'Nepodařilo se načíst událost.');

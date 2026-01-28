@@ -339,7 +339,7 @@ export function gracefulShutdown(signal) {
 
 	const close = server => new Promise<void>(resolve => server?.close?.(() => resolve()) || resolve());
 	const killThreads = async () =>
-		Promise.all(Array.from((workerThreadsRef || new Map()).values()).map(async (info: any) => info.worker?.terminate?.().catch(e => console.error(`Terminating thread error: ${e.message}`))));
+		await Promise.all(Array.from((workerThreadsRef || new Map()).values()).map(async (info: any) => info.worker?.terminate?.().catch(e => console.error(`Terminating thread error: ${e.message}`))));
 
 	// Force close active connections to allow fast restart
 	for (const socket of sockets) {

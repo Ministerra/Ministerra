@@ -72,11 +72,17 @@ export function humanizeDateTime(inp) {
 		const secsDiff = Math.round((date.getTime() - currentDate.getTime()) / 1000);
 		const minsDiff = Math.round(secsDiff / 60);
 		const hoursDiff = Math.round(minsDiff / 60);
-		const alreadyPassed = currentDate > date;
+		const isHappening = date.getTime() < currentDate.getTime() && (inp.endsInMs ? inp.endsInMs > currentDate.getTime() : currentDate.getTime() < date.getTime() + 2 * 60 * 60 * 1000);
+		const alreadyPassed = currentDate.getTime() > date.getTime() && !isHappening;
 
 		const labels = {
-			0: alreadyPassed ? 'Dnes proběhlo' : 'Dnešní',
-			'-1': 'včerejší', 1: 'zítra', '-7': 'minulý týden', 7: 'v týdnu', '-30': 'minulý měsíc', '-31': 'stará',
+			0: isHappening ? 'právě probíhá' : alreadyPassed ? 'Dnes proběhlo' : 'Dnešní',
+			'-1': isHappening ? 'právě probíhá' : 'včerejší',
+			1: 'zítra',
+			'-7': 'minulý týden',
+			7: 'v týdnu',
+			'-30': 'minulý měsíc',
+			'-31': 'stará',
 		};
 		let label = labels[daysDiff] || (daysDiff > -7 && daysDiff < 0 ? 'minulý týden' : daysDiff > 0 && daysDiff < 7 ? 'v týdnu' : daysDiff > -30 && daysDiff <= -7 ? 'minulý měsíc' : daysDiff <= -30 ? 'stará' : '');
 
@@ -95,29 +101,55 @@ export function humanizeDateTime(inp) {
 		const [day, month, year] = [date.getDate(), date.getMonth() + 1, date.getFullYear()];
 		const showWeekDay = daysDiff <= 60 && daysDiff >= 3;
 
-		let datePart = isToday ? 'Dnes' : daysDiff === 1 ? 'Zítra' : daysDiff === 2 ? 'Pozítří' : daysDiff === -1 ? 'Včera'
-			: showWeekDay ? `${weekDays[date.getDay()].slice(0, daysDiff <= 6 ? undefined : 2)} ${daysDiff <= 6 ? '' : `${day}.${month}${year === currentDate.getFullYear() ? '' : `.${year}`}`}`
-			: `${day}.${month}${year === currentDate.getFullYear() ? '' : `.${year}`}`;
+		let datePart = isToday ? 'Dnes' : daysDiff === 1 ? 'Zítra' : daysDiff === 2 ? 'Pozítří' : daysDiff === -1 ? 'Včera' : showWeekDay ? `${weekDays[date.getDay()].slice(0, daysDiff <= 6 ? undefined : 2)} ${daysDiff <= 6 ? '' : `${day}.${month}${year === currentDate.getFullYear() ? '' : `.${year}`}`}` : `${day}.${month}${year === currentDate.getFullYear() ? '' : `.${year}`}`;
 
 		const dateString = `${datePart}${hideFarTime && daysDiff > 90 ? '' : ` v ${time}`}`;
 		if (thumbRow === 'upper') return daysDiff <= 7 ? weekDays[date.getDay()].slice(0, 2) : year === currentDate.getFullYear() ? (showWeekDay ? datePart.split(' ')[1] : datePart) : `${day}.${month}`;
 		if (thumbRow === 'bottom') return daysDiff <= 7 ? time : year === currentDate.getFullYear() ? `${daysDiff <= 60 ? `${weekDays[date.getDay()].slice(0, 2)} ${time}` : weekDays[date.getDay()]}` : year.toString();
 
 		return dateString;
-	} catch (err) { throw new Error(err); }
+	} catch (err) {
+		throw new Error(err);
+	}
 }
 
 // INFLECT NAME (CZECH DATIVE CASE) --------------------------------------------
 // Steps: pick suffix rule by last two chars first (more specific), then last char, otherwise fall back to “em” so chat/toast strings read naturally.
 export function inflectName(name) {
 	const endings = {
-		a: 'ou', e: 'em', i: 'ím', o: 'em', u: 'em', y: 'ým', á: 'ou', é: 'ým', í: 'ím', ě: 'em', ů: 'em',
-		ř: 'řem', š: 'šem', ž: 'žem', c: 'cem', k: 'kem', g: 'gem', h: 'hem', ch: 'chem', j: 'jem', l: 'lem',
-		m: 'mem', n: 'nem', p: 'pem', r: 'rem', s: 'sem', t: 'tem', v: 'vem', z: 'zem',
+		a: 'ou',
+		e: 'em',
+		i: 'ím',
+		o: 'em',
+		u: 'em',
+		y: 'ým',
+		á: 'ou',
+		é: 'ým',
+		í: 'ím',
+		ě: 'em',
+		ů: 'em',
+		ř: 'řem',
+		š: 'šem',
+		ž: 'žem',
+		c: 'cem',
+		k: 'kem',
+		g: 'gem',
+		h: 'hem',
+		ch: 'chem',
+		j: 'jem',
+		l: 'lem',
+		m: 'mem',
+		n: 'nem',
+		p: 'pem',
+		r: 'rem',
+		s: 'sem',
+		t: 'tem',
+		v: 'vem',
+		z: 'zem',
 	};
-	const lastChar = name.slice(-1), lastTwoChars = name.slice(-2);
+	const lastChar = name.slice(-1),
+		lastTwoChars = name.slice(-2);
 	if (endings[lastTwoChars]) return name.slice(0, -2) + endings[lastTwoChars];
 	else if (endings[lastChar]) return name.slice(0, -1) + endings[lastChar];
 	else return name + 'em';
 }
-

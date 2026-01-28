@@ -16,7 +16,7 @@ type ActiveView = 'main' | 'attendance' | 'rating' | 'share';
 // SUB-VIEW WRAPPER ---------------------------
 const SubViewWrapper = ({ children }: { children: any; title: string }) => <sub-view class="flexCol  w100 bInsetBlueTopXs2 aliCen posRel fadingIn fadedIn">{children}</sub-view>;
 
-function EveActionsBs({ obj, nowAt, fadedIn, setModes, brain, status, setStatus, modes, isInactive, thisIs, isPast }: any) {
+function EveActionsBs({ obj, nowAt, fadedIn, setModes, brain, status, setStatus, modes, isInactive, thisIs, isPast, isStrip }: any) {
 	const [activeView, setActiveView] = useState<ActiveView>('main');
 	const [timerProgress, setTimerProgress] = useState(0);
 	const intervalRef = useRef<any>();
@@ -89,20 +89,24 @@ function EveActionsBs({ obj, nowAt, fadedIn, setModes, brain, status, setStatus,
 
 	// MAIN CONTROL BAR ---------------------------
 	const MainControlBar = (
-		<main-bar class="flexRow w100 shaBot spaceBet aliStretch">
+		<main-bar class="flexRow w100 noBackground spaceBet aliStretch">
 			<button
 				onClick={() => {
 					if (isPast) return;
-					setActiveView(activeView === 'attendance' ? 'main' : 'attendance');
-					if (!status.inter) setModes(prev => ({ ...prev, autoSelectInter: true }));
+					if (status.inter) setActiveView(activeView === 'attendance' ? 'main' : 'attendance');
+					else setModes(prev => ({ ...prev, autoSelectInter: true }));
 				}}
-				className={`grow bHover  bBor padVerXxs posRel   bgTrans flexCol aliCen ${attendanceButtonContent.class} ${activeView === 'attendance' ? 'bInsetBlueBotXs arrowDown1' : ''}`}>
+				className={`grow bHover  bBor ${!isStrip ? 'padVerXxs' : 'padVerXxs'} posRel   bgTrans flexCol aliCen ${attendanceButtonContent.class} ${activeView === 'attendance' ? 'bInsetBlueBotXs arrowDown1' : ''}`}>
 				<div className="flexRow aliCen gapXxs">
-					<img className={`${nowAt === 'event' ? 'mw6' : 'mw4'} aspect1610`} src={attendanceButtonContent.icon} alt="" />
+					<img className={`${nowAt === 'event' ? 'mw7' : !isStrip ? 'mw5' : 'mw3'} aspect1610`} src={attendanceButtonContent.icon} alt="" />
 					{status.inter && <span className={`${nowAt === 'event' ? 'fs16' : 'fs12'} textSha tDarkBlue xBold`}>{attendanceButtonContent.label}</span>}
 				</div>
-				{!status.inter && <span className="fs5 bold">Účast</span>}
-				{status.inter && <span className={`fs7 boldXs posRel ${nowAt === 'event' ? 'upTiny' : 'upTiny'} textSha`}>vidí: {attendanceButtonContent.priv}</span>}
+				{!status.inter && <span className="fs5 bold">Zajímá mě</span>}
+				{status.inter && (
+					<span className={`fs8 marTopXxs  posRel ${nowAt === 'event' ? 'moveUp' : 'upTiny'} textSha`}>
+						vidí: <strong className="boldM">{attendanceButtonContent.priv}</strong>
+					</span>
+				)}
 			</button>
 			{!status.own && (
 				<button
@@ -110,17 +114,17 @@ function EveActionsBs({ obj, nowAt, fadedIn, setModes, brain, status, setStatus,
 						setActiveView(activeView === 'rating' ? 'main' : 'rating');
 						if (!status.mark) setModes(prev => ({ ...prev, autoSelectRating: true }));
 					}}
-					className={`grow bBor ${activeView === 'rating' ? 'bInsetBlueBotXs arrowDown1' : ''} padVerXxs posRel  bgTrans flexCol aliCen bHover ${ratingButtonContent.class}`}>
+					className={`grow bBor ${activeView === 'rating' ? 'bInsetBlueBotXs arrowDown1' : ''} ${!isStrip ? 'padVerXxs' : 'padVerXxs'} posRel  bgTrans flexCol aliCen bHover ${ratingButtonContent.class}`}>
 					<div className="flexRow aliCen gapXxs">
-						<img className={`${nowAt === 'event' ? 'mw6' : 'mw4'} aspect1610`} src={ratingButtonContent.icon} alt="" />
+						<img className={`${nowAt === 'event' ? 'mw7' : !isStrip ? 'mw5' : 'mw3'} aspect1610`} src={ratingButtonContent.icon} alt="" />
 						{status.mark > 0 && <span className={`${nowAt === 'event' ? 'fs16' : 'fs12'} textSha tDarkBlue xBold`}>{ratingButtonContent.label}</span>}
 					</div>
 					{!status.mark && <span className="fs5 bold">Hodnotit</span>}
 					{ratingButtonContent.awards.length > 0 && <span className="fs7 boldXs textSha  posRel upTiny opacityL">+ {ratingButtonContent.awards.join(', ')}</span>}
 				</button>
 			)}
-			<button onClick={() => setActiveView(activeView === 'share' ? 'main' : 'share')} className={`grow bBor ${activeView === 'share' ? 'bInsetBlueBotXs arrowDown1' : ''} padVerXxs posRel flexCol aliCen bHover bgTrans tDarkBlue`}>
-				<img className={`${nowAt === 'event' ? 'mw6' : 'mw4'} aspect1610`} src="/icons/share.png" alt="" />
+			<button onClick={() => setActiveView(activeView === 'share' ? 'main' : 'share')} className={`grow bBor ${activeView === 'share' ? 'bInsetBlueBotXs arrowDown1' : ''} ${!isStrip ? 'padVerXxs' : 'padVerXxs'} posRel flexCol aliCen bHover bgTrans tDarkBlue`}>
+				<img className={`${nowAt === 'event' ? 'mw7' : !isStrip ? 'mw5' : 'mw3'} aspect1610`} src="/icons/share.png" alt="" />
 				<span className="fs5 bold">Sdílet</span>
 			</button>
 		</main-bar>
@@ -128,16 +132,18 @@ function EveActionsBs({ obj, nowAt, fadedIn, setModes, brain, status, setStatus,
 
 	// RENDER CONTENT BASED ON ACTIVE VIEW ---------------------------
 	return (
-		<secondary-bs onClick={e => e.stopPropagation()} class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''} flexCol zinMenu posRel marAuto aliStretch w100 bgWhite  borBotLight boRadS`}>
+		<secondary-bs onClick={e => e.stopPropagation()} class={`fadingIn ${fadedIn.includes('BsEvent') ? 'fadedIn' : ''} flexCol zinMenu posRel ${!isStrip ? 'marTopXs' : ''} aliStretch w100 noBackground shaBotLight borBotLight boRadS`}>
 			{MainControlBar}
 
 			{activeView !== 'main' && <blue-divider class="hr0-2 zin1 block opacityM     bInsetBlueTopXl  bgTrans w80 marAuto" />}
 			{activeView !== 'main' && activeView !== 'rating' && timerProgress > 0 && <TimeoutIndicator progress={timerProgress} invert={true} noRedColor={true} />}
 
-			{activeView === 'attendance' && (
-				<SubViewWrapper title="Vaše účast">
-					<IntersPrivsButtons obj={obj} nowAt={nowAt} fadedIn={fadedIn} setModes={setModes} brain={brain} status={status} setStatus={setStatus} modes={modes} isInactive={isInactive} resetTimer={resetTimer} goBack={goBack} />
-				</SubViewWrapper>
+			{(activeView === 'attendance' || (activeView === 'main' && modes.autoSelectInter)) && (
+				<div style={activeView !== 'attendance' ? { display: 'none' } : {}}>
+					<SubViewWrapper title="Vaše účast">
+						<IntersPrivsButtons obj={obj} nowAt={nowAt} fadedIn={fadedIn} setModes={setModes} brain={brain} status={status} setStatus={setStatus} modes={modes} isInactive={isInactive} resetTimer={resetTimer} goBack={goBack} />
+					</SubViewWrapper>
+				</div>
 			)}
 
 			{activeView === 'rating' && (

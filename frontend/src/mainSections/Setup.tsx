@@ -63,8 +63,12 @@ const Setup = () => {
 		visibleSections = isIntroduction ? sections.slice(0, sections.indexOf(curSection) + 1) : sections.slice(1),
 		[data, setData] = useState(() => {
 			if (isIntroduction && sessionStorage.getItem('registrationData')) {
-				const storedData = JSON.parse(sessionStorage.getItem('registrationData'));
-				return (delete storedData.section, storedData);
+				try {
+					const storedData = JSON.parse(sessionStorage.getItem('registrationData'));
+					return (delete storedData.section, storedData);
+				} catch {
+					return { ...loaderData, cities: loaderData.cities?.map(city => brain.cities.find(c => c.cityID === city) || city) || [] };
+				}
 			} else return { ...loaderData, cities: loaderData.cities?.map(city => brain.cities.find(c => c.cityID === city) || city) || [] };
 		}),
 		[inform, setInform] = useState([]),
@@ -196,6 +200,8 @@ const Setup = () => {
 			if (issues.length) return setInform(issues);
 			if (isIntroduction && curSection !== sections[sections.length - 1]) return setCurSection(sections[sections.indexOf(curSection) + 1]);
 
+			// DOUBLE-SUBMIT GUARD ---
+			if (saveButtonState === 'saving') return;
 			setSaveButtonState('saving');
 			setInform(['finalizing']);
 

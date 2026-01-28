@@ -87,10 +87,10 @@ function Filter(props) {
 									return (
 										<button
 											style={{ width: `100%`, maxWidth: `${Math.min(bWidth, 100)}px` }}
-											className={` ${invertButton === typeID ? 'boldM xBold' : ''}   ${nowAt === 'editor' ? (types.includes(typeID) ? 'thickBors shaBot xBold posRel bgTrans  boRadS zinMax  shaComment ' : 'boldXs ') : ''} ${avaTypes.includes(typeID) && types.includes(typeID) && active ? 'shaBlue boRadXxs bInsetBlueTopS boldXs posRel' : avaTypes.includes(typeID) ? '  shaSubtle boRadXxs  textSha' : ''} fs6      w100  bHover`}
+											className={` ${invertButton === typeID ? 'boldM xBold' : 'boldXs'}   ${nowAt === 'editor' ? (types.includes(typeID) ? 'thickBors shaBot xBold posRel bgTrans  boRadS zinMax  shaComment ' : 'boldXs ') : ''} ${avaTypes.includes(typeID) && types.includes(typeID) && active ? 'shaBlue boRadXxs bInsetBlueTopS  posRel' : avaTypes.includes(typeID) ? '  shaSubtle boRadXxs  textSha' : ''} fs6      w100  bHover`}
 											onClick={() => ((nowAt === 'home' && avaTypes.includes(typeID)) || nowAt === 'editor') && man(cat, typeID)}
 											key={typeID}>
-											<img className={`${nowAt === 'home' ? (!avaTypes.includes(typeID) ? 'opaque mw4 mh4 ' : 'mw6 mh5') : 'mw7'} shaWhite boRadXxs     posRel   `} src={`/icons/types/${typeID}.png`} alt="" />
+											<img className={`${nowAt === 'home' ? (!avaTypes.includes(typeID) ? 'opaque mw4 mh4 ' : 'mw7 mh5') : 'mw7'} shaWhite boRadXxs     posRel   `} src={`/icons/types/${typeID}.png`} alt="" />
 											{invertButton === typeID ? 'invert?' : typesMap.get(typeID).cz}
 										</button>
 									);

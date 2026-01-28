@@ -196,10 +196,10 @@ async function getFutureEvent({ eventID, getBasi, getDeta, devIsStable, userID, 
 	let detailsData = getDeta ? eventCache.get(detaKey) : undefined;
 
 	const promises: Promise<any>[] = [];
-	if (getBasi && !basicsData) promises.push(redis.hgetall(`${REDIS_KEYS.eveBasics}:${eventID}`).then((d: any) => (eventCache.set(basiKey, d), d)));
+	if (getBasi && !basicsData) promises.push(redis.hgetall(`${REDIS_KEYS.eveBasics}:${eventID}`).then((d: any) => (eventCache.set(basiKey, d), d)).catch(() => ({})));
 	else promises.push(Promise.resolve(basicsData || {}));
 
-	if (getDeta && !detailsData) promises.push(redis.hgetall(`${REDIS_KEYS.eveDetails}:${eventID}`).then((d: any) => (eventCache.set(detaKey, d), d)));
+	if (getDeta && !detailsData) promises.push(redis.hgetall(`${REDIS_KEYS.eveDetails}:${eventID}`).then((d: any) => (eventCache.set(detaKey, d), d)).catch(() => ({})));
 	else promises.push(Promise.resolve(detailsData || {}));
 
 	if (!devIsStable && !gotSQL) promises.push(getEventRating(con, userID, eventID));
@@ -235,11 +235,11 @@ export async function Event(req: { body: EventRequest }, res: any) {
 
 		// META LOAD -----------------------------------------------------------
 		// Steps: try meta from redis first; if missing or event is past, open SQL and ensure past cache is hydrated.
-		let meta: any[] | null = await (redis as any).hgetBuffer(REDIS_KEYS.eveMetas, eventID).then((buffer: Buffer | null) => (buffer ? decode(buffer) : null));
+		let meta: any[] | null = await (redis as any).hgetBuffer(REDIS_KEYS.eveMetas, eventID).then((buffer: Buffer | null) => (buffer ? decode(buffer) : null)).catch(() => null);
 		if ((!meta && userID) || (meta && isEventPast(meta))) {
-			connection = await Sql.getConnection();
+			
 			if (!meta)
-				meta = (await (redis as any).hgetBuffer(`pastEve:${eventID}`, 'meta').then((buffer: Buffer | null) => (buffer ? decode(buffer) : null))) || (await cachePastEvent(eventID, connection));
+				meta = (await (redis as any).hgetBuffer(`pastEve:${eventID}`, 'meta').then((buffer: Buffer | null) => (buffer ? decode(buffer) : null)).catch(() => null)) || (connection = await Sql.getConnection(), await cachePastEvent(eventID, connection));
 		}
 		if (!meta) throw new Error('notFound');
 
@@ -271,6 +271,7 @@ export async function Event(req: { body: EventRequest }, res: any) {
 
 		// ROUTE EXECUTION -----------------------------------------------------
 		// Steps: for past events, read past cache + optional users; for future, read hashes + optional attendees list (for friendly events).
+		if (isEventPast(meta) && !connection && !gotSQL) connection = await Sql.getConnection(), fetchProps.con = connection;
 		const pastRes = isEventPast(meta) ? await getPastEvent(fetchProps) : null;
 		const [eventData, attendeeSync, pastUsers]: [any, any, any] = pastRes
 			? [pastRes[0], undefined, pastRes[1]]

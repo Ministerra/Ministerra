@@ -29,6 +29,7 @@ const MAX_PAYLOAD_SIZE: number = 262144;
 // Singleton state
 let io: Server | null = null;
 let redis: ioRedisType | null = null;
+let redisSub: ioRedisType | null = null; // SUBSCRIBER CONNECTION FOR CLEANUP TRACKING ---
 let initialized: boolean = false;
 
 const ioRedisSetter = (client: ioRedisType | null): ioRedisType | null => (redis = client);
@@ -53,6 +54,7 @@ async function Socket(server: any): Promise<Server | null> {
 
 		const pub: ioRedisType = redis;
 		const sub: ioRedisType = await (pub as any).duplicate();
+		redisSub = sub; // STORE REFERENCE FOR CLEANUP ---
 
 		io = new Server(server, {
 			cors: { origin: CORS_ORIGINS as string[], methods: ['GET', 'POST'], credentials: true },
@@ -69,7 +71,7 @@ async function Socket(server: any): Promise<Server | null> {
 		try {
 			setupWorker(io);
 		} catch (workerErr: any) {
-			logger.info('setupWorker skipped (not in cluster mode or unsupported)', { error: workerErr?.message });
+			logger.info('setupWorker skipped (not in cluster mode)', { error: workerErr?.message });
 		}
 
 		// CLEANUP STALE DATA ---------------------------------------------------
@@ -553,4 +555,19 @@ async function getOnlineStatus(userIds: (string | number)[]): Promise<OnlineStat
 	}
 }
 
-export { Socket, emitToUsers, ioRedisSetter, getOnlineStatus, getSocketIOInstance };
+// GRACEFUL SHUTDOWN CLEANUP ----------------------------------------------------
+// Steps: close Redis subscriber and Socket.IO server on process termination to prevent connection leaks.
+async function cleanupSocketIO(): Promise<void> {
+	try {
+		if (redisSub) { await redisSub.quit().catch(() => {}); redisSub = null; }
+		if (io) { io.close(); io = null; }
+		initialized = false;
+	} catch (err: any) {
+		logger.error('Socket cleanup failed', { error: err?.message });
+	}
+}
+
+process.on('SIGTERM', cleanupSocketIO);
+process.on('SIGINT', cleanupSocketIO);
+
+export { Socket, emitToUsers, ioRedisSetter, getOnlineStatus, getSocketIOInstance, cleanupSocketIO };

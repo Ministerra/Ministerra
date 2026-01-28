@@ -685,6 +685,9 @@ border-right: 15px solid transparent;
 .shaTop {
 	box-shadow: 0px -5px 8px -0px rgba(51, 60, 64, 0.144);
 }
+.shaTopStrong {
+	box-shadow: 0px -5px 5px -0px rgba(51, 60, 64, 0.344);
+}
 
 .shaTopLight {
 	box-shadow: 0px -5px 4px -0px rgba(106, 155, 175, 0.05);
@@ -695,7 +698,7 @@ border-right: 15px solid transparent;
 	background-color: white;
 }
 .shaBotLong {
-	box-shadow: 0px 4px 30px rgba(4, 96, 245, 0.187), 0px 2px 10px rgba(221, 229, 236, 0.372);
+	box-shadow: 0px 4px 30px rgba(4, 96, 245, 0.13), 0px 2px 10px rgba(221, 229, 236, 0.372);
 }
 .shaBotLongDown {
 	box-shadow: 0px 30px 40px -20px rgba(20, 102, 185, 0.25), 0px 2px 10px rgba(221, 229, 236, 0.372);
@@ -1046,6 +1049,7 @@ border-right: 15px solid transparent;
 	-webkit-mask-image: linear-gradient(to right, transparent, black 2%, black 90%, transparent);
 	mask-image: linear-gradient(to right, transparent, black 2%, black 90%, transparent);
 }
+
 
 /* BOTTOM INSET BLUE VARIANTS ---------------------------*/
 .bInsetBlueBot::before {

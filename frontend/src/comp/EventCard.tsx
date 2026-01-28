@@ -28,11 +28,13 @@ function EventCard(props: any) {
 	const navigate = useNavigate();
 	const protocolRef = useRef(null),
 		cardRef = useRef(null),
+		profileWrapperRef = useRef(null),
+		invitesWrapperRef = useRef(null),
 		// UI MODES STATE ---
 		// Controls visibility of interactive overlays like share, actions, and menus
 		[modes, setModes] = useState<any>({ share: false, actions: false, menu: false, protocol: false, privs: false, map: false }),
 		// STABLE RANDOM FOR PLACEHOLDER ASSETS ---
-		stableRandom = useRef((parseInt(String(obj.id).slice(-4), 36) % 30) + 1),
+		stableRandom = useRef((obj.id % 29) + 1),
 		// EVENT INTERACTION STATUS ---
 		// Tracks user-specific data like ratings, attendance, and ownership
 		[status, setStatus] = useState<any>({
@@ -58,6 +60,7 @@ function EventCard(props: any) {
 		resetSubModes = (hideMenu = false) => setModes(prev => ({ ...prev, protocol: false, evePreview: false, invites: false, delete: false, cancel: false, inter: false, feedback: false, deletePast: false, invitees: false, invitors: false, profile: false, menu: !hideMenu })),
 		isInactive = status.deleted || status.canceled,
 		imgVers = obj.imgVers?.toString().split('_')[0] || 0,
+		locationPrefix = obj.location?.startsWith('+') ? 'v okolí' : !obj.location && !obj.place ? 'kdekoliv v' : '',
 		// IS PAST CHECK ---
 		// Steps: use centralized isEventPast to handle missing ends with default duration so ongoing meetings remain interactive.
 		isPast = isEventPast(obj);
@@ -68,6 +71,7 @@ function EventCard(props: any) {
 		<open-event
 			onClick={e => {
 				e.stopPropagation();
+				if (obj.notFound) return;
 				if (hideMenu || modes.profile || modes.invites) return resetSubModes(true);
 				navigate(`/event/${obj.id}`);
 			}}
@@ -97,10 +101,22 @@ function EventCard(props: any) {
 		if (obj.canceled !== status.canceled || (obj.state === 'del') !== status.deleted) setStatus(prev => ({ ...prev, canceled: obj.canceled, deleted: obj.state === 'del' }));
 	}, [obj.canceled, obj.state]);
 
+	useEffect(() => {
+		if (modes.profile && profileWrapperRef.current) {
+			profileWrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	}, [modes.profile]);
+
+	useEffect(() => {
+		if (modes.invites && invitesWrapperRef.current) {
+			invitesWrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	}, [modes.invites]);
+
 	// PROFILE PREVIEW OVERLAY ---
 	// Displays user profile card overlay with blurred background images
 	const profileWrapper = modes.profile && (
-		<profile-wrapper onClick={e => e.stopPropagation()} class="block w100 marAuto  fPadHorXxs padBotXs   zinMaXl posRel">
+		<profile-wrapper ref={profileWrapperRef} onClick={e => e.stopPropagation()} class="block w100 marAuto  fPadHorXxs padBotXs   zinMaXl posRel">
 			<blurred-imgs onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, profile: false })))} class={`flexCen  aliStretch posAbs moveDown  mask h60  bInsetBlueTopXs topCen posRel w100`}>
 				<div className="mih0-5 shaTop  posAbs topCen opacityS shaTop zin100 bgWhite w100 aliStart" />
 				<img title="Profile picture" src={`${import.meta.env.VITE_BACK_END}/public/users/${obj.id === brain.user.id ? brain.user.id : stableRandom.current}_${modes.profile.imgVers}.webp`} className={`w50 `} />
@@ -111,22 +127,23 @@ function EventCard(props: any) {
 	);
 
 	// ACTION BUTTONS SECTION (bottom of the card) ---------------------------
-	const actionsComp = !modes.menu && !modes.profile && <EveActionsBs {...{ fadedIn: ['BsEvent'], thisIs: 'event', brain, nowAt, obj, status, setModes, setStatus, modes, isInactive, isPast }} />;
+	const actionsComp = !modes.menu && !modes.profile && obj.state !== 'del' && <EveActionsBs {...{ fadedIn: ['BsEvent'], thisIs: 'event', brain, nowAt, obj, status, setModes, setStatus, modes, isInactive, isPast }} />;
 
 	// EVENT TYPE INDICATOR ---
 	// Renders event type icon with type name label
-	const typeImg = (
+	const typeImg = (isWrapped = false) => (
 		<type-img
 			onClick={e => {
 				e.stopPropagation();
+				if (obj.notFound) return;
 				if (hideMenu) return resetSubModes();
 				setModes(prev => ({ ...prev, share: false, menu: !prev.menu, actions: false, protocol: false, profile: false, invites: false }));
 				setStatus(prev => ({ ...prev, copied: false }));
 			}}
-			class={`bHover mw16 selfEnd aliCen point ${cardsView === 1 && !status.isMeeting ? 'floatLeft' : ''} ${!status.isMeeting || cardsView === 2 ? (cardsView !== 2 ? 'moveUp' : { 2: 'downLittle', 3: 'moveDown', 4: 'moveDownMore', 5: 'downEvenMore' }[cols] || 'downLittle') : 'upTiny'} textAli     boRadXxs ${modes.menu ? 'bsContentGlow boRadL upTinyBit    borBot8' : ''} pointer marRigS posRel w20   zin2500`}>
-			<img className={`${cols === 2 || cardsView === 2 ? 'mw16' : ' mw16'} w100  aspect1611 selfEnd zinMaXl `} src={`/icons/types/${obj.type}.png`} alt="" />
+			class={`bHover  selfEnd aliCen point ${cardsView === 1 && !status.isMeeting ? 'floatLeft' : ''} ${!status.isMeeting || cardsView === 2 ? (cardsView !== 2 ? '' : { 2: 'downLittle', 3: 'downLittle', 4: 'moveDownMore', 5: 'downEvenMore' }[cols] || 'downLittle') : 'upTiny'} ${isWrapped ? 'textRight' : 'textAli'}     boRadXxs ${modes.menu ? 'bsContentGlow boRadL upTinyBit    borBot8' : ''} pointer ${isWrapped ? 'w100' : ' w20'} posRel zin2500`}>
+			<img className={`${cols === 1 ? 'mw22' : cols === 2 ? 'mw18' : cardsView === 2 ? 'mw14' : ' mw16'} w100  aspect1611 selfEnd zinMaXl `} src={`/icons/types/${obj.type}.png`} alt="" />
 			{!hideMenu && !modes.menu && <span className="bold fs8 posRel posAbs padVerXxxxs bgTrans tShaWhiteXl padHorXs   w60 miw8 botCen textSha">{typesMap.get(obj.type)?.cz || 'NEEXISTUJUJÍCÍ TYP'}</span>}
-			{modes.menu && <span className="bold fs8 posRel posAbs padVerXxxxs bRed tWhite padHorXs w100 marBotXxxs miw8 botCen textSha">{hideMenu ? 'zpět na menu' : 'skrýt menu'}</span>}
+			{modes.menu && <span className="bold fs8 posRel textAli posAbs padVerXxxxs bRed tWhite padHorXs w100 marBotXxxs miw8 botCen textSha">{hideMenu ? 'zpět na menu' : 'skrýt menu'}</span>}
 		</type-img>
 	);
 
@@ -136,12 +153,13 @@ function EventCard(props: any) {
 		<type-img-large
 			onClick={e => {
 				e.stopPropagation();
+				if (obj.notFound) return;
 				if (hideMenu) return resetSubModes();
 				setModes(prev => ({ ...prev, share: false, menu: !prev.menu, actions: false, protocol: false, profile: false, invites: false }));
 				setStatus(prev => ({ ...prev, copied: false }));
 			}}
-			class={`flexCol point posAbs botCen aliCen justCen  marAuto aliCen textAli  ${modes.menu ? 'bsContentGlow mw22 boRadL borBot8' : ' mw20 boRadL'} pointer marBotXs     zinMaXl`}>
-			<img className={`cover ${cols <= 2 ? 'mw20 miw14' : 'mw16 miw10'}`} src={`/icons/types/${obj.type}.png`} alt="" />
+			class={`flexCol point posAbs botCen aliCen justCen  marAuto aliCen textAli  ${modes.menu ? 'bsContentGlow  mw22 boRadL borBot8' : ' mw20 boRadL'} pointer marBotXs     zinMaXl`}>
+			<img className={`cover ${cols === 1 ? 'mw24 miw14' : cols === 2 ? 'mw20 miw14' : 'mw16 miw10'}`} src={`/icons/types/${obj.type}.png`} alt="" />
 			{!hideMenu && <span className="bold fs8  bgTrans padHorS boRadXxs textSha">{typesMap.get(obj.type)?.cz || 'NEEXISTUJÍCÍ TYP'}</span>}
 			{hideMenu && <span className="bold fs8 bRed textAli w100 inlineBlock tWhite padHorS boRadXxs textSha">zpět na menu</span>}
 		</type-img-large>
@@ -157,10 +175,10 @@ function EventCard(props: any) {
 						key={user.id + i}
 						loading="lazy"
 						decoding="async"
-						className={`${modes.profile?.id === user.id ? 'bsContentGlow bigger3 zinMenu bor2White  arrowDown1 posRel' : 'bHover'} mw10 miw7 zin3000 point`}
-						onClick={e => (e.stopPropagation(), modes.profile?.id === user.id ? setModes(prev => ({ ...prev, profile: false })) : showUsersProfile({ obj: user, brain, setModes, modes }), setModes(prev => ({ ...prev, menu: false })))}
+						className={`${modes.profile?.id === user.id ? 'bsContentGlow  bigger3 zinMenu bor2White  arrowDown1 posRel' : 'bHover'}  mw10 miw7 zin3000 point`}
+						onClick={e => (e.stopPropagation(), modes.profile?.id === user.id || obj.notFound ? setModes(prev => ({ ...prev, profile: false })) : showUsersProfile({ obj: user, brain, setModes, modes }), setModes(prev => ({ ...prev, menu: false })))}
 						style={{ width: `${interUsers.length > 0 ? Math.floor(100 / interUsers.length) : 100}%`, aspectRatio: '16/10' }}
-						src={`${import.meta.env.VITE_BACK_END}/public/users/${(parseInt(String(user.id).slice(-4), 36) % 30) + 1}_${user.imgVers}S.webp`}
+						src={`${import.meta.env.VITE_BACK_END}/public/users/${(user.id % 29) + 1}_${user.imgVers}S.webp`}
 						alt=""
 					/>
 				))}
@@ -171,16 +189,16 @@ function EventCard(props: any) {
 
 	// PARTICIPANT THUMBNAILS COMPONENT ---
 	const thumbsWrapper = (
-		<thumbs-wrapper class={`flexRow padVerXxxs  posRel boRadXs w100 wrap  shaTop noPoint`}>
+		<thumbs-wrapper class={`flexRow padVerXxxs  posRel boRadS overHidden w100 wrap marBotXxs gapXxxxs  noPoint`}>
 			{interUsers.map((user, i) => (
 				<img
 					key={user.id + i}
 					loading="lazy"
 					decoding="async"
-					className={`${modes.profile?.id === user.id ? 'bsContentGlow  bigger3 arrowDown1 bor2White zinMenu  posRel' : 'bHover'}  ${cardsView === 2 ? 'mw18' : 'mw12'} zin3000 point`}
-					onClick={e => (e.stopPropagation(), modes.profile?.id === user.id ? setModes(prev => ({ ...prev, profile: false })) : showUsersProfile({ obj: user, brain, setModes, modes }), setModes(prev => ({ ...prev, menu: false })))}
+					className={`${modes.profile?.id === user.id ? 'bsContentGlow  upLittle bigger3 arrowDown1 bor2White zinMenu  posRel' : 'bHover'} shaTop  ${cardsView === 2 ? 'mw16' : 'mw11'} zin3000 point`}
+					onClick={e => (e.stopPropagation(), modes.profile?.id === user.id || obj.notFound ? setModes(prev => ({ ...prev, profile: false })) : showUsersProfile({ obj: user, brain, setModes, modes }), setModes(prev => ({ ...prev, menu: false })))}
 					style={{ width: `${interUsers.length > 0 ? Math.floor(100 / interUsers.length) : 100}%`, aspectRatio: '16/10' }}
-					src={`${import.meta.env.VITE_BACK_END}/public/users/${user.id}_${user.imgVers}S.webp`}
+					src={`${import.meta.env.VITE_BACK_END}/public/users/${(user.id % 29) + 1}_${user.imgVers}S.webp`}
 					alt=""
 				/>
 			))}
@@ -189,27 +207,27 @@ function EventCard(props: any) {
 	);
 
 	// DYNAMIC TEXT STYLING CLASSES ---
-	const titleClass = { 1: 'fs17', 2: 'fs15', 3: 'fs15', 4: 'fs12', 5: 'fs10' }[cols] || (status.embeded ? 'fs18 lh0-8 marBotXxxs' : 'fs14'),
-		subTitleClass = { 1: 'fs11', 2: 'fs10', 3: 'fs9', 4: 'fs8', 5: 'fs7' }[cols] || 'fs9',
-		shortClass = { 1: 'fs9', 2: 'fs9', 3: 'fs8', 4: 'fs7', 5: 'fs6' }[cols] || 'fs9';
+	const titleClass = { 1: 'fs20', 2: 'fs18', 3: 'fs17', 4: 'fs16', 5: 'fs14' }[cols] || (status.embeded ? 'fs18 lh0-8 marBotXxxs' : 'fs14'),
+		subTitleClass = { 1: 'fs11', 2: 'fs10', 3: 'fs9', 4: 'fs8', 5: 'fs9' }[cols] || 'fs9',
+		shortClass = { 1: 'fs9', 2: 'fs9', 3: 'fs8', 4: 'fs7', 5: 'fs9' }[cols] || 'fs9';
 
 	// EVENT METADATA SUBTITLE COMPONENT ---
 	const subTitleElement = (centered = false) => (
 		<date-indis-adress class={`flexRow  aliCen ${centered ? 'justCen' : ''} ${cardsView === 2 ? 'marBotXxs' : 'marBotXxs'} wrap ${subTitleClass} posRel`}>
 			{/* EVENT TIME DETAILS --- */}
-			<span className={`${subTitleClass} ${obj.starts >= Date.now() ? 'tDarkBlue' : 'tRed'} boldM marRigXs textSha`}>
-				{humanizeDateTime({ dateInMs: obj.starts })}
-				{obj.ends && ` - ${humanizeDateTime({ dateInMs: obj.ends })}`}
+			<span className={`${subTitleClass} boldM marRigXs textSha`}>
+				<span className={`${subTitleClass} boldM ${obj.starts >= Date.now() ? 'tDarkBlue' : 'tRed'}`}>{humanizeDateTime({ dateInMs: obj.starts })}</span>
+				{obj.ends && (
+					<>
+						{' - '}
+						<span className={`${subTitleClass} boldM ${obj.ends >= Date.now() ? 'tDarkBlue' : 'tRed'}`}>{humanizeDateTime({ dateInMs: obj.ends })}</span>
+					</>
+				)}
 			</span>
 			{/* CONTENT BADGES AND INDICATORS --- */}
-			<ContentIndis brain={brain} status={status} obj={obj} thisIs={'event'} isCardOrStrip={true} nowAt={'home'} modes={modes} cols={cols} hideAttenRating={true} />
-			{/* GEOGRAPHIC CONTEXT --- */}
-			{!isSearch && (obj.location?.startsWith('+') || (!obj.location && !obj.place)) && (
-				<around-indi class="flexInline aliCen marRigXxs marLefS posRel">
-					<span className={`chipPurple ${chipClass}`}>{obj.location?.startsWith('+') ? 'v okolí' : 'kdekoliv v'}</span>
-				</around-indi>
-			)}
-			{brain.user.curCities.length > 0 && obj.city && <strong className={`marRigXs ${subTitleClass} tDarkGreen boldM`}>{`${obj.city.slice(0, 15)}${obj.city.length > 15 ? '...' : ''}`}</strong>}
+			<ContentIndis brain={brain} status={status} obj={obj} thisIs={'event'} isCardOrStrip={true} nowAt={'home'} modes={modes} cols={cols} hideAttenRating={true} isSearch={isSearch} />
+			{locationPrefix && <strong className={`marRigXs ${subTitleClass} tPurple xBold`}>{locationPrefix}</strong>}
+			{obj.city && (brain.user.curCities.length > 0 || locationPrefix) && <strong className={`marRigXs ${subTitleClass} tDarkGreen boldM`}>{`${obj.city.slice(0, 15)}${obj.city.length > 15 ? '...' : ''}`}</strong>}
 			<span className={`${subTitleClass} textSha marRigXs`}>{obj.place || obj.location?.slice(1)}</span>
 			{/* DISTANCE FROM USER LOCATION --- */}
 			{Number.isFinite(obj.distance) && (
@@ -227,13 +245,20 @@ function EventCard(props: any) {
 	// event type  icon on the left, title, subtitle, badges, shortDesc on the right
 	const iconTitle = (
 		<icon-title class={`${cardsView != 3 ? 'flexRow aliStart' : cardsView === 3 ? 'marTopS block' : ''} zinMaXl noBackground noPoint `}>
-			{typeImg}
-			<left-wrapper class={`${cardsView === 2 ? 'padTopXl posRel grow' : isPreview ? (obj.imgVers ? 'padTopXs ' : '') : ''} w85   noPoint block ${!status.isMeeting ? 'padTopXs' : ''}`}>
+			{cardsView === 1 ? (
+				<div className={`${cols <= 2 ? 'w15' : 'w20'}  selfStretch posRel noPoint`}>
+					<div className="posAbs botRight  w100 noPoint">{typeImg(true)}</div>
+				</div>
+			) : (
+				typeImg()
+			)}
+			<left-wrapper class={`${cardsView === 2 ? 'padTopXl posRel grow' : isPreview ? (obj.imgVers ? 'padTopXs ' : '') : ''} ${cols <= 2 ? 'w85' : 'w80'}   noPoint block ${!status.isMeeting ? 'padTopXs' : ''}`}>
 				<text-wrapper class={`fPadHorXxxs block    w100`}>
 					{cardsView === 1 && obj.type.startsWith('a') && thumbsWrapper}
 
 					<span className={`${titleClass} block textSha marBotXxxs xBold lh0-9 wordBreak`}>
 						{status.canceled && <strong className="xBold tRed marRigS inlineBlock">ZRUŠENO! </strong>}
+						{obj.notFound && <strong className="xBold fs20 tRed marRigS inlineBlock">NENALEZENO! </strong>}
 						{obj.title}
 					</span>
 					{subTitleElement(false)}
@@ -250,9 +275,9 @@ function EventCard(props: any) {
 			id={`card_${obj.id}`}
 			ref={cardRef}
 			onClick={() => navigate(`/event/${obj.id}`)}
-			class={`${cardsView !== 2 && cardsView !== 3 && !status.embeded && (modes.actions || modes.menu || modes.invites || modes.profile) ? 'boRadS  shaMega  boRadXxs' : ''} ${cardsView === 3 && (modes.actions || modes.menu || modes.invites || modes.profile) ? 'boRadS borTop8  shaBot boRadXxs' : ''} ${!status.embeded ? `${cardsView !== 2 ? 'shaBotLong' : 'shaBotLongDown'} marBotXxl noBackground bHover` : 'bgWhite  borderLight'}  ${
-				isMapPopUp ? 'mw100 shaBotLongDown bBor2 w95 boRadXxs textLeft marTopM posRel bgWhite shrink0' : 'mw160 bgTrans w100 posRel boRadXxs marAuto'
-			} ${modes.protocol ? 'borderLight ' : ''} marAuto zinMaXl block boRadXs block    posRel boRadXxs`}>
+			class={`${cardsView !== 2 && cardsView !== 3 && !status.embeded && (modes.actions || modes.menu || modes.invites || modes.profile) ? 'boRadS  shaMega  boRadXxs' : ''} ${cardsView === 3 && (modes.actions || modes.menu || modes.invites || modes.profile) ? 'boRadS borTop8  shaBot boRadXxs' : ''} ${!status.embeded ? `${cardsView !== 2 ? 'shaBotLong ' : 'shaBotLongDown'} marBotXxl noBackground bHover` : 'bgWhite  borderLight'}  ${
+				isMapPopUp ? 'mw100    w95 boRadXxs textLeft marTopM posRel bgWhite shrink0' : 'mw160 bgTrans w100 posRel boRadXxs marAuto'
+			} ${modes.protocol ? 'borderLight ' : ''} marAuto zinMaXl  block boRadXs block ${obj.state === 'del' ? 'borderRed' : ''}    posRel boRadXxs`}>
 			{cardsView === 2 && iconTitle}
 			{modes.menu && cardsView === 2 && !modes.invites && <EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
 
@@ -275,10 +300,10 @@ function EventCard(props: any) {
 
 				{/* COVER IMAGE AND PARTICIPANT THUMBNAILS SECTION -------------------------------- */}
 				{status.isMeeting ? (
-					<cover-portraits class={` posRel aliEnd flexCol ${cardsView === 2 ? 'hvw12' : 'hvw14'}  mih25 w100 boRadS zinMaXl noPoint`}>
+					<cover-portraits class={` posRel aliEnd flexCol ${cardsView === 2 ? 'hvw12' : 'hvw13'}  mih25 w100 boRadS zinMaXl noPoint`}>
 						<div className={`bgWhite topCen opacityXs shaCon h10  posAbs w100 zinMaXl`} />
 
-						<img decoding="async" className={`w100 cover  boRadXxs maskLowXs hvw13  mih16  h100 `} src={`/covers/friendlyMeetings/${obj.type}.png`} alt="" />
+						<img decoding="async" className={`w100 cover  boRadXxs maskLowXs ${cardsView === 3 ? 'hvw13' : cardsView === 1 ? 'hvw10' : 'hvw12'}    h100 `} src={`/covers/friendlyMeetings/${obj.type}.png`} alt="" />
 						{/* PARTICIPANT THUMBNAILS --- */}
 						{cardsView !== 3 && (
 							<portraits-pics class={` posRel posAbs  boRadS shaTop  botLeft w100  flexRow noPoint`}>
@@ -288,7 +313,10 @@ function EventCard(props: any) {
 						)}
 					</cover-portraits>
 				) : (
-					<img decoding="async" className={`w100  boRadXxs ${cardsView === 3 ? 'maskLowXs ' : 'shaBotLongDown '} `} style={{ objectFit: 'cover', aspectRatio: '16/10' }} src={`${import.meta.env.VITE_BACK_END}/public/events/${!obj.own ? stableRandom.current : obj.id}_${imgVers}.webp`} alt="" />
+					<img-wrapper class="posRel w100 shaCon  block">
+						<div className={`bgWhite botCen opacityXs   hr1   posAbs w100 `} />
+						<img decoding="async" className={`w100  boRadXxs ${cardsView === 3 ? 'maskLowXs ' : ' '} `} style={{ objectFit: 'cover', aspectRatio: '16/10' }} src={`${import.meta.env.VITE_BACK_END}/public/events/${!obj.own ? stableRandom.current : obj.id}_${imgVers}.webp`} alt="" />
+					</img-wrapper>
 				)}
 
 				{!status.isMeeting && cardsView === 1 && iconTitle}
@@ -296,18 +324,18 @@ function EventCard(props: any) {
 			</main-images>
 
 			{/* UNDER IMAGE SECTION ---------------------------------- */}
-			<under-image class={`block marBotXxxs fPadHorXxxs  posRel ${isMapPopUp ? '' : 'h100'} w100 ${status.embeded && status.isMeeting ? '' : !modes.actions ? (cardsView !== 2 ? '' : 'padTopXs ') : ''}`}>
+			<under-image class={`block   posRel ${isMapPopUp ? '' : 'h100'} w100 ${status.embeded && status.isMeeting ? '' : !modes.actions ? (cardsView !== 2 ? '' : 'padTopXs ') : ''}`}>
 				<InteractionHitboxes />
 				{/* LAYOUT-SPECIFIC CONTENT VIEWS --- */}
 				{cardsView === 1 && (
-					<view-one>
+					<view-one ref={invitesWrapperRef}>
 						{obj.shortDesc && !modes.profile && !modes.invites && <p className={`posRel borLeftThick padLeftXs marTopXs marBotXs   ${shortClass} lh1-1`}>{obj.shortDesc}</p>}
 						{modes.menu && <EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
 					</view-one>
 				)}
 
 				{cardsView === 2 && (
-					<view-two>
+					<view-two ref={invitesWrapperRef}>
 						{obj.shortDesc && !modes.invites && <p className={`posRel borLeftThick  marBotXs   ${shortClass} lh1-1`}>{obj.shortDesc}</p>}
 						{modes.invites && <Invitations {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, thisIs: 'event', userCardSetModes, isCardOrStrip: true }} />}
 
@@ -317,11 +345,6 @@ function EventCard(props: any) {
 
 				{cardsView === 3 && (
 					<view-three class="flexCol aliCen textAli">
-						{modes.menu && (
-							<menu-wrapper class="w100 block marBotXs">
-								<EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, isCardOrStrip: true, userCardSetModes }} />
-							</menu-wrapper>
-						)}
 						<span className={`${titleClass} block textSha xBold marBotXxxs lh1 wordBreak`}>
 							{status.canceled && <strong className="xBold tRed marRigS inlineBlock">ZRUŠENO! </strong>}
 							{obj.title}
@@ -333,7 +356,12 @@ function EventCard(props: any) {
 							{obj.badges && <EventBadges obj={obj} />}
 						</texts-wrapper>
 
-						{portraitImagesV3}
+						{!modes.menu && portraitImagesV3}
+						{modes.menu && (
+							<menu-wrapper class="w100 block marBotXs">
+								<EveMenuStrip {...{ obj, status, setStatus, nowAt: 'home', setModes, brain, modes, isCardOrStrip: true, userCardSetModes }} />
+							</menu-wrapper>
+						)}
 					</view-three>
 				)}
 				<protocol-top ref={protocolRef} />
@@ -341,6 +369,7 @@ function EventCard(props: any) {
 				{actionsComp}
 			</under-image>
 			{profileWrapper}
+			{obj.notFound && <span className={`xBold fs8 ${cardsView === 3 ? 'textAli' : ''} fPadHorXxxs tRed marBotXxxs inlineBlock`}>Tato událost byla pravděpodobně smazána a již není dostupná ... </span>}
 		</event-card>
 	);
 }

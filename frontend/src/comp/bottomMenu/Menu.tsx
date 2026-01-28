@@ -9,7 +9,7 @@ import { areEqual } from '../../../helpers';
 /** Bottom menu panel for city selection, setup/editor shortcuts and logout */
 function Menu(props) {
 	const navigate = useNavigate();
-	const { brain, logOut, changeCities, setMenuView, nowAt, menuView } = props;
+	const { brain, logOut, changeCities, setMenuView, nowAt, menuView, modes, setModes } = props;
 	const [curSelCities, setCurSelCities] = useState(() => [...brain.user.curCities]);
 
 	// CITY FILTER SYNC ---------------------------
@@ -24,7 +24,7 @@ function Menu(props) {
 		setCurSelCities([...brain.user.curCities]);
 	}, [brain.user.curCities, menuView]);
 
-	console.log(brain.user, 'BRAIN USER');
+	console.log(brain, 'BRAIN -----------------------------------------');
 
 	return (
 		<main-menu class={`${menuView !== 'menu' ? 'hide' : ''} boRadM textAli  shaBotLong bBor2    bgTransXxs    fPadHorXxs flexCol `}>

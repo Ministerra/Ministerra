@@ -6,11 +6,11 @@ import { useOutletContext } from 'react-router-dom';
 import { BASIC_TOPICS, USER_TRAITS } from '../../../shared/constants';
 import { humanizeDateTime } from '../../helpers';
 import EventCard from './EventCard.tsx';
+import UserActionsBs from './UserActionsBs';
 import RateAwards from './RateAwards';
 import ContentIndis from './ContentIndis';
 import { Fragment } from 'react';
 import { previewEveCard } from './menuStrips/helpers';
-import UserMenuStrip from './menuStrips/UserMenuStrip';
 
 // TODO when ismobile is true, do not set specific heights to userCards, heights don´t matter on mobile
 
@@ -27,7 +27,7 @@ const UserCard = props => {
 			actions: showActions,
 			protocol: false,
 			evePreview: null,
-			invite: false,
+			invites: false,
 			inviteEvePreview: false,
 			allEveThumbs: false,
 		}),
@@ -63,7 +63,7 @@ const UserCard = props => {
 		showTopRedInfoStrip = ['evePreview', 'protocol', 'profile', 'invites', 'allEveThumbs'].some(button => modes[button]);
 
 	// TEXT CLASS DEFINITION ---------------------------
-	const textClass = !cols || cols <= 3 ? 'fs9' : 'fs7';
+	const textClass = !cols || cols <= 3 ? 'fs9' : 'fs8';
 
 	// SHERLOCK MATCHES (PERSONA SIMILARITY) ---------------------------
 	const sherlockMatches = useMemo(() => {
@@ -102,11 +102,11 @@ const UserCard = props => {
 	// EVENT THUMBNAILS COMPONENT ---------------------------
 	// Renders list of upcoming events for the user with status indicators.
 	const eventsThumb = (
-		<thumbs-wrapper onClick={() => setModes(prev => ({ ...prev, allEveThumbs: false }))} class={`flexRow aliEnd point ${modes.allEveThumbs ? '  bgTransXs padBotL padTopXxs   overAuto' : hasMoreEvents ? `marBotXxs` : cardsView !== 2 ? `miw9 marRigXs ` : ` marBotXxsp`} ${modes.evePreview && hasMoreEvents ? 'padBotXs ' : ''}   posRel wrap  boRadXs zinMaXl  `}>
+		<thumbs-wrapper onClick={() => setModes(prev => ({ ...prev, allEveThumbs: false }))} class={`flexRow aliStretch point ${modes.allEveThumbs ? `  bgTransXs padHorXxxs padTopXxxs padBotS ${cardsView === 2 ? 'justCen' : 'justStart'} w100 gapXxxs overYAuto overXHidden` : hasMoreEvents ? `marBotXxs` : cardsView !== 2 ? `${cols === 5 ? 'miw11 ' : cols >= 4 ? 'miw13 ' : 'miw9 marRigXs'}` : ` marBotXxs`} ${modes.evePreview && hasMoreEvents ? 'padBotXs ' : ''}   posRel wrap   boRadXs zinMaXl  `}>
 			{/* SHOW ALL BUTTON --------------------------- */}
 			{!modes.allEveThumbs && hasMoreEvents && (
 				<show-all onClick={e => (e.stopPropagation(), setModes(prev => ({ ...prev, allEveThumbs: !prev.allEveThumbs, evePreview: false, actions: false })))} className={`${modes.allEveThumbs ? 'noBackground padHorS posRel zinMaXl' : 'borRedSel'} block flexCol aliCen boldM shaLight boRadXxxs  posRel`}>
-					<img className={`marAuto posRel boRadXs ${cardsView === 2 ? ' mw8' : 'aspect1610 upTiny mw9'}`} src={`/icons/event.png`} alt="" />
+					<img className={`marAuto posRel boRadXs ${cardsView === 2 ? ' mw8' : cols === 5 ? 'mw7' : 'aspect1610 upTiny mw9'}`} src={`/icons/event.png`} alt="" />
 					{!modes.allEveThumbs && <span className="xBold fs14 bgTransXxs posAbs padVerXxxxs padHorXs botRight bgWhite boRadM lh1">{eveThumbsToShow.length}</span>}
 				</show-all>
 			)}
@@ -123,16 +123,17 @@ const UserCard = props => {
 						return (
 							<single-thumb
 								key={eventID}
-								onClick={async e => (e.stopPropagation(), modes.evePreview?.id === eventObj.id ? setModes(prev => ({ ...prev, evePreview: false })) : (await previewEveCard({ obj: eventObj, brain }), setModes(prev => ({ ...prev, evePreview: eventObj, protocol: false, invite: false }))))}
-								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue arrowDown1 tWhite upTiny bsContentGlow' : 'zinMax'} flexCen   ${cardsView === 2 ? 'mw8' : 'padRightXs'}  pointer bgTransXs  ${cardsView === 2 ? 'miw14' : 'miw13'} padHorXs    posRel boRadXxs`}>
-								<inner-wrapper class="flexCen bHover aliCen padVerXxxs  justCen grow">
-									<img className={`${cols === 1 ? 'mw7' : cols === 3 ? 'mw9' : cols === 4 ? 'mw7' : 'mw7 '}   posRel  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt="" />
+								onClick={async e => (e.stopPropagation(), modes.evePreview?.id === eventObj.id ? setModes(prev => ({ ...prev, evePreview: false })) : (await previewEveCard({ obj: eventObj, brain }), setModes(prev => ({ ...prev, evePreview: eventObj, protocol: false, invites: false }))))}
+								className={`${modes.evePreview?.id === eventID ? 'bDarkBlue arrowDown1 tWhite upTiny bsContentGlow' : 'zinMax'} flexCen aliStretch   ${cardsView === 2 ? 'mw8' : 'padRightXs'}  pointer bgTransXs  ${cardsView === 2 ? 'miw14' : cols >= 4 ? (modes.allEveThumbs ? (cols === 5 ? 'w31' : 'w23') : 'miw14') : 'miw13'} ${cols >= 4 ? 'padHorXxxs' : 'padHorXs'}    posRel boRadXxs`}
+								style={modes.allEveThumbs && cols >= 4 ? { flex: `0 0 ${cols === 5 ? '31.5%' : '23.5%'}`, maxWidth: `${cols === 5 ? '31.5%' : '23.5%'}`, minWidth: `${cols === 5 ? '31.5%' : '23.5%'}` } : {}}>
+								<inner-wrapper class={`flexRow bHover aliStretch padVerXxxs w100 justCen grow`}>
+									<img className={`${cols === 1 ? 'mw7' : cols === 3 ? 'mw9' : cols >= 4 ? (modes.allEveThumbs ? (cols === 5 ? 'mw4' : 'mw5') : 'mw7') : 'mw7 '}   posRel selfCen  w90    posRel boRadXs   `} src={`/icons/types/${eventObj.type}.png`} alt="" />
 									<texts-wraper class="flexCol justCen  fPadHorXxxs    ">
-										<span className={`${flag === 'sur' ? 'tGreen tSha10 xBold' : eventIsPast ? 'tGrey textSha' : 'tBlue bold'} textSha fs20 lh1`}>{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'upper' })}</span>
-										<span className="tNoWrap fs9 bold lh1">{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'bottom' })}</span>
+										<span className={`${flag === 'sur' ? 'tGreen tSha10 xBold' : eventIsPast ? 'tGrey textSha' : 'tBlue bold'} textSha ${cols <= 3 ? 'fs20' : cols === 4 ? 'fs16' : 'fs15'} lh1`}>{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'upper' })}</span>
+										<span className="tNoWrap fs8 bold lh1">{humanizeDateTime({ dateInMs: eventObj.starts, thumbRow: 'bottom' })}</span>
 										{/* INTERACTION BADGES --------------------------- */}
 										{eventObj.inter === 'may' && obj.id !== brain.user.id && <span className="bBlue boldS fs6 flexCen boRadXxs padVerXxxxs  tWhite">možná</span>}
-										{eventObj.inter === 'sur' && obj.id !== brain.user.id && <span className="bDarkGreen flexCen fs7 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite">určitě</span>}
+										{eventObj.inter === 'sur' && obj.id !== brain.user.id && <span className={`bDarkGreen flexCen fs7 xBold boRadXxs bold padVerXxxxs ${cols === 5 ? 'padHorXxxs' : 'padHorXxs'} tWhite`}>určitě</span>}
 										{eventIsPast && <span className="bRed flexCen fs6 xBold boRadXxs bold padVerXxxxs padHorXxs tWhite">minulá</span>}
 									</texts-wraper>
 								</inner-wrapper>
@@ -160,7 +161,7 @@ const UserCard = props => {
 				(() => {
 					const d = obj.distance;
 					const label = d < 1 ? `${Math.round(d * 1000)} m` : d > 5 ? `${Math.round(d)} km` : `${d.toFixed(1)} km`;
-					return <span className="fsA tGrey marLefXs marTopXxxs">{label}</span>;
+					return <span className="fs8 bold tGrey marLefXs marTopXxxs">{label}</span>;
 				})()}
 		</indi-row>
 	);
@@ -168,18 +169,11 @@ const UserCard = props => {
 	// HANDLE CLICK ON IMAGE---------------------------------------------------------------
 	const handleClick = e => {
 		e.stopPropagation();
-		if (isProfile) return setModes(prev => ({ ...prev, invite: false }));
-		else
-			setModes(prev => ({
-				...prev,
-				profile: false,
-				allEveThumbs: false,
-				invite: false,
-				protocol: false,
-				actions: modes.invites ? true : modes.evePreview || modes.allEveThumbs ? prev.actions : !prev.actions,
-				evePreview: false,
-			}));
+		if (!modes.actions) setModes(prev => ({ ...prev, actions: true, allEveThumbs: false }));
+		else setModes(prev => ({ ...prev, invites: false, actions: ['evePreview', 'allEveThumbs', 'invites', 'protocol', 'profile'].some(mode => prev[mode]) ? true : !prev.actions, allEveThumbs: false, evePreview: false, protocol: false, profile: false }));
 	};
+
+	console.log(obj, 'OBJ');
 
 	// JSX RETURN ----------------------------------------------------------------
 	return (
@@ -197,16 +191,16 @@ const UserCard = props => {
 				<div className="mih2 shaTop  zin100 posAbs topCen opacityS w100 aliStart" />
 				{showTopRedInfoStrip && (
 					<info-strip class="posAbs topCen zinMaXl marTopXs w100 textAli">
-						<arrow-down className="arrowDownRed posRel  zinMaXl  textAli   marAuto   inlineBlock   downTiny   xBold " />
-						<span className="  tRed tShaWhiteXl   padHorM   marAuto posAbs topCen zinMaXl  textAli   padHorM marAuto  inlineBlock borTop bInsetBlueTopXs  fs14  xBold ">zpět na profil</span>
+						<arrow-down className="arrowDownRed  posRel  zinMaXl  textAli   marAuto   inlineBlock   downTiny   xBold " />
+						<span className={`  tRed tShaWhiteXl   padHorM w100  marAuto posAbs topCen zinMaXl padTopXxxs  textAli   padHorM marAuto  inlineBlock  bInsetBlueTopXs  ${cols === 5 ? 'fs10' : cols === 4 ? 'fs12' : 'fs16'}  xBold `}>zpět na profil</span>
 					</info-strip>
 				)}
 				{/* USER IMAGE --------------------------- */}
 				<img decoding="async" className={`w100 maskLowXs  aspect1610`} src={obj.imgVers ? `${import.meta.env.VITE_BACK_END}/public/users/${obj.id === brain.user.id ? brain.user.id : stableRandom.current}_${obj.imgVers}.webp` : '/icons/placeholdergood.png'} alt="" />
 
 				{/* CARDSVIEW 1 - FULL NAME + INDICATORS STRIP -------------------------------------------------*/}
-				{cardsView === 1 && !modes.protocol && !modes.invites && (
-					<bottom-row class={`flexRow w100 spaceBet zinMax   hvw3 noPoint posAbs marBotXxs botCen`}>
+				{cardsView === 1 && (
+					<bottom-row class={`flexRow w100 spaceBet zinMax ${modes.allEveThumbs ? 'fitContent' : 'hvw3'} noPoint posAbs  botCen`}>
 						{/* COOL-GUY INDICATOR --------------------------------------------------------------- */}
 
 						{!modes.allEveThumbs && obj.indis?.includes(1) && (
@@ -216,8 +210,8 @@ const UserCard = props => {
 						)}
 						{nowAt !== 'event' && !isProfile && eveThumbsToShow?.length > 0 && eventsThumb}
 						{!modes.allEveThumbs && (
-							<left-side class="flexCol fPadHorXxxs grow marLefS aliStart textLeft  posRel">
-								<span className={`${!cols || cols === 1 ? 'fs18' : cols <= 3 ? 'fs16' : cols === 4 ? 'fs14' : cols === 5 ? 'fs9' : 'fs10'} textSha  inlineBlock lh1 wordBreak`}>
+							<left-side class={`flexCol fPadHorXxxs grow ${cols === 5 ? '' : 'marLefS'} aliStart textLeft  posRel`}>
+								<span className={`${!cols || cols === 1 ? 'fs18' : cols <= 3 ? 'fs16' : cols === 4 ? 'fs14' : cols === 5 ? 'fs11' : 'fs10'} textSha  inlineBlock lh1 wordBreak`}>
 									<strong className={'xBold'}>{obj.first + ' ' + obj.last}</strong> ({obj.age})
 								</span>
 								{indiRow}
@@ -253,14 +247,14 @@ const UserCard = props => {
 
 			{/* UNDER IMAGE SECTIONS ------------------------------------------------------------- */}
 			{(!isPast || modes.profile) && !modes.invites && !modes.allEveThumbs && (
-				<under-image onClick={handleClick} class={` posRel flexCol   zinMaX h100 wrap pointer posRel textLeft    gapXxxxs`}>
+				<under-image onClick={handleClick} class={` posRel flexCol   zinMaX  wrap pointer posRel textLeft    gapXxxxs`}>
 					{/* TEXTS AND TOPICS WRAPPER ------------------------------------------------------------- */}
 					{!modes.evePreview && !modes.protocol && (
-						<texts-wrapper class={`${cardsView === 2 ? 'textAli marTopXs ' : ''}  ${cols === 1 ? 'fs11' : 'fs7'} lh1 zinMaxXl  fPadHorXxs posRel flexCol grow`}>
+						<texts-wrapper class={`${cardsView === 2 ? 'textAli marTopXs ' : ''}  ${cols === 1 ? 'fs11' : 'fs7'} lh1-2 zinMaxXl  fPadHorXxs posRel flexCol `}>
 							{/* EXPERT AND FAVORITE TOPICS --------------------------------------------*/}
 							<favex-topics class={'inline marBotXxxs'}>
 								{['exps', 'favs']
-									.filter(key => obj[key] && Math.random() < 0.5)
+									.filter(key => obj[key]?.filter(Boolean).length > 0)
 									.map(key => (
 										<topics-wraper class={`marRigXs  flexInline inline ${textClass}`} key={key}>
 											<span className={`marRigS  tDarkBlue inline ${key === 'exps' ? 'boRadXxs padVerXxxxs boldM textSha' : 'boldM textSha'} ${textClass}`}>{key === 'exps' ? 'Expertní' : 'Oblíbené'}</span>
@@ -282,7 +276,7 @@ const UserCard = props => {
 								key =>
 									(modes.actions || isProfile) &&
 									obj[key] && (
-										<span key={key} className={`lh1-1 ${textClass} block`}>
+										<span key={key} className={`lh1-2 ${textClass} block`}>
 											<span className={`xBold inline  tBlue marRigXs ${textClass}`}>{key === 'shortDesc' ? 'O mně' : 'Poznámka'}</span>
 											{obj[key]}
 										</span>
@@ -318,23 +312,27 @@ const UserCard = props => {
 										})}
 									</traits-wrapper>
 									{/*PROGRESSIVE TOPICS --------------------------------------------------------- */}
-									<span className="block lh1-1 fs7  marBotXs">
-										<span className={`boldM textSha tGreen ${textClass}  marRigXs`}>Progresivní</span>
-										{obj.basics?.map((topic, idx) => (
-											<span key={topic} className={`${sherlockMatches.basics?.includes(topic) ? 'borderRed' : ''} ${textClass} `}>
-												{BASIC_TOPICS.get(topic)}
-												{idx < obj.basics.length - 1 ? ', ' : ''}
-											</span>
-										))}
-									</span>
+									{obj.basics?.filter(item => item).length > 0 && (
+										<span className="block lh1-2 fs7  marBotXs">
+											<span className={`boldM textSha tGreen ${textClass}  marRigXs`}>Progresivní</span>
+											{obj.basics
+												?.filter(item => item)
+												.map((topic, idx) => (
+													<span key={topic} className={`${sherlockMatches.basics?.includes(topic) ? 'borderRed' : ''} ${textClass} `}>
+														{BASIC_TOPICS.get(topic)}
+														{idx < obj.basics.length - 1 ? ', ' : ''}
+													</span>
+												))}
+										</span>
+									)}
 								</extras-sec>
 							)}
 							{/* THERE´S MORE INDICATORS --------------------------------------------------------- */}
 							{!modes.actions && !isProfile && !isPast && (
 								<theres-more class="block selfEnd marTopAuto  w100">
-									{obj.shortDesc?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}    bold tBlue   ${textClass}`}>{`Více o mně ↓`}</span>}
-									{obj.note?.length && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}   tDarkBlue boldXs fsA`}>{`+poznámka`}</span>}
-									{obj.traits?.length > 0 && !isProfile && <span className={` miw8  boldS marBotXs  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.traits.length} skupiny`}</span>}
+									{obj.shortDesc?.length > 0 && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}    bold tBlue   ${textClass}`}>{`Více o mně ↓`}</span>}
+									{obj.note?.length > 0 && <span className={`marRigXs inlineBlock marAuto ${cardsView !== 2 ? '' : 'textAli'}   tDarkBlue boldXs fsA`}>{`+poznámka`}</span>}
+									{obj.traits?.filter(item => item).length > 0 && !isProfile && <span className={` miw8  boldS marBotXs  inlineBlock tDarkGreen boldM ${textClass}`}>{`+${obj.traits.filter(item => item).length} skupiny`}</span>}
 								</theres-more>
 							)}
 						</texts-wrapper>
@@ -342,14 +340,12 @@ const UserCard = props => {
 				</under-image>
 			)}
 
-			{/* RATING SECTION --------------------------------------------------------------- */}
-			{modes.actions && obj.id !== brain.user.id && !modes.protocol && !status.blocked && !modes.evePreview && !modes.invites && (!isPast || eveInter === 'sur') && (!isProfile || (obj.state !== 'stale' && obj.eveInters?.length > 0)) && <RateAwards {...{ modes, brain, isCardOrStrip: true, thisIs: 'user', status, setStatus, setModes, obj, fadedIn: ['RatingBs'] }} />}
+			{/* USER ACTIONS SECTION --------------------------------------------------------------- */}
+			{modes.actions && obj.id !== brain.user.id && !modes.evePreview && <UserActionsBs obj={obj} brain={brain} status={status} setStatus={setStatus} modes={modes} setModes={setModes} isPast={isPast} galleryMode={galleryMode} nowAt={nowAt} superMan={props.superMan} UserCardComp={UserCard} />}
 
 			{/* IS YOU WARNING --------------------------------------------------------------- */}
 			{modes.actions && obj.id === brain.user.id && !modes.evePreview && <you-warning className="boldM textAli block  inlineBlock hr2  posRel textSha fs8 textSha borderRed tRed  marRigXs">Tohle jsi ty. Ovládací prvky nejsou dostupné</you-warning>}
 
-			{/* USER MENU STRIP --------------------------------------------------------------- */}
-			{modes.actions && obj.id !== brain.user.id && !modes.evePreview && <UserMenuStrip obj={obj} brain={brain} modes={modes} status={status} setStatus={setStatus} setModes={setModes} isEventPreview={isEventPreview} isPast={isPast} galleryMode={galleryMode} />}
 			{/* EVENT evePreview userCard ---------------------------------------------------------- */}
 			<event-scroll ref={eventPreviewRef} />
 			{modes.evePreview && nowAt === 'home' && <EventCard key={modes.evePreview.id} obj={modes.evePreview} cols={cols || 1} brain={brain} isPreview={obj.id} setModes={setModes} />}

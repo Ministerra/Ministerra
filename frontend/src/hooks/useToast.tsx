@@ -17,6 +17,17 @@ function useToast(_opts?: any) {
 	const [isToastActive, setIsToastActive] = useState(false);
 	const toastQueue = useRef([]);
 	const processingQueue = useRef(false);
+	// MOUNT TRACKING FOR MEMORY LEAK PREVENTION ---
+	const mountedRef = useRef(true);
+	const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+	// CLEANUP ON UNMOUNT ---
+	useEffect(() => {
+		return () => {
+			mountedRef.current = false;
+			timeoutRefs.current.forEach(id => clearTimeout(id));
+		};
+	}, []);
 
 	const processNextToast = useCallback(() => {
 		if (processingQueue.current) return;
@@ -57,9 +68,14 @@ function useToast(_opts?: any) {
 			);
 
 			// Clear toast after timeout and process next in queue
-			setTimeout(() => {
-				setToast(null), setIsToastActive(false), setTimeout(processNextToast, 100);
+			const timeoutId = setTimeout(() => {
+				if (!mountedRef.current) return;
+				setToast(null);
+				setIsToastActive(false);
+				const nextId = setTimeout(processNextToast, 100);
+				timeoutRefs.current.push(nextId);
 			}, timeout);
+			timeoutRefs.current.push(timeoutId);
 		},
 		[processNextToast]
 	);
@@ -71,6 +87,9 @@ function useToast(_opts?: any) {
 
 	const showToast = useCallback(
 		toastConfig => {
+			// QUEUE SIZE LIMIT -----------------------------------------------------
+			// Steps: cap queue at 50 entries and drop oldest to prevent unbounded memory growth under rapid toast conditions.
+			if (toastQueue.current.length >= 50) toastQueue.current.shift();
 			toastQueue.current.push(toastConfig);
 			processNextToast();
 		},

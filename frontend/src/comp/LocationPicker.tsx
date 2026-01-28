@@ -179,7 +179,7 @@ function LocationPicker(props) {
 
 	const man = (inp, val) => {
 		if (inMenu) {
-			const activateInvert = brain.user.cities.length > 2 && curSelCities.length === brain.user.cities.length;
+			const activateInvert = brain.user.cities.length > 1 && curSelCities.length === brain.user.cities.length;
 			if (activateInvert) (setInvertButton(val), (invertTimeout.current = setTimeout(() => setInvertButton(null), 2000)));
 			else if (invertButton === val) (clearTimeout(invertTimeout.current), setInvertButton(null));
 
@@ -201,8 +201,8 @@ function LocationPicker(props) {
 							? [val]
 							: invertButton === val
 								? brain.user.cities.filter(city => city !== val)
-								: curSelCities.includes(val)
-									? curSelCities.filter(city => city != val)
+								: curSelCities.some(city => (city.cityID || city) === val)
+									? curSelCities.filter(city => (city.cityID || city) !== val)
 									: [...curSelCities.filter(city => brain.user.cities.includes(city.cityID || city)), val]
 			);
 		} else if (nowAt === 'editor') superMan(inp, val);
@@ -350,11 +350,11 @@ function LocationPicker(props) {
 			)}
 
 			{/* LOCATION INPUT ------------------------------------------------------------------------ */}
-			{(inMenu || citiesSrc.length < 10) && !hideSearch && (
+			{(inMenu || citiesSrc.length < MAX_COUNTS.cities) && !hideSearch && (
 				<input
 					value={locaInput}
 					disabled={disableSearch}
-					autoFocus={(nowAt === 'home' && !isMobile) || (nowAt === 'editor' && !data.city && !data.cityID)}
+					autoFocus={inMenu || (nowAt === 'home' && !isMobile) || (nowAt === 'editor' && !data.city && !data.cityID)}
 					onKeyDown={e => e.key === 'Enter' && locaInp.current.blur()}
 					onBlur={handleInputBlur}
 					onChange={handleInputChange}
@@ -400,13 +400,13 @@ function LocationPicker(props) {
 								onClick={() => {
 									if (isDisabled) return; // prevent click on disabled buttons
 									resetSearchState();
-									if (inMenu && brain.user.cities.length === 1 && curSelCities.includes(id)) return;
+									if (inMenu && brain.user.cities.length === 1 && curSelCities.some(c => (c.cityID || c) === id)) return;
 									if (isIntroduction) {
 										const newCities = data.cities.filter(c => (c.hashID || c.cityID) !== (city.hashID || city.cityID));
 										superMan('cities', newCities);
 									} else man(nowAt === 'setup' ? 'delCity' : nowAt === 'editor' ? 'cityID' : 'selCity', id);
 								}}
-								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${invertButton === id || isIntroduction || curSelCities.includes(id) || isSelected ? 'xBold bInsetBlueTopXs bBor2 ' : ''} posRel ${inMenu ? 'fs15' : 'fs13'} ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXxxs padHorL   flexCen bgTrans       `}>
+								class={`${isDisabled && !isSelected ? 'opacityXs' : 'bHover'} ${invertButton === id || isIntroduction || curSelCities.some(c => (c.cityID || c) === id) || isSelected ? 'xBold bInsetBlueTopXs bBor2 ' : ''} posRel ${inMenu ? 'fs15' : 'fs13'} ${nowAt === 'setup' ? 'textLeft' : ''} shaLight padVerXxxs padHorL   flexCen bgTrans       `}>
 								{nowAt === 'setup' && (
 									<button
 										title="Domovské město"
@@ -439,10 +439,10 @@ function LocationPicker(props) {
 			{/* QUICK SELECTION BUTTONS -------------------------------------------------------------------- */}
 			{inMenu && brain.user.cities.length > 1 && (
 				<quick-sel className="flexCen  growAll    posRel posRel  boRadXs  wAuto    marBotS marAuto">
-					{['Domov', 10, 25, 50, 'Všechny']
+					{['Všechny', 'Domov', 10, 25, 50]
 						.filter(button => {
 							return button === 'Domov'
-								? !curSelCities.includes(brain.user.cities[0]) || curSelCities.length > 1
+								? !curSelCities.some(c => (c.cityID || c) === brain.user.cities[0]) || curSelCities.length > 1
 								: button === 'Všechny'
 									? curSelCities.length !== brain.user.cities.length
 									: radCities[button]?.length &&

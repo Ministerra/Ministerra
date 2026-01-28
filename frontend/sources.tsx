@@ -68,18 +68,7 @@ export const eventTitles = {
 			', sejdeme se někde venku pod širým nebem a užijeme si atmošku?',
 			', vyrazíme do ulic a zažijeme spolu tu pravou městskou atmosféru?',
 		],
-		instrumental: [
-			'Provětráš se v ulicích města',
-			'Vyrazíš na průzkum městskejch zákoutí',
-			'Dáš si ňákej ten venkovní relax',
-			'Půjdeš na čerstvej městskej vzduch',
-			'Projdeš se historickým centrem',
-			'Vyrazíš na vejšlap po památkách',
-			'Dáš si pořádnou procházku městem',
-			'Vyfoukáš si hlavu v městským ruchu',
-			'Sejdeš se pod širým nebem',
-			'Vyrazíš do víru velkoměsta',
-		],
+		instrumental: ['Provětráš se v ulicích města', 'Vyrazíš na průzkum městskejch zákoutí', 'Dáš si ňákej ten venkovní relax', 'Půjdeš na čerstvej městskej vzduch', 'Projdeš se historickým centrem', 'Vyrazíš na vejšlap po památkách', 'Dáš si pořádnou procházku městem', 'Vyfoukáš si hlavu v městským ruchu', 'Sejdeš se pod širým nebem', 'Vyrazíš do víru velkoměsta'],
 	},
 	a2: {
 		// Beer / Pivko
@@ -96,18 +85,7 @@ export const eventTitles = {
 			', prolijeme hrdla zlatavým mokem v ňáký útulný starý pivnici?',
 			', dáme si pár kousků a uvidíme, kam se ta naše debata dneska stočí?',
 		],
-		instrumental: [
-			'Spláchneš prach orosenou plzničkou',
-			'Probereš život u piva',
-			'Skočíš na jedno rychlý orosený',
-			'Dáš si ňákou tu dobrou dvanáctku',
-			'Posedíš u zlatavýho moku',
-			'Vyrazíš na průzkum lokálních pivovarů',
-			'Dáš si pořádnej poctivej krýgl',
-			'Zajdeš na skvěle ošetřený točený',
-			'Proliješ hrdlo poctivým pivem',
-			'Zajdeš na pár orosenejch kousků',
-		],
+		instrumental: ['Spláchneš prach orosenou plzničkou', 'Probereš život u piva', 'Skočíš na jedno rychlý orosený', 'Dáš si ňákou tu dobrou dvanáctku', 'Posedíš u zlatavýho moku', 'Vyrazíš na průzkum lokálních pivovarů', 'Dáš si pořádnej poctivej krýgl', 'Zajdeš na skvěle ošetřený točený', 'Proliješ hrdlo poctivým pivem', 'Zajdeš na pár orosenejch kousků'],
 	},
 	a3: {
 		// Coffee / Káva
@@ -124,18 +102,7 @@ export const eventTitles = {
 			', posedíme u šálku dobrý kávy a vychutnáme si tu chvilku klidu?',
 			', dáme si ňákej ten odpolední dýchánek s vůní čerstvě mletý kávy?',
 		],
-		instrumental: [
-			'Nakopneš se výběrovou kávou',
-			'Zajdeš na kafe a dlouhej pokec',
-			'Probereš věci u espressa',
-			'Skočíš na pořádně dobrý lattéčko',
-			'Dáš si pauzu na kofein',
-			'Posedíš v útulný kavárně',
-			'Dáš si cappuccino a klid',
-			'Zajdeš na kofeinovou vzpruhu',
-			'Posedíš u šálku dobrý kávy',
-			'Užiješ si kávovej dýchánek',
-		],
+		instrumental: ['Nakopneš se výběrovou kávou', 'Zajdeš na kafe a dlouhej pokec', 'Probereš věci u espressa', 'Skočíš na pořádně dobrý lattéčko', 'Dáš si pauzu na kofein', 'Posedíš v útulný kavárně', 'Dáš si cappuccino a klid', 'Zajdeš na kofeinovou vzpruhu', 'Posedíš u šálku dobrý kávy', 'Užiješ si kávovej dýchánek'],
 	},
 	a4: {
 		// Games / Hravé
@@ -152,18 +119,7 @@ export const eventTitles = {
 			', vyzkoušíme ňákou úplně novou hru, kterou jsme ještě nikdy nehráli?',
 			', rozjedeme ňákej ten herní turnaj a uvidíme, kdo z nás je fakt nejlepší?',
 		],
-		instrumental: [
-			'Zahraješ si něco a zkusíš vyhrát',
-			'Dáš si ňákou tu ostrou deskovku',
-			'Rozsekáš se v strategický hře',
-			'Vyrazíš si zahrát něco akčního',
-			'Dáš si gaming a herní debatu',
-			'Protáhneš mozkový závity u hry',
-			'Zapaříš si něco v týmu',
-			'Dáš si herní večer plnej smíchu',
-			'Vyzkoušíš úplně novou hru',
-			'Rozjedeš ňákej ten herní turnaj',
-		],
+		instrumental: ['Zahraješ si něco a zkusíš vyhrát', 'Dáš si ňákou tu ostrou deskovku', 'Rozsekáš se v strategický hře', 'Vyrazíš si zahrát něco akčního', 'Dáš si gaming a herní debatu', 'Protáhneš mozkový závity u hry', 'Zapaříš si něco v týmu', 'Dáš si herní večer plnej smíchu', 'Vyzkoušíš úplně novou hru', 'Rozjedeš ňákej ten herní turnaj'],
 	},
 	a5: {
 		// Indoors / Uvnitř
@@ -180,18 +136,7 @@ export const eventTitles = {
 			', schováme se do interiéru a užijeme si ňákej ten komorní meetup?',
 			', posedíme v ňákým útulnu, kde se budeme cítit jako doma?',
 		],
-		instrumental: [
-			'Zalezeš do tepla před deštěm',
-			'Dáš si v klidu indoor pokec',
-			'Posedíš v teple u dobrýho pití',
-			'Schováš se do fajn interiéru',
-			'Dáš si ňákou tu vnitřní akci',
-			'Posedíš v naprostým klidu',
-			'Zajdeš pod střechu do útulna',
-			'Dáš si pohodu v interiéru',
-			'Schováš se dovnitř na pokec',
-			'Posedíš v ňákým tom útulnu',
-		],
+		instrumental: ['Zalezeš do tepla před deštěm', 'Dáš si v klidu indoor pokec', 'Posedíš v teple u dobrýho pití', 'Schováš se do fajn interiéru', 'Dáš si ňákou tu vnitřní akci', 'Posedíš v naprostým klidu', 'Zajdeš pod střechu do útulna', 'Dáš si pohodu v interiéru', 'Schováš se dovnitř na pokec', 'Posedíš v ňákým tom útulnu'],
 	},
 	a6: {
 		// Party / Pařba
@@ -208,18 +153,7 @@ export const eventTitles = {
 			', provětráme parket v mým oblíbeným klubu a pořádně si to užijeme?',
 			', zapaříme až do svítání a pak si dáme ňákou tu ranní snídani?',
 		],
-		instrumental: [
-			'Roztočíš to dneska večer',
-			'Dáš si ňákou tu pořádnou kalbu',
-			'Vyrazíš na nezapomenutelnou pařbu',
-			'Zakalíš si a uvidíš co přijde',
-			'Rozjedeš to dneska ve velkým',
-			'Dáš si party se skvělou hudbou',
-			'Vyrazíš do nočního víru',
-			'Dáš si divočinu na baru',
-			'Provětráš se mnou parket',
-			'Zapaříš si až do svítání',
-		],
+		instrumental: ['Roztočíš to dneska večer', 'Dáš si ňákou tu pořádnou kalbu', 'Vyrazíš na nezapomenutelnou pařbu', 'Zakalíš si a uvidíš co přijde', 'Rozjedeš to dneska ve velkým', 'Dáš si party se skvělou hudbou', 'Vyrazíš do nočního víru', 'Dáš si divočinu na baru', 'Provětráš se mnou parket', 'Zapaříš si až do svítání'],
 	},
 	a7: {
 		// Discussion / Diskuzní
@@ -236,18 +170,7 @@ export const eventTitles = {
 			', dáme intelektuální dýchánek u čaje a budeme hledat pravdu?',
 			', probereme život a uvidíme, jestli najdeme odpovědi na naše otázky?',
 		],
-		instrumental: [
-			'Probereš hluboký témata',
-			'Dáš si intelektuální debatu',
-			'Zafilozofuješ si o životě',
-			'Vyměníš si názory na svět',
-			'Probereš aktuální dění',
-			'Dáš si konstruktivní diskuzi',
-			'Posedíš a pokecáš vážně',
-			'Prodiskutuješ věci u čaje',
-			'Dáš si intelektuální talk',
-			'Probereš život a vesmír',
-		],
+		instrumental: ['Probereš hluboký témata', 'Dáš si intelektuální debatu', 'Zafilozofuješ si o životě', 'Vyměníš si názory na svět', 'Probereš aktuální dění', 'Dáš si konstruktivní diskuzi', 'Posedíš a pokecáš vážně', 'Prodiskutuješ věci u čaje', 'Dáš si intelektuální talk', 'Probereš život a vesmír'],
 	},
 	a8: {
 		// English / Anglicky
@@ -264,18 +187,7 @@ export const eventTitles = {
 			', give a chance to English and see where the conversation leads?',
 			', talk in English together and maybe learn some new expressions?',
 		],
-		instrumental: [
-			'Practice language and speaking',
-			'Give English a real try',
-			'Discuss topics in English',
-			'Dáš si English talk v klidu',
-			'Procvičíš si angličtinu',
-			'Zaspíkuješ si o životě',
-			'Improve your English skills',
-			'Speak about everything',
-			'Give English a fair chance',
-			'Talk in English together',
-		],
+		instrumental: ['Practice language and speaking', 'Give English a real try', 'Discuss topics in English', 'Dáš si English talk v klidu', 'Procvičíš si angličtinu', 'Zaspíkuješ si o životě', 'Improve your English skills', 'Speak about everything', 'Give English a fair chance', 'Talk in English together'],
 	},
 	a9: {
 		// Exercise / Cvičení
@@ -292,18 +204,7 @@ export const eventTitles = {
 			', pohneme kostrou a uvidíme, co naše těla dneska vlastně zvládnou?',
 			', uděláme něco pro naši fyzičku a budeme mít ze sebe radost?',
 		],
-		instrumental: [
-			'Dáš si pořádně do těla',
-			'Zaposiluješ si a zamakáš',
-			'Vyrazíš si spolu zacvičit',
-			'Zpotíš se při tréninku',
-			'Dáš si ňákou tu makačku',
-			'Protáhneš se a uvolníš',
-			'Vyrazíš na společnej trénink',
-			'Dáš si workout venku',
-			'Pohneš se mnou kostrou',
-			'Uděláš něco pro fyzičku',
-		],
+		instrumental: ['Dáš si pořádně do těla', 'Zaposiluješ si a zamakáš', 'Vyrazíš si spolu zacvičit', 'Zpotíš se při tréninku', 'Dáš si ňákou tu makačku', 'Protáhneš se a uvolníš', 'Vyrazíš na společnej trénink', 'Dáš si workout venku', 'Pohneš se mnou kostrou', 'Uděláš něco pro fyzičku'],
 	},
 	a10: {
 		// Dogs / S pejsky
@@ -320,18 +221,7 @@ export const eventTitles = {
 			', unavíme ty naše psí parťáky tak, aby doma pak jenom spokojeně spali?',
 			', dáme společný venčení a probereme u toho všechno možný?',
 		],
-		instrumental: [
-			'Vyrazíš ven s chlupáčem',
-			'Vyvenčíš se mnou ty bestie',
-			'Dáš si psí procházku',
-			'Pustíš hafany k sobě',
-			'Vyrazíš na louku s pejskem',
-			'Dáš si ňákej ten psí sraz',
-			'Provětráš se mnou miláčky',
-			'Vyrazíš na psí hřiště',
-			'Unavíš svýho hafoše',
-			'Dáš si společný venčení',
-		],
+		instrumental: ['Vyrazíš ven s chlupáčem', 'Vyvenčíš se mnou ty bestie', 'Dáš si psí procházku', 'Pustíš hafany k sobě', 'Vyrazíš na louku s pejskem', 'Dáš si ňákej ten psí sraz', 'Provětráš se mnou miláčky', 'Vyrazíš na psí hřiště', 'Unavíš svýho hafoše', 'Dáš si společný venčení'],
 	},
 	a11: {
 		// Teens / Teens
@@ -348,18 +238,7 @@ export const eventTitles = {
 			', vyrazíme na ňákej hangout a poznáme ňáký nový lidi z okolí?',
 			', dáme si ňákou tu naprostou pohodu a užijeme si dnešní den?',
 		],
-		instrumental: [
-			'Dáš si ňákej ten chill venku',
-			'Vyrazíš ven s celou grupou',
-			'Uděláš akci pro mladý lidi',
-			'Dáš si meetup a pokecáš',
-			'Zevlíš se mnou někde v parku',
-			'Vyrazíš do streetu za lidma',
-			'Dáš si slezinu s hudbou',
-			'Posedíš někde venku na zídce',
-			'Vyrazíš na hangout v okolí',
-			'Dáš si dneska totální pohodu',
-		],
+		instrumental: ['Dáš si ňákej ten chill venku', 'Vyrazíš ven s celou grupou', 'Uděláš akci pro mladý lidi', 'Dáš si meetup a pokecáš', 'Zevlíš se mnou někde v parku', 'Vyrazíš do streetu za lidma', 'Dáš si slezinu s hudbou', 'Posedíš někde venku na zídce', 'Vyrazíš na hangout v okolí', 'Dáš si dneska totální pohodu'],
 	},
 	a12: {
 		// Singles / Nezadaní
@@ -376,18 +255,7 @@ export const eventTitles = {
 			', dáme šanci osudu a uvidíme, jestli nám někoho přihraje do cesty?',
 			', vyrazíme lovit do ulic a budeme se u toho hlavně dobře bavit?',
 		],
-		instrumental: [
-			'Zkusíš se se mnou seznámit',
-			'Vyrazíš mezi nezadaný lidi',
-			'Prolomíš ty trapný ledy',
-			'Dáš si rande na slepo',
-			'Zkusíš najít spřízněnou duši',
-			'Dáš si seznamovací akci',
-			'Vyrazíš na speed dating',
-			'Zkusíš seznámení v klidu',
-			'Dáš dneska šanci osudu',
-			'Vyrazíš lovit do ulic',
-		],
+		instrumental: ['Zkusíš se se mnou seznámit', 'Vyrazíš mezi nezadaný lidi', 'Prolomíš ty trapný ledy', 'Dáš si rande na slepo', 'Zkusíš najít spřízněnou duši', 'Dáš si seznamovací akci', 'Vyrazíš na speed dating', 'Zkusíš seznámení v klidu', 'Dáš dneska šanci osudu', 'Vyrazíš lovit do ulic'],
 	},
 	a13: {
 		// Business / Business
@@ -404,18 +272,7 @@ export const eventTitles = {
 			', probereme možný synergie mezi našima firmama nebo projekty?',
 			', dáme ňákej ten brain-storming a zkusíme vymyslet něco novýho?',
 		],
-		instrumental: [
-			'Probereš byznys a plány',
-			'Dáš si networking a pokec',
-			'Vyměníš si nápady a vize',
-			'Probereš se mnou spolupráci',
-			'Dáš si pracovní schůzku',
-			'Probereš svý nový projekty',
-			'Dáš si obchodní řeč',
-			'Vyrazíš na business lunch',
-			'Probereš se mnou synergie',
-			'Dáš si brainstorming',
-		],
+		instrumental: ['Probereš byznys a plány', 'Dáš si networking a pokec', 'Vyměníš si nápady a vize', 'Probereš se mnou spolupráci', 'Dáš si pracovní schůzku', 'Probereš svý nový projekty', 'Dáš si obchodní řeč', 'Vyrazíš na business lunch', 'Probereš se mnou synergie', 'Dáš si brainstorming'],
 	},
 	a14: {
 		// Nature / Příroda
@@ -432,18 +289,7 @@ export const eventTitles = {
 			', nadýcháme se lesního vzduchu a probereme u toho život?',
 			', vyrazíme na ňákej ten vandr s batohem a užijeme si svobodu?',
 		],
-		instrumental: [
-			'Vyrazíš do divočiny v klidu',
-			'Dáš si trek v hlubokým lese',
-			'Nadýcháš se v přírodě ticha',
-			'Vyrazíš za město do ticha',
-			'Dáš si vejlet do vysokejch hor',
-			'Odpočineš si od lidí a ruchu',
-			'Vyrazíš do zelena na túru',
-			'Dáš si poctivou túru lesem',
-			'Nadýcháš se čerstvýho vzduchu',
-			'Vyrazíš na vandr s batohem',
-		],
+		instrumental: ['Vyrazíš do divočiny v klidu', 'Dáš si trek v hlubokým lese', 'Nadýcháš se v přírodě ticha', 'Vyrazíš za město do ticha', 'Dáš si vejlet do vysokejch hor', 'Odpočineš si od lidí a ruchu', 'Vyrazíš do zelena na túru', 'Dáš si poctivou túru lesem', 'Nadýcháš se čerstvýho vzduchu', 'Vyrazíš na vandr s batohem'],
 	},
 	a15: {
 		// Seniors / Senioři
@@ -460,18 +306,7 @@ export const eventTitles = {
 			', dáme ňákou tu klidnou debatu o věcech, který jsou pro nás důležitý?',
 			', sejdeme se jako za mlada a užijeme si společně strávenej čas?',
 		],
-		instrumental: [
-			'Posedíš a zavzpomínáš na mládí',
-			'Dáš si klidnou procházku parkem',
-			'Probereš se mnou co je novýho',
-			'Vyrazíš na akci pro starší',
-			'Posedíš u čaje a sušenek',
-			'Dáš si sraz zkušenějších',
-			'Probereš životní zkušenosti',
-			'Posedíš v naprostým klidu',
-			'Dáš si klidnou debatu',
-			'Sejdeš se se mnou jako dřív',
-		],
+		instrumental: ['Posedíš a zavzpomínáš na mládí', 'Dáš si klidnou procházku parkem', 'Probereš se mnou co je novýho', 'Vyrazíš na akci pro starší', 'Posedíš u čaje a sušenek', 'Dáš si sraz zkušenějších', 'Probereš životní zkušenosti', 'Posedíš v naprostým klidu', 'Dáš si klidnou debatu', 'Sejdeš se se mnou jako dřív'],
 	},
 	a16: {
 		// Gypsies / S Romy
@@ -488,24 +323,13 @@ export const eventTitles = {
 			', dáme ňákou tu romskou zábavu plnou emocí a temperamentu?',
 			', pokecáme o všem možným a uvidíme, kam nás ta debata zavede?',
 		],
-		instrumental: [
-			'Dáš si posezení s rodinou',
-			'Vyrazíš na romskou akci',
-			'Zapaříš si čardáš s náma',
-			'Probereš věci v komunitě',
-			'Dáš si romskej dýchánek',
-			'Sejdeš se a pokecáš s náma',
-			'Dáš si pořádnou oslavu',
-			'Posedíš u nás v rodině',
-			'Dáš si romskou zábavu',
-			'Pokecáš s náma o všem',
-		],
+		instrumental: ['Dáš si posezení s rodinou', 'Vyrazíš na romskou akci', 'Zapaříš si čardáš s náma', 'Probereš věci v komunitě', 'Dáš si romskej dýchánek', 'Sejdeš se a pokecáš s náma', 'Dáš si pořádnou oslavu', 'Posedíš u nás v rodině', 'Dáš si romskou zábavu', 'Pokecáš s náma o všem'],
 	},
 };
 
 export const catsSrc = {
-	cz: ['Přátelské', 'Kulturní', 'Odborné', 'Prospěšné'],
-	en: ['Meetings', 'Events', 'Courses', 'Goodwill'],
+	cz: ['Přátelské', 'Prospěšné', 'Kulturní', 'Odborné'],
+	en: ['Friendly', 'Beneficial', 'Cultural', 'Professional'],
 };
 
 export const ratingSrc = {
@@ -515,14 +339,7 @@ export const ratingSrc = {
 			en: ['Wasteful', 'Superficial', 'Hello', 'Nazdar', 'Educational', 'Beneficial'],
 			cz: ['konzumní', 'zbytečné', 'záživné', 'morální', 'naučné', 'Prospěšné'],
 		},
-		awardsTexts: [
-			'Plýtvá, nadměrná spotřebá, konzum, luxus.',
-			'Primitivní, nemorální, hloupé, povrchní.',
-			'Zábavné, vizuální a nebo interaktivní',
-			'Podporuje slušné chování a rozumné myšlení ',
-			'Zvyšuje inteligenci, vzdělanost a přehled.',
-			'Prospívá procesům, přírodě, zvířatům či lidem',
-		],
+		awardsTexts: ['Plýtvá, nadměrná spotřebá, konzum, luxus.', 'Primitivní, nemorální, hloupé, povrchní.', 'Zábavné, vizuální a nebo interaktivní', 'Podporuje slušné chování a rozumné myšlení ', 'Zvyšuje inteligenci, vzdělanost a přehled.', 'Prospívá procesům, přírodě, zvířatům či lidem'],
 	},
 	meeting: {
 		rating: ['slabé', 'dobrý', 'skvělý', 'výtečný!'],
@@ -530,12 +347,7 @@ export const ratingSrc = {
 			en: ['dislike', 'sympathetic', 'interesting', 'témata'],
 			cz: ['nelíbí', 'sympaťáci', 'zajímavé', 'témata'],
 		},
-		awardsTexts: [
-			'Konzumní či povrchní témata, nevhodné aktivity, nesmyslné, škodlivé či zbytečné prvky',
-			'...sympatická, charismatická či inteligentně působící partička lidí, které chceš potkat',
-			'Unikátní náplň nebo prospěšné, či obohacující aktivity či jiné nadstandartní prvky',
-			'Zajímavá konverzační či expertní témata nebo atraktivní skladba osobnostních indikátorů',
-		],
+		awardsTexts: ['Konzumní či povrchní témata, nevhodné aktivity, nesmyslné, škodlivé či zbytečné prvky', '...sympatická, charismatická či inteligentně působící partička lidí, které chceš potkat', 'Unikátní náplň nebo prospěšné, či obohacující aktivity či jiné nadstandartní prvky', 'Zajímavá konverzační či expertní témata nebo atraktivní skladba osobnostních indikátorů'],
 	},
 	user: {
 		rating: ['dobrý', 'skvělý'],

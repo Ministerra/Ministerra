@@ -161,7 +161,7 @@ function MapLibre(props: any) {
 					else if (currentMapVisibility !== true && currentMapVisibility !== prevMapVisibility.current && brain.lastFetchMapIDs && brain.lastFetchMapIDs?.length !== brain.totalMapContent && !snap?.changed) brain.stillShowingMapContent = true;
 
 					const allowFetch = brain.snapChangedWhileMapHidden || brain.stillShowingMapContent ? true : currentMapVisibility !== true ? (!brain.lastFetchMapIDs ? false : brain.totalMapContent !== brain.itemsOnMap.length) : !brain.lastFetchMapIDs ? brain.itemsOnMap.length !== brain.totalMapContent : !areEqual(brain.lastFetchMapIDs, brain.itemsOnMap);
-					setSnap?.(prev => ({ ...prev, changed: allowFetch }));
+					if (allowFetch && !snap?.changed) setSnap?.(prev => ({ ...prev, changed: true }));
 				}
 
 				((prevMapVisibility.current = currentMapVisibility), setRecalc(prev => prev + 1));
@@ -594,7 +594,7 @@ function MapLibre(props: any) {
 			<map-canvas ref={mapContainer} class="h100 block posRel w100" />
 
 			{/* INTERACTIVE CONTROLS ------------------------------------------------- */}
-			<map-buttons class={`flexCen  boRadXs overHidden bInsetBlueTopXl zinMaXl gapXxxs posAbs marAuto botCen w70 mw90 `}>
+			<map-buttons class={`flexCen  boRadXs overHidden bInsetBlueTopXl moveDown  zinMaXl gapXxxs posAbs marAuto botCen w70 mw90 `}>
 				<button
 					disabled={zoomLimits.current >= zoomLimits.max}
 					onClick={() => {

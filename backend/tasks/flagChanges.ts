@@ -205,8 +205,13 @@ async function processFlagChanges(con, redis) {
 
 		// REDIS PIPELINES COMMIT ------------------------------------------------
 		// Steps: commit deletions first, then metas/detail/attendance writes; this keeps “remove first” semantics to minimize temporary visibility of stale content.
-		await deletionsPipe.exec();
-		await Promise.all([metasPipe.exec(), basiDetaPipe.exec(), attenPipe.exec()]);
+		try {
+			await deletionsPipe.exec();
+			await Promise.all([metasPipe.exec(), basiDetaPipe.exec(), attenPipe.exec()]);
+		} catch (redisError) {
+			// REDIS FAILURE AFTER SQL COMMIT - LOG FOR RECONCILIATION ---
+			logger.error('flagChanges.redis_commit_failed', { error: redisError, affectedEventIDs, affectedUserIDs, message: 'RECONCILIATION_REQUIRED' });
+		}
 
 		// STATE RESET -----------------------------------------------------------
 		// Steps: clear shared state so subsequent calls don’t leak ids/maps across runs.

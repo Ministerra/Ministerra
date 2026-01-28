@@ -19,6 +19,7 @@ function EventStrip(props) {
 	const chipClass = `fs7 bold textSha padHorXs hr1-5 boRadXxs tWhite`;
 	const [modes, setModes] = useState({ inter: false, share: false, menu: false, evePreview: false, protocol: false, invites: false, invitees: false, invitors: false, feedback: false });
 	const imgVers = obj.imgVers?.toString().split('_')[0] || 0;
+	const locationPrefix = obj.location?.startsWith('+') ? 'v okolí' : !obj.location && !obj.place ? 'kdekoliv v' : '';
 	const invitesUsersSrc = (() => {
 		if (!(galleryMode && galleryMode.includes('invites'))) return [];
 		const src = obj.invites;
@@ -30,6 +31,7 @@ function EventStrip(props) {
 
 	const [status, setStatus] = useState({
 		score: obj.score,
+		mark: obj.mark,
 		comments: obj.comments,
 		surely: obj.surely,
 		maybe: obj.maybe,
@@ -93,7 +95,7 @@ function EventStrip(props) {
 					return undefined;
 				})();
 				return galleryMode === 'invitesIn' && invitedFlag === 'acc' ? 'bInsetGreen' : galleryMode === 'invitesIn' && invitedFlag === 'ref' ? 'bInsetRed' : isSelected ? 'bInsetBlue shaBot posRel borBot8 bor3 boRadXxs Halo' : '';
-			})()}   mw130 w100   boRadXxs ${!isMobile && !modes.menu && !modes.evePreview ? '' : modes.menu ? 'shaMega  borTop    ' : ''} ${modes.protocol || modes.menu || modes.evePreview ? ' boRadXs  shaStrong     bInsetBlueTopXs  boRadXs   posRel' : ''} ${isPastEvent ? 'bgTransXxs' : ''} flexCol posRel bHover2  pointer   aliStart`}>
+			})()}   mw130 w100 marBotS shaBot sideBors  boRadXxs ${!isMobile && !modes.menu && !modes.evePreview ? '' : modes.menu ? 'shaMega  borTop    ' : ''} ${modes.protocol || modes.menu || modes.evePreview ? ' boRadXs  shaStrong     bInsetBlueTopXs  boRadXs   posRel' : ''} ${isPastEvent ? 'bgTransXxs' : ''} flexCol posRel bHover2  pointer   aliStart`}>
 			<strip-body class={`${modes.menu ? 'marBotXxs' : ''} flexRow aliStart posRel  fPadHorXxxs  marAuto bgWhite  zinMaXl padBotXs  w100`}>
 				{(modes.profile || modes.invites) && (
 					<info-strip
@@ -150,17 +152,15 @@ function EventStrip(props) {
 
 					<second-row class={`flexRow aliCen wrap textLeft marTopXxxs marBotXxxs  `}>
 						<span className={`fs9 boldM tDarkBlue inline marRigS lh1 ${isPastEvent ? 'tRed' : ''}`}>{humanizeDateTime({ dateInMs: obj.starts })}</span>
-						{!isSearch && (obj.location?.startsWith('+') || (!obj.location && !obj.place)) && (
-							<around-indi class={`flexInline aliCen posRel down1 marRigXxs`}>
-								<span className={`chipPurple ${chipClass}`}>{obj.location?.startsWith('+') ? 'v okolí' : 'kdekoliv'}</span>
-							</around-indi>
-						)}
+
+						{locationPrefix && <strong className={`fs9 marRigXs tPurple xBold`}>{locationPrefix}</strong>}
+
 						<span className={`${`fs9  marRigS  ${(isSearch && obj.starts < Date.now()) || isPastEvent ? 'tRed boldM' : 'tDarkGreen boldS'}`} inline marRigXs `}>{`${obj.place ? `${obj.place} -` : ''} ${obj.city}`}</span>
 					</second-row>
 
 					{/* INDICATORS (third row) --------------------------------------------------- */}
 					<third-row class="flexInline">
-						<ContentIndis status={status} isSearch={isSearch} thisIs={'event'} galleryMode={galleryMode} isInvitations={isInvitations} s isCardOrStrip={true} modes={modes} brain={brain} obj={obj} />
+						<ContentIndis status={status} isSearch={isSearch} thisIs={'event'} galleryMode={galleryMode} isInvitations={isInvitations} isCardOrStrip={true} modes={modes} brain={brain} obj={obj} />
 					</third-row>
 
 					{/* USER ROW (multiple users who invited) ---------------------------------------------- */}
@@ -190,7 +190,7 @@ function EventStrip(props) {
 					{modes.evePreview && <EventCard brain={brain} isPreview={true} obj={obj} isPastEvent={isPastEvent} isSearch={isSearch} />}
 				</bottom-part>
 			)}
-			{!modes.menu && <EveActionsBs {...{ fadedIn: ['BsEvent'], brain, isPastEvent, obj, status, setStatus, modes, setModes, thisIs: 'event' }} />}
+			{!modes.menu && <EveActionsBs {...{ fadedIn: ['BsEvent'], brain, isPastEvent, obj, status, setStatus, modes, setModes, thisIs: 'event', isStrip: true }} />}
 		</event-strip>
 	);
 }

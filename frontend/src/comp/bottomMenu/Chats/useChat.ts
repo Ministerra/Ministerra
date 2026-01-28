@@ -81,8 +81,12 @@ function useChat(props) {
 
 	// UI: BACK BUTTON HANDLING ---------------------------------------------------------
 	// Intercept browser back button to switch from 'openedChat' to 'chatsList'
+	// STALE CLOSURE FIX ----------------------------------------------------------------
+	// Steps: use ref to always access latest viewSwitch without adding it to dependencies (which would cause listener churn).
+	const viewSwitchRef = useRef(viewSwitch);
+	useEffect(() => { viewSwitchRef.current = viewSwitch; });
 	useEffect(() => {
-		const handleBack = event => (event.preventDefault(), viewSwitch('chatsList'));
+		const handleBack = event => (event.preventDefault(), viewSwitchRef.current('chatsList'));
 		window.addEventListener('popstate', handleBack);
 		return () => window.removeEventListener('popstate', handleBack);
 	}, []);

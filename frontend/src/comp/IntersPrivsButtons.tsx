@@ -135,7 +135,7 @@ function IntersPrivsButtons(props) {
 					const PRIVACIES_SET = new Set(['pub', 'lin', 'own', 'tru']);
 					const latestPriv = finalInterFlag?.startsWith('min') ? null : PRIVACIES_SET.has(finalPriv) ? finalPriv : 'pub';
 					debounceInterOrPriv({ interFlag: finalInterFlag, priv: latestPriv });
-				}, 800),
+				}, 4000),
 			};
 			if (askPriv && !modes.privs) setModes(prev => ({ ...prev, privs: true }));
 			setStatus(prev => ({ ...prev, ...newStatusProps }));
@@ -168,10 +168,10 @@ function IntersPrivsButtons(props) {
 				const PRIVACIES_SET = new Set(['pub', 'lin', 'own', 'tru']);
 				const latestPriv = cur.interFlag?.startsWith('min') ? null : PRIVACIES_SET.has(cur.priv) ? cur.priv : 'pub';
 				debounceInterOrPriv({ interFlag: cur.interFlag, priv: latestPriv });
-			}, 800);
+			}, 4000);
 		} else {
 			clearTimeout(brain.privInProg[obj.id]?.timeout);
-			brain.privInProg[obj.id] = { priv, timeout: setTimeout(() => debounceInterOrPriv({ priv }), 800) };
+			brain.privInProg[obj.id] = { priv, timeout: setTimeout(() => debounceInterOrPriv({ priv }), 4000) };
 		}
 		setStatus(prev => ({ ...prev, interPriv: priv }));
 		onPrivSelected?.(); // NOTIFY PARENT PRIV SELECTED ---------------------------
@@ -191,11 +191,11 @@ function IntersPrivsButtons(props) {
 				.filter(btn => btn.short !== 'int' || !status.own)
 				.map((btn, i) => {
 					const isSelected = status.inter === btn.short;
-					const showAsNo = !isFriendly && isSelected;
-					const label = showAsNo ? 'nepřijdu' : btn.label;
+					const showAsNo = isSelected && (!isFriendly || !status.own);
+					const label = showAsNo ? 'zrušit zájem' : btn.label;
 					const icon = showAsNo ? 'error' : btn.key === 'interested' ? 'eye' : btn.key;
 
-					const widthClass = !status.inter ? 'imw8' : isSelected ? 'imw12' : 'imw6';
+					const widthClass = !status.inter ? 'imw10' : isSelected ? 'imw12' : 'imw6';
 					const selectedClass = isSelected ? ' bBor ' : '';
 					const fontClass = inEditor ? 'fs9' : 'fs5';
 
@@ -203,7 +203,7 @@ function IntersPrivsButtons(props) {
 						<button
 							key={btn.key}
 							onClick={() => {
-								if (status.own && isFriendly && isSelected) return;
+								if (status.own && isFriendly && isSelected) return goBack();
 								if (isSelected) setEventInter({ inter: btn.short, priv: 'pub' });
 								else setEventInter({ inter: btn.short, priv: isFriendly || status.own ? 'pub' : status.interPriv || brain.user.defPriv || 'pub' });
 
@@ -248,7 +248,7 @@ function IntersPrivsButtons(props) {
 				}
 
 				return (
-					<button key={option} className={`bHover ${inEditor ? 'mw70 w25' : 'w25'} padVerXs  marAuto bInsetBlueTopXs bBor2   posRel zinMenu ${status.interPriv === option ? ' xBold tDarkBlue  fs18' : 'bold   fs12 '}`} onClick={() => (option === status.interPriv ? setModes(prev => ({ ...prev, privs: false, inter: false })) : setInterPriv({ priv: option }))}>
+					<button key={option} className={`bHover ${inEditor ? 'mw70 w25' : 'w25'} padVerXs  marAuto bInsetBlueTopXs bBor2   posRel zinMenu ${status.interPriv === option ? ' xBold tDarkBlue  fs14' : 'bold   fs8 '}`} onClick={() => (option === status.interPriv ? setModes(prev => ({ ...prev, privs: false, inter: false })) : setInterPriv({ priv: option }))}>
 						<button-texture style={{ filter: 'brightness(1.5)' }} class="noPoint padAllXxxs posAbs botCen zin1 w100 h100 " />
 						{title}
 					</button>

@@ -318,7 +318,7 @@ async function initializeTaskSchedule() {
 	const lastExecutions = (await state.redis.hgetall(REDIS_KEYS.tasksFinishedAt)) || {};
 	for (const taskName of taskNames) {
 		const taskConfig = TASKS[taskName];
-		const lastRun = parseInt(lastExecutions[taskName] || '0');
+		const lastRun = parseInt(lastExecutions[taskName] || '0', 10);
 		const timeSinceLastRun = lastRun > 0 ? now - lastRun : 0;
 		// Schedule normally; executeTask() will re-check Redis before running
 		const nextRun = lastRun === 0 || timeSinceLastRun >= taskConfig.interval ? now + 5000 + Math.random() * 2000 : lastRun + taskConfig.interval;
@@ -610,7 +610,7 @@ async function checkForOverdueTasks() {
 		let maxOverdueRatio = 0;
 
 		for (const [taskName, taskConfig] of Object.entries(TASKS)) {
-			const lastRun = parseInt(lastExecutions[taskName] || '0');
+			const lastRun = parseInt(lastExecutions[taskName] || '0', 10);
 			if (lastRun === 0) continue;
 
 			const timeSinceLastRun = now - lastRun;
@@ -896,15 +896,26 @@ process.on('SIGTERM', () => shutdown('SIGTERM').catch(error => sendError(error i
 process.on('SIGINT', () => shutdown('SIGINT').catch(error => sendError(error instanceof Error ? error : new Error(String(error)))));
 
 // ERROR HANDLERS ---------------------------------------------------------------
+// CONNECTION CLEANUP ON CRASH --------------------------------------------------
+// Steps: release connections immediately on uncaught errors before shutdown to prevent pool exhaustion.
+async function emergencyConnectionCleanup(): Promise<void> {
+	try {
+		if (state.con) { state.con.release(); state.con = null; }
+		if (state.redis) { await state.redis.quit().catch(() => {}); state.redis = null; }
+	} catch {}
+}
+
 process.on('uncaughtException', async error => {
 	log(`Uncaught exception: ${error.message}`, 'error');
 	sendError(error);
+	await emergencyConnectionCleanup();
 	await shutdown('uncaughtException', 1);
 });
 
 process.on('unhandledRejection', async reason => {
 	log(`Unhandled rejection: ${reason}`, 'error');
 	sendError(new Error(`Unhandled rejection: ${reason}`));
+	await emergencyConnectionCleanup();
 	await shutdown('unhandledRejection', 1);
 });
 

@@ -101,8 +101,11 @@ async function processContentMetas({ con, load, getCities, cities, userID }) {
 
 	try {
 		// CITY RESOLUTION ---
-		// Steps: if caller supplied city objects, normalize them into stable cityIDs so all downstream Redis keys are deterministic.
-		if (getCities.length) citiesData = await getOrSaveCityData((con ??= await Sql.getConnection()), getCities);
+		// Steps: if caller supplied getCities (objects or IDs needing data), fetch them
+		if (getCities?.length) {
+			citiesData = await getOrSaveCityData((con ??= await Sql.getConnection()), getCities);
+		}
+		const cityIDsFromInput = cities.filter(c => typeof c === 'number');
 
 		if (load === FOUNDATION_LOADS.topEvents) {
 			// SPECIAL MODE: GLOBAL TOP EVENTS ---
@@ -111,9 +114,10 @@ async function processContentMetas({ con, load, getCities, cities, userID }) {
 			contentMetas[0].cityID = REDIS_KEYS.topEvents;
 		} else {
 			// STANDARD MODE: PER-CITY PIPELINE ---
-			// Steps: build the full city list, then stage reads in bulk so Redis roundtrips stay bounded.
+			// Steps: combine resolved city IDs from objects with directly provided numeric IDs
+			const resolvedCityIDs = citiesData?.map(c => c.cityID) || [];
 			const [getFilteringMapsPipe, getPublicMetasPipe] = [redis.pipeline(), redis.pipeline()];
-			const cityIDs = [...new Set(cities.filter(c => typeof c === 'number').concat(citiesData?.map(c => c.cityID) || []))];
+			const cityIDs = [...new Set([...cityIDsFromInput, ...resolvedCityIDs])];
 			const cityIDStrings = cityIDs.map(id => String(id));
 
 			// PERMISSION KEY ACCUMULATION ---

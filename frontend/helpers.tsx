@@ -207,12 +207,13 @@ export async function processMetas({ eveMetas = {}, userMetas = {}, brain, contS
 				score: Number(score),
 				age,
 				gender,
-				imgVers: Number(imgVers),
+				imgVers: String(imgVers),
 				eveInters,
 			};
 
 			// MERGE WITH EXISTING USER OR CREATE NEW ---------------------------------------------------------------------
 			if (user) {
+				if (user.state === 'del') continue;
 				if (basiVers != (user.basiVers || basiVers)) (delProps(user, USER_BASI_KEYS), (user.state = 'meta'), delete user.basiVers);
 				Object.assign(user, userObj);
 			} else brain.users[id] = userObj;
@@ -409,6 +410,17 @@ export async function fetchOwnProfile(brain) {
 }
 
 let forageInited = false;
+// FORAGE INIT LOCK - prevents race condition with concurrent initialization ---
+let forageInitPromise: Promise<void> | null = null;
+async function ensureForageInited(): Promise<void> {
+	if (forageInited) return;
+	if (!forageInitPromise) {
+		forageInitPromise = Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => {
+			forageInited = true;
+		});
+	}
+	await forageInitPromise;
+}
 // PERSISTENT WORKERS - receive auth/DEK broadcasts, stay alive for session ---------------------------
 const encryptedModes = new Set(['user', 'chat', 'comms', 'past', 'alerts']); // PDK-encrypted (user-bound)
 const deviceBoundModes = new Set(['events', 'users', 'miscel']); // Device-scoped persistent workers (events/users DEK-encrypted, miscel unencrypted)
@@ -418,6 +430,16 @@ const encryptionWorkers = [...allPersistentModes].reduce((acc, what) => {
 	acc[what] = new Worker(new URL('./workers/forageSetWorker.js', import.meta.url), { type: 'module' });
 	return acc;
 }, {});
+
+// INIT WORKER - initializes a worker and returns it when ready ---------------------------
+function initWorker(worker): Promise<any> {
+	return new Promise((resolve, reject) => {
+		const handleInit = ({ data }) => (data.inited ? (cleanup(), resolve(worker)) : data.error && (cleanup(), reject(new Error(data.error))));
+		const handleError = err => (cleanup(), reject(err));
+		const cleanup = () => (worker.removeEventListener('message', handleInit), worker.removeEventListener('error', handleError));
+		(worker.addEventListener('message', handleInit), worker.addEventListener('error', handleError), worker.postMessage({ mode: 'init' }));
+	});
+}
 
 // EXECUTE WORKER - uses request IDs to handle parallel requests to same worker ---------------------------
 let reqCounter = 0;
@@ -449,15 +471,6 @@ export async function forage({ mode, what, id, val }: { mode: string; what?: str
 		const params = { mode, what, id, val },
 			createWorker = () => new Worker(new URL('./workers/forageSetWorker.js', import.meta.url), { type: 'module' });
 
-		const initWorker = async worker => {
-			return new Promise((resolve, reject) => {
-				const handleInit = ({ data }) => (data.inited ? (cleanup(), resolve(worker)) : data.error && (cleanup(), reject(new Error(data.error))));
-				const handleError = err => (cleanup(), reject(err));
-				const cleanup = () => (worker.removeEventListener('message', handleInit), worker.removeEventListener('error', handleError));
-				(worker.addEventListener('message', handleInit), worker.addEventListener('error', handleError), worker.postMessage({ mode: 'init' }));
-			});
-		};
-
 		if (mode === 'del' && what === 'everything') {
 			const tmp = createWorker();
 			(await initWorker(tmp), await executeWorker(tmp, params));
@@ -468,7 +481,7 @@ export async function forage({ mode, what, id, val }: { mode: string; what?: str
 		if (mode === 'clearPDK' || mode === 'clearDEK') return forageInited && (await Promise.all(Object.values(encryptionWorkers).map(worker => executeWorker(worker, params))));
 
 		if (what === 'auth') {
-			if (!forageInited) await Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => (forageInited = true));
+			await ensureForageInited();
 			const workers = Object.values(encryptionWorkers),
 				primary = workers[0];
 			return await Promise.all(
@@ -482,7 +495,7 @@ export async function forage({ mode, what, id, val }: { mode: string; what?: str
 
 		if (allPersistentModes.has(what) || workerAliases[what]) {
 			const key = workerAliases[what] || what;
-			if (!forageInited) await Promise.all(Object.values(encryptionWorkers).map(worker => initWorker(worker))).then(() => (forageInited = true));
+			await ensureForageInited();
 			try {
 				return await executeWorker(encryptionWorkers[key], params);
 			} catch (e) {
@@ -838,10 +851,11 @@ export function humanizeDateTime(inp) {
 		const hoursDiff = Math.floor(minsDiff / 60);
 
 		if (sameDayAsPrev && isToday) return Math.abs(minsDiff) >= 60 ? `v ${time}` : '';
-		const alreadyPassed = dateInMs < Date.now() && (endsInMs ? endsInMs < Date.now() : true);
+		const isHappening = dateInMs < Date.now() && (endsInMs ? endsInMs > Date.now() : Date.now() < dateInMs + 2 * 60 * 60 * 1000);
+		const alreadyPassed = dateInMs < Date.now() && !isHappening;
 		const labels = {
-			0: alreadyPassed ? 'Dnes proběhlo' : 'Dnešní',
-			'-1': 'včerejší',
+			0: isHappening ? 'právě probíhá' : alreadyPassed ? 'Dnes proběhlo' : 'Dnešní',
+			'-1': isHappening ? 'právě probíhá' : 'včerejší',
 			1: 'zítra',
 			'-7': 'minulý týden',
 			7: 'v týdnu',

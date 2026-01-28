@@ -173,9 +173,9 @@ function sanitizeLocaMode(value) {
 // SANITIZE V_IMG ---------------------------------------------------------------
 function sanitizeVImg(value) {
 	if (value === undefined) return undefined;
-	const num = Number(value);
-	if (isNaN(num)) throw new Error('invalid imgVers');
-	return num;
+	const str = String(value);
+	if (!/^[0-9]+(-[0-9]+)?$/.test(str)) throw new Error('invalid imgVers');
+	return str;
 }
 
 // SANITIZE EVENT ID ------------------------------------------------------------

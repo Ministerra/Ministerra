@@ -36,12 +36,16 @@ export function delFalsy(obj: Record<string, any>, empStrings = false, zeros = f
 }
 
 // GET IDS STRING ---------------------------------------------------------------
-// Steps: stringify IDs (or targetProp) into a SQL-safe quoted list, escaping single quotes so callers can embed into IN(...) when parameterization is not possible.
+// Steps: stringify IDs (or targetProp) into a SQL-safe quoted list, validating numeric IDs and escaping quotes.
 export const getIDsString = (arrOrSet: Array<any> | Set<any>, targetProp?: string): string => {
 	return [...arrOrSet]
 		.map(item => {
-			const value = String(item[targetProp] || item).replace(/'/g, "''"); // Escape quotes ---------------------------
-			return `'${value}'`;
+			const rawValue = item[targetProp] || item;
+			// NUMERIC ID VALIDATION ------------------------------------------------
+			// Steps: validate that ID is numeric to prevent SQL injection via non-numeric strings.
+			const numericValue = Number(rawValue);
+			if (!Number.isFinite(numericValue)) throw new Error(`invalidID: ${String(rawValue).slice(0, 20)}`);
+			return `'${numericValue}'`;
 		})
 		.join(',');
 };

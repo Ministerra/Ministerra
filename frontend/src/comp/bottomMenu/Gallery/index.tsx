@@ -59,8 +59,17 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 	brain.user.galleryOpenCounts ||= {};
 
 	// LAYOUT HOOKS ------------------------------------------------------------
-	const [numOfCols] = useMasonResize({ wrapper: wrapperRef, brain, contType: isEvents ? 'eveStrips' : 'userStrips', deps: [content?.length, mode], contLength: content?.length || 1 });
-	const catWidth = useCentralFlex('galleryCats', [menuView], null, Object.keys(modeTexts).filter(k => !isInvitations || (isInvitations === 'userToEvents' ? ['futuOwn', 'futuSurMay'].includes(k) : ['links', 'trusts'].includes(k))).length, wrapperRef);
+	const availableCategories = useMemo(() => {
+		const all = !isInvitations ? Object.keys(modeTexts) : isInvitations === 'userToEvents' ? ['futuOwn', 'futuSurMay'] : ['links', 'trusts'];
+		return all.filter(m => {
+			if (m === 'links') return linkUsers.length > 0;
+			if (m === 'trusts') return linkUsers.some(link => link[1] === 'tru');
+			return true;
+		});
+	}, [isInvitations, linkUsers]);
+
+	const [numOfCols] = useMasonResize({ wrapper: wrapperRef, brain, contType: isEvents ? 'eveStrips' : 'userStrips', contLength: content?.length || 1, isMobile });
+	const catWidth = useCentralFlex('galleryCats', [menuView], null, availableCategories.length, wrapperRef);
 
 	// RESET GALLERY MODE ------------------------------------- */}
 	// If user opens the same mode multiple times after all content fetched, we remove the "all content fetched" flag to allow for refetch, presuming the user knows that there is more content to fetch.
@@ -130,6 +139,11 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 
 	useLayoutEffect(() => () => Object.values(galleryTimers.current).forEach(clearTimeout), []);
 
+	// AUTO-SELECT SINGLE CATEGORY ---
+	useLayoutEffect(() => {
+		if (show === 'menu' && availableCategories.length === 1) man('selMode', availableCategories[0]);
+	}, [show, availableCategories]);
+
 	// EMPTY NOTICE ---
 	// Displays feedback when a category has no items.
 	useLayoutEffect(() => {
@@ -152,15 +166,20 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 			// HANDLE INPUT SWITCHES ------------------------------------- */}
 			if (inp === 'selMode') return val !== mode ? (setMode(val), setSelSort(val.startsWith('futu') ? 'earliest' : 'recent'), setShow(null), setContent(null)) : setShow(null);
 			if (inp === 'sort') {
-				(setSelSort(val || selSort), setShow(null));
-				return brain.user.noMore.gallery[mode] ? setContent(sortContent(content, val || selSort)) : setContent(null);
+				if (val === selSort) return setShow(null);
+				setSelSort(val || selSort);
+				setShow(null);
+				if (brain.user.noMore.gallery[mode]) return setContent(sortContent([...(content || [])], val || selSort));
+				setContent(null);
+				return;
 			}
-
-			(setInform(p => [...new Set([...p, 'rendering'])]), (brain.user.galleryIDs[mode] ??= {}), (brain.user.pastEve ??= {}));
 
 			// DATA SOURCE PREP ------------------------------------- */}
 			const [itemsSrc, gotAll] = [isPast ? brain.user.pastEve : brain[target], brain.user.noMore.gallery[mode]];
-			const ids = gotAll ? brain.user.galleryIDs[mode] : brain.user.galleryIDs[mode][selSort] || [];
+			const ids = (Array.isArray(brain.user.galleryIDs[mode]) ? brain.user.galleryIDs[mode] : brain.user.galleryIDs[mode]?.[selSort]) || [];
+
+			if (gotAll && content && !inp) return;
+			(setInform(p => [...new Set([...p, 'rendering'])]), (brain.user.galleryIDs[mode] ??= {}), (brain.user.pastEve ??= {}));
 
 			if ((isPast && !fetchedPastEve.current) || (ids.length && !fetchedMode.current[mode])) {
 				const missing = isPast && ids.length ? ids.filter(id => !brain[target][id]) : !isPast && ids.length ? ids.filter(id => !brain[target][id]) : null;
@@ -209,7 +228,7 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 			if (newData.length) brain.user.galleryIDs[mode][selSort] = [...(ids || []), ...newData.map(i => i.id || 'pH').filter(id => !new Set(ids).has(id))];
 			else {
 				(markNoMore(mode), (brain.user.galleryIDs[mode] = brain.user.galleryIDs[mode]?.[selSort] || []));
-				if (content) {
+				if (content && inp === 'fetchAxi') {
 					setInform(p => [...new Set([...p.filter(i => i !== 'rendering'), 'nothingMore'])]);
 					setTimeout(() => setInform(p => p.filter(i => i !== 'nothingMore')), 2000);
 				} else setContent([]);
@@ -242,6 +261,7 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 					const exist = itemsSrc[item.id];
 					const final = Object.assign(
 						{
+							...item,
 							...(exist || {}),
 							...(mode === 'trusts' && { trusts: true, linked: true }),
 							...(mode === 'links' && { linked: true }),
@@ -326,13 +346,13 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 					{inform.includes('nothingMore') ? 'Nic dalšího už není' : locally.current ? (contentStrips?.length > 0 ? 'Tohle ne. Prohledat server ...' : 'Prohledat ještě server ...') : 'Načíst další výsledky'}
 				</button>
 			)}
-			{!directMode && !isInvitations && <empty-div class="hr16 block" />}
+			{!directMode && !isInvitations && <empty-div class="hr20 block" />}
 		</content-wrapper>
 	);
 
 	// RENDER ------------------------------------------------------------------
 	return (
-		<gallery-menu ref={wrapperRef} class={`boRadXs ${menuView !== 'gallery' && !directMode && !isInvitations ? 'hide' : ''} ${!directMode && !isInvitations ? 'hvh100 mihvh100 shaMega bgWhite' : 'noBackground'} flexCol ${!isInvitations ? 'overAuto bInsetBlueDark' : ''}	 justStart zinMaXl w100 aliCen ${isInvitations && mode && contentStrips?.length ? 'marBotXxxl' : ''} `}>
+		<gallery-menu ref={wrapperRef} class={`boRadXs ${menuView !== 'gallery' && !directMode && !isInvitations ? 'hide' : ''} ${!directMode && !isInvitations ? 'hvh100 mihvh100 shaMega bgWhite' : 'noBackground'} flexCol ${!isInvitations ? 'overAuto bInsetBlueDark' : ''}	 justStart zinMaXl w100 aliCen ${isInvitations && mode && contentStrips?.length ? 'marBotXxxl' : ''}  `}>
 			{!isInvitations && <ContentWrapper />}
 
 			{/* BOTTOM MENU SECTION ------------------------------------- */}
@@ -342,7 +362,7 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 						{/* SUB-MENU (CATEGORY SELECTION) ------------------------------------- */}
 						{show === 'menu' ? (
 							<menu-bs class="w100 flexCen wrap marAuto padBotXxs  posRel aliStretch shaTop bgTransXs">
-								{(!isInvitations ? ['futuOwn', 'futuSurMay', 'futuInt', 'links', 'trusts', 'requests', 'invitesIn', 'invitesOut', 'pastOwn', 'pastSurMay', 'pastInt', 'blocks'] : isInvitations === 'userToEvents' ? ['futuOwn', 'futuSurMay'] : ['links', 'trusts']).map(m => (
+								{availableCategories.map(m => (
 									<button key={m} onClick={() => (man('selMode', m), setShow(false))} style={{ width: isInvitations ? '50%' : '100%', ...(catWidth && { maxWidth: `${catWidth - 1}px` }) }} className={`${!isInvitations && show === 'menu' && mode === m ? 'bDarkBlue tWhite xBold ' : ''} bHover grow imw6 imiw4 padAllXxxs`}>
 										<inner-wrapper class="bInsetBlueTopXs iw25 gapXxs shaBlueLight bBor padAllS flexCol aliCen justCen posRel w100 h100">
 											<img src={`/icons/gallery/${m}.png`} alt={`${m} icon`} />
@@ -361,9 +381,9 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 								{['cat', 'sort']
 									.filter(m => m === 'cat' || content?.length > 1)
 									.map(m => (
-										<button key={m} onClick={() => setShow(m === 'cat' ? 'menu' : 'sortMenu')} className="bgTrans xBold posRel padTopS padBotM textSha bHover bInsetBlueTopXs bBor grow">
+										<button key={m} onClick={() => setShow(m === 'cat' ? 'menu' : 'sortMenu')} className="bgTrans xBold posRel padTopS padBotS textSha bHover bInsetBlueTopXs bBor grow">
 											<span className="fs8 marBotXxxs boldXs">{m === 'cat' ? (!content?.length ? 'Změnit kategorii' : 'kategorie') : 'seřazení'}</span>
-											<span className={`${!isInvitations ? 'fs20' : 'fs8'} xBold`}>
+											<span className={`${!isInvitations ? (numOfCols === 3 ? 'fs20' : numOfCols === 1 && content?.length > 1 ? 'fs16' : 'fs16') : 'fs8'} xBold`}>
 												{m === 'cat'
 													? modeTexts[mode]?.full
 													: `od ${
@@ -393,5 +413,5 @@ function Gallery({ brain, setMenuView, nowAt, isMobile, menuView, mode: directMo
 	);
 }
 
-const arePropsEqual = (p, n) => p.menuView === n.menuView && p.selectedItems === n.selectedItems && (p.brain.user.unstableObj || p.brain.user).linkUsers?.length === (n.brain.user.unstableObj || n.brain.user).linkUsers?.length;
+const arePropsEqual = (p, n) => p.menuView === n.menuView && p.selectedItems === n.selectedItems && p.isMobile === n.isMobile && (p.brain.user.unstableObj || p.brain.user).linkUsers?.length === (n.brain.user.unstableObj || n.brain.user).linkUsers?.length;
 export default memo(Gallery, arePropsEqual);

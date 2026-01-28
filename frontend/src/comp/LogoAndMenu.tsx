@@ -7,6 +7,8 @@ import Menu from './bottomMenu/Menu';
 import Gallery from './bottomMenu/Gallery';
 import Search from './bottomMenu/Search';
 import Alerts from './bottomMenu/Alerts';
+import UserCard from './UserCard';
+import { showUsersProfile } from '../utils/userProfileUtils';
 import BsDynamic from './BsDynamic';
 import useScrollDir from '../hooks/useScrollDir';
 import useToast from '../hooks/useToast';
@@ -47,6 +49,7 @@ export function parseMenuViewState() {
 // LOGO AND MENU COMPONENT ---
 function LogoAndMenu(props) {
 	const { nowAt, loader, menuView, setMenuView, brain, setFadedIn, setInitialize, isMobile, logOut, location } = props,
+		[modes, setModes] = useState({ profile: null }),
 		[logoSubtext, setLogoSubtext] = useState(null),
 		bottomMenu = useRef(null),
 		timeout = useRef(null),
@@ -129,15 +132,23 @@ function LogoAndMenu(props) {
 	// FILTER MANAGEMENT ---------------------------
 	async function changeCities(inp) {
 		setFadedIn([]);
-		const [user, cities] = [brain.user, inp.map(c => c.cityID || c)];
-		const needCities = cities.filter(city => typeof city === 'object' || !brain.citiesEveTypesInTimes[city]);
+		const inputCities = inp;
+		const needCities = inputCities.filter(city => {
+			const id = typeof city === 'object' ? city.cityID : city;
+			return !id || !brain.citiesEveTypesInTimes[id];
+		});
+
 		window.scrollTo({ top: 0, behavior: 'smooth' });
-		if (needCities.length) loader.load(`/?homeView=cityEvents&newCities=${encodeURIComponent(JSON.stringify(cities))}`);
-		else ((user.curCities = cities), setInitialize('cityEvents'));
+		if (needCities.length) {
+			loader.load(`/?homeView=cityEvents&newCities=${encodeURIComponent(JSON.stringify(inputCities))}`);
+		} else {
+			brain.user.curCities = inputCities.map(c => (typeof c === 'object' ? c.cityID : c)).sort((a, b) => a - b);
+			setInitialize('cityEvents');
+		}
 	}
 
 	// SHARED MENU PROPS ---------------------------
-	const jsxProps = { brain, setMenuView, nowAt, scrollDir, setNotifDots, isMobile, logOut, changeCities, notifDots, menuView, showToast };
+	const jsxProps = { brain, setMenuView, nowAt, scrollDir, setNotifDots, isMobile, logOut, changeCities, notifDots, menuView, showToast, modes, setModes };
 	const prevMenuView = sessionStorage.getItem('menuView');
 
 	const hasNotifs = notifDots.chats > 0 || notifDots.alerts > 0 || notifDots.archive > 0;
@@ -172,6 +183,11 @@ function LogoAndMenu(props) {
 					<Menu {...jsxProps} />
 					<Gallery {...jsxProps} />
 					<Search {...jsxProps} />
+					{modes.profile && (
+						<div className="w100 overYAuto hvh100 padBotL fadingIn bgWhite zinMaXl posAbs topCen">
+							<UserCard obj={modes.profile} isProfile={true} brain={brain} setModes={setModes} cardsView={brain.user.cardsView.users} />
+						</div>
+					)}
 				</bottom-menu>
 			)}
 
@@ -191,7 +207,13 @@ function LogoAndMenu(props) {
 							}}
 							class="flexCen trapezoid-logo-background-bot2 bgWhite gapXxxs padHorXxs boRadS zinMenu w100 mw80 marAuto hvw2 mih3 posFix botCen borTop">
 							{['alerts', 'chats', 'menu', 'search', 'gallery'].map(b => (
-								<button key={b} onClick={() => setMenuView(mode => (mode === b ? (sessionStorage.setItem('menuView', ''), false) : (sessionStorage.setItem('menuView', b), b)))} className={`${menuView === b ? ' posRel bDarkGreen shaMega thickBors bold' : notifDots[b] > 0 || (b === 'alerts' && notifDots.alerts > 0) ? 'bGlass borRedSel bgWhite' : ' bgWhite'} w100 bHover mhvh5 zinMax padTopXxs imw4 fs7 iw45 h100 textSha bold posRel grow `}>
+								<button
+									key={b}
+									onClick={() => {
+										if (b === 'menu' && menuView === 'menu') showUsersProfile({ obj: brain.user, brain, setModes, modes });
+										else setMenuView(mode => (mode === b ? (sessionStorage.setItem('menuView', ''), false) : (sessionStorage.setItem('menuView', b), b)));
+									}}
+									className={`${menuView === b ? ' posRel bDarkGreen shaMega thickBors bold' : notifDots[b] > 0 || (b === 'alerts' && notifDots.alerts > 0) ? 'bGlass borRedSel bgWhite' : ' bgWhite'} w100 bHover mhvh5 zinMax padTopXxs imw4 fs7 iw45 h100 textSha bold posRel grow `}>
 									<inner-wrapper class="posRel h100 w100 overHidden">
 										{b === 'menu' ? (
 											<div className="flexRow gapXxxs aliCen justCen padBotXxs boRadXs h100 padHorS ">

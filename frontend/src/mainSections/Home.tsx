@@ -61,10 +61,11 @@ function Home(props) {
 		effectiveSelectedTypes = useMemo(() => (types || []).filter(type => avail.types?.includes(type)), [types, avail.types]),
 		hasEffectiveTypeSelection = avail.types?.length > 0 && effectiveSelectedTypes.length > 0,
 		noMeetSel = useMemo(() => {
+			if (!cats?.includes('Přátelské')) return true;
 			const availableFriendlyTypes = (avail.types || []).filter(type => type.startsWith('a'));
 			if (availableFriendlyTypes.length === 0) return false;
 			return !availableFriendlyTypes.some(type => (types || []).includes(type));
-		}, [avail.types, types]),
+		}, [avail.types, types, cats]),
 		[sherData, setSherData] = useState({ ...sherlockObj }),
 		sherAvail = useMemo(() => {
 			if (!show.sherlock) return;
@@ -177,6 +178,10 @@ function Home(props) {
 	// SNAP MANAGER FUNCTION -------------------------------------------------
 	const snapMan = useCallback(
 		(inp, val, reset) => {
+			console.log('🚀 ~ Home ~ val:', val);
+
+			console.log('🚀 ~ Home ~ inp:', inp);
+
 			const isSnapProp = !Object.keys(sherlockObj).includes(inp);
 			let [lastSnap, newSnap, newSherlock, snapChanged, sherChanged, sherActive] = [provideSnap('last'), null, null, false, false, false];
 			const lastSnapSafe = lastSnap || {};
@@ -205,6 +210,7 @@ function Home(props) {
 			// SETTING NEW SNAP -------------------------------------------
 			if (newSherlock) setSherData(newSherlock);
 
+			console.log(snapChanged);
 			setSnap({
 				...trim(newSnap || snap),
 				...(inp === 'fetch' ? { fetch: reset ? !areEqual(trim(provideSnap('last')), trim(newSnap)) : true, contView: typeof val === 'object' ? val.contView : val } : { contView: snap.contView }),
@@ -214,7 +220,7 @@ function Home(props) {
 				...(sherChanged && { sherChanged: true }),
 			});
 		},
-		[snap, show, sherlock, sherData, inform, brain, modify, provideSnap, setAvailOrGetAvaTypes, avail.types, isSherActive]
+		[snap, show, sherlock, sherData, inform, brain, modify, provideSnap, setAvailOrGetAvaTypes, avail.types, isSherActive, types]
 	);
 
 	// AUTO-CLOSE SHERLOCK WHEN FRIENDLY CATEGORY IS REMOVED ---
@@ -331,11 +337,11 @@ function Home(props) {
 					{/* QUICK FRIENDLY ------------------------------------------------- */}
 
 					<QuickFriendly {...jsxProps} ref={quickRef} />
-					<empty-div class={`block ${quick === false ? 'hvh2' : 'hvh11'}`} />
+					<empty-div class={`block ${quick === false ? 'hr5' : 'hvh11'}`} />
 
 					{/* CAT FILTER --------------------------------------------- */}
 					<img src={`/icons/search.png`} className="aspect1610 w20 miw3 mw8 maskLowXs  downTinyBit posRel" alt="" />
-					<span className="boldM fs13 tDarkBlue textSha marBotXxxxs block lh1">Hlavní vyhledávač</span>
+					<span className="boldM fs25 tDarkBlue textSha marBotXxxxs block lh1">Hlavní vyhledávač</span>
 					<span className="fs8 w90 marAuto  posRel inlineBlock marBotXs ">Zvol si kategorie , časové období a způsob řazení. Použij pokročilé nástroje (Filter, Mapa, Sherlock) pro precizní vyvledání událostí a účastníků</span>
 					<filtering-system ref={catsWrapperRef} class="block   w100 posRel">
 						{/* RESET BUTTON --------------------------------------------------- */}
@@ -351,7 +357,7 @@ function Home(props) {
 						{/* TOOLS STRIP------------------------------------------------- */}
 						<tools-strip ref={toolsRef} id="switches" class={`fadingIn ${fadedIn.includes('Tools') ? 'fadedIn' : ''} ${!hasEffectiveTypeSelection ? 'borderRed' : ''} flexCol    posRel  marAuto `}>
 							{!times && !sorts && (
-								<toggle-buttons className="flexCen alicen spaceBet   aliStretch  bPadVerM       w100   posRel   ">
+								<toggle-buttons className="flexCen alicen spaceBet   aliStretch  bPadVerS       w100   posRel   ">
 									{/* TOGGLE TIME FRAMES ---------------------------------------- */}
 									{(() => {
 										const noEventsInTime = !avail.times?.includes(time);
@@ -383,7 +389,7 @@ function Home(props) {
 														className={`${!types.length && availCount > 0 ? 'fs12 bsContentGlow tRed' : ''} ${isSel && !inform.length && hasEffectiveTypeSelection ? 'fs18  arrowDown1 posRel xBold   ' : ' fs8   bHover  '}
 													${!hasEffectiveTypeSelection ? 'tRed xBold fs15' : notAllTypesSelected ? 'shaBotLongDown' : ''}
 											          grow  bInsetBlueTopXs bBor    bgTransXs posRel   lh1         `}>
-														<img src={`/icons/${key}.png`} className={`aspect1612 ${isSel || notAllTypesSelected ? 'mw8 ' : 'mw6'}  w50  miw4  `} alt="" />
+														<img src={`/icons/${key}.png`} className={`aspect1612 ${isSel || notAllTypesSelected ? 'mw8 ' : 'mw5'}  w50  miw4  `} alt="" />
 														{notAllTypesSelected && (
 															<span className="fs10 botCen posAbs  xBold tDarkBlue shaBlue borBotLight posRel block marBotS boRadXxs bgTransXs padAllXxxs">
 																({availCount - numOfAvailNotSel}/{availCount})

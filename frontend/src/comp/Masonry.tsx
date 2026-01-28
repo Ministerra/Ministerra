@@ -51,7 +51,12 @@ const Masonry = props => {
 				if (attendees > 4) cardHeight += 40;
 				if (attendees > 8) cardHeight += 40;
 			} else if (card.imgVers) {
-				cardHeight += 180;
+				const [version, imgHeight] = String(card.imgVers).split('_');
+				if (imgHeight) {
+					const numHeight = parseInt(imgHeight);
+					if (!isNaN(numHeight)) cardHeight += (numHeight * 360) / 600;
+					else cardHeight += 180;
+				} else cardHeight += 180;
 			}
 
 			if (card.badges?.length > 0) cardHeight += 25;
@@ -63,8 +68,16 @@ const Masonry = props => {
 		const [newChunks, heights] = [[], []];
 		const CHUNK_SIZE = 20;
 
-		// PROCESS CONTENT IN CHUNKS -------------------------------------------
-		content.forEach((card, index) => {
+		// IDENTIFY PARTIAL LAST ROW -------------------------------------------
+		const total = content.length;
+		const lastRowSize = total % numOfCols;
+		const hasPartialLastRow = lastRowSize > 0 && !contType.includes('Strips');
+
+		const mainContent = hasPartialLastRow ? content.slice(0, total - lastRowSize) : content;
+		const lastRowContent = hasPartialLastRow ? content.slice(total - lastRowSize) : [];
+
+		// PROCESS MAIN CONTENT IN CHUNKS -------------------------------------------
+		mainContent.forEach((card, index) => {
 			const chunkIndex = Math.floor(index / CHUNK_SIZE);
 			if (!newChunks[chunkIndex]) {
 				newChunks[chunkIndex] = Array(numOfCols)
@@ -85,22 +98,12 @@ const Masonry = props => {
 			newChunks[chunkIndex][targetColIdx].push(card);
 		});
 
-		// HANDLE LAST ROW CENTERING -------------------------------------------
-		// If last chunk is only partial, center it by padding columns
-		if (newChunks.length > 0 && !contType.includes('Strips')) {
-			const lastIdx = newChunks.length - 1;
-			const itemsInLastChunk = newChunks[lastIdx].flat().length;
-			if (itemsInLastChunk < numOfCols) {
-				const emptyCols = numOfCols - itemsInLastChunk;
-				if (emptyCols > 0 && emptyCols % 2 === 0) {
-					const padding = emptyCols / 2;
-					const centered = Array(numOfCols)
-						.fill(null)
-						.map(() => []);
-					for (let i = 0; i < itemsInLastChunk; i++) centered[padding + i] = newChunks[lastIdx][i];
-					newChunks[lastIdx] = centered;
-				}
-			}
+		// ADD CENTERED LAST ROW AS FINAL CHUNK ---------------------------------
+		if (hasPartialLastRow) {
+			const lastChunk = lastRowContent.map(item => [item]);
+			// @ts-ignore ---
+			lastChunk.isCentered = true;
+			newChunks.push(lastChunk);
 		}
 
 		(setView(contType), setNumCols(numOfCols), setChunks(newChunks));
@@ -120,23 +123,12 @@ const Masonry = props => {
 
 						return (
 							<single-chunk class={` aliCen fPadHorXxs block  w100`} key={i}>
-								{i > 0 && nowAt !== 'event' && contType !== 'alertStrips' && (
-									<chunks-divider
-										class={`marVerS w100 block mw30 posRel textAli padVerXxs padHorXs marAuto boRadS fsD xBold`}
-										style={{
-											color: 'rgba(20, 60, 120, 0.9)',
-											background: 'linear-gradient(90deg, rgba(30,144,255,0.12), rgba(30,144,255,0.06), rgba(30,144,255,0.12))',
-											borderTop: '2px solid rgba(30,144,255,0.28)',
-											letterSpacing: '0.03em',
-										}}>
-										{`${start} - ${end}`}
-									</chunks-divider>
-								)}
+								{i > 0 && !chunk.isCentered && nowAt !== 'event' && contType !== 'alertStrips' && <chunks-divider class={`marVerS bInsetBlueTopXs posRel bBor2 w100 block mw50  textAli hr2 flexCen justCen padTopXxs  marAuto boRadS fs16 tDarkBlue   xBold`}>{`${start} - ${end}`}</chunks-divider>}
 								{/* COLUMN GRID --------------------------- */}
 								<cols-wrapper class={`${view === 'alertStrips' ? 'gapXxs' : view === 'pastUsers' ? 'gapXxs' : ['users', 'eveUsers'].includes(view) ? 'gapXs' : view.includes('Strips') ? 'gapXxs' : ['gapMiddleL', 'gapMiddleS', 'gapMiddleXs'][numCols > 3 ? 2 : numCols - 2]} flexCen w100 marAuto aliStart  spaceCen padBotXs `} key={i}>
 									{chunk.map((cards, j) => {
 										return (
-											<content-column style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }} class={`flexCol justStart grow ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen    `} key={j}>
+											<content-column style={{ width: `${100 / numCols}%`, maxWidth: maxWidthSource[contType] ? `${maxWidthSource[contType]}px` : undefined }} class={`flexCol justStart ${chunk.isCentered ? '' : 'grow'} ${nowAt !== 'event' ? 'downTinyBit' : ''} posRel   ${!view.includes('Strips') ? 'gapXxxs' : ''} aliCen    `} key={j}>
 												{/* RENDER ITEMS OR PLACEHOLDERS --------------------------- */}
 												{cards.map((item, idx) => (isValidElement(item) ? item : <Comp {...cardProps} key={item.id} obj={item} isFirstInCol={idx === 0} />))}
 											</content-column>

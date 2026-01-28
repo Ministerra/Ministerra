@@ -213,8 +213,8 @@ function normalizeSetupPayload(input: any, { isIntroduction }: any) {
 	// IMGVERS FROM MIDDLEWARE ---
 	// Images middleware sets imgVers; sanitizer validates format. Spoofed values are stripped by middleware.
 	if (input.imgVers !== undefined) {
-		const vImg = Number(input.imgVers);
-		if (!Number.isInteger(vImg) || vImg < 0) throw new Error('badRequest');
+		const vImg = String(input.imgVers);
+		if (!/^[0-9]+(-[0-9]+)?$/.test(vImg)) throw new Error('badRequest');
 		payload.imgVers = vImg;
 	}
 

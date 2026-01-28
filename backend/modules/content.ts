@@ -53,7 +53,7 @@ async function Content(req, res) {
 		// REDIS CACHE FETCH ---------------------------------------------------
 		// Steps: pipeline hgetall per requested ID, then stitch results back into {id->hash} map.
 		if (filteredIDs.length) {
-			for (const id of filteredIDs) pipeline.hgetall(contView === 'events' ? `eveBasics:${id}` : `userBasics:${id}`);
+			for (const id of filteredIDs) pipeline.hgetall(contView === 'events' ? `${REDIS_KEYS.eveBasics}:${id}` : `${REDIS_KEYS.userBasics}:${id}`);
 			for (const [idx, [err, data]] of (await pipeline.exec()).entries()) if (!err) basics[filteredIDs[idx]] = data;
 		}
 

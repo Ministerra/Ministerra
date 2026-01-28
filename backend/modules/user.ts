@@ -1,7 +1,7 @@
 import { Sql, Catcher, Socket } from '../systems/systems.ts';
 import { calculateAge, delFalsy } from '../../shared/utilities.ts';
 import { encode, decode } from 'cbor-x';
-import { USER_GENERIC_KEYS, USER_PROFILE_KEYS, REDIS_KEYS } from '../../shared/constants.ts';
+import { USER_GENERIC_KEYS, USER_PROFILE_KEYS, REDIS_KEYS, MAX_COUNTS } from '../../shared/constants.ts';
 import { emitToUsers } from '../systems/socket/socket.ts';
 import { fetchUserData } from '../systems/handlers/emitter.ts';
 import { getLogger } from '../systems/handlers/loggers.ts';
@@ -82,7 +82,7 @@ export async function getProfile({ userID, id, basiOnly, devIsStable }, con) {
 				// Steps: hgetall returns {} for missing keys; treat as not found to avoid returning empty profile.
 				if (!res || !Object.keys(res).length) throw new Error('notFound');
 				return userCache.set(id, res), res;
-			})
+			}).catch(err => { throw new Error('redisError'); })
 			: redis.getBuffer(`tempProfile:${id}`).then(async b => {
 					if (b) return decode(b);
 					let c;
@@ -94,7 +94,7 @@ export async function getProfile({ userID, id, basiOnly, devIsStable }, con) {
 					} finally {
 						c?.release();
 					}
-			  }),
+			  }).catch(err => { if (err.message === 'deleted' || err.message === 'notFound') throw err; throw new Error('redisError'); }),
 		!devIsStable && con ? con.execute(`SELECT mark, awards FROM user_rating WHERE user=? AND user2=?`, [userID, id]) : [[{}]],
 	]);
 	// OVERLAY RATING ---------------------------------------------------------
@@ -107,9 +107,15 @@ export async function getProfile({ userID, id, basiOnly, devIsStable }, con) {
 const linksHandler = async ({ mode, userID, id, note, message }, con) => {
 	// VALIDATION -------------------------------------------------------------
 	// Steps: bound message/note size; enforce daily request cap via redis so DB isn’t used as a rate limiter.
-	if (message?.length > 200 || note?.length > 200 || (mode === 'link' && (await redis.hincrby('dailyLinkReqCounts', userID, 1)) > 40))
-		throw new Error(mode === 'link' ? 'tooManyLinkRequest' : 'badRequest');
-	const ord = [userID, id].sort(),
+	if (message?.length > 200 || note?.length > 200) throw new Error('badRequest');
+	// ATOMIC RATE LIMIT CHECK ------------------------------------------------
+	// Steps: use Lua script for atomic increment-and-check to prevent race conditions where concurrent requests bypass the limit.
+	if (mode === 'link') {
+		const RATE_LIMIT_LUA = `local count = redis.call('HINCRBY', KEYS[1], ARGV[1], 1) if count > tonumber(ARGV[2]) then return 0 else return 1 end`;
+		const allowed = await redis.eval(RATE_LIMIT_LUA, 1, 'dailyLinkReqCounts', userID, MAX_COUNTS.linkRequestsPerDay);
+		if (!allowed) throw new Error('tooManyLinkRequest');
+	}
+	const ord = [userID, id].sort((a,b) => b - a),
 		who = ord[0] === userID ? 1 : 2;
 
 	try {
@@ -159,7 +165,7 @@ const linksHandler = async ({ mode, userID, id, note, message }, con) => {
 // TRUSTS HANDLER --------------------------------------------------------------
 // Steps: update link state to/from tru in SQL under a transaction, emit to socket immediately, then update redis sets/watermarks so other devices converge.
 const trustsHandler = async ({ mode, userID, id }, con) => {
-	const ord = [userID, id].sort(),
+	const ord = [userID, id].sort((a,b) => b - a),
 		who = ord[0] === userID ? 1 : 2,
 		opp = who === 1 ? 2 : 1;
 	try {
@@ -185,7 +191,7 @@ const trustsHandler = async ({ mode, userID, id }, con) => {
 // BLOCKS HANDLER ---------------------------------------------------------------
 // Steps: write user_blocks row, unlink relationship when blocking, then update symmetric redis block sets + watermarks and emit to sockets so clients remove hidden content.
 const blocksHandler = async ({ mode, userID, id }, con) => {
-	const ord = [userID, id].sort(),
+	const ord = [userID, id].sort((a,b) => b - a),
 		who = ord[0] === userID ? 1 : 2;
 	try {
 		const [[b], [l]] = await Promise.all([con.execute(qs[mode], [userID, id, who]), mode === 'block' ? con.execute(`UPDATE user_links SET link='del' WHERE user=? AND user2=?`, ord) : [{}]]);
@@ -193,9 +199,7 @@ const blocksHandler = async ({ mode, userID, id }, con) => {
 		if (mode !== 'unblock' || b.affectedRows)
 			await Promise.all([
 				redis
-					.multi()
-					[mode === 'block' ? 'sadd' : 'srem'](`blocks:${userID}`, id)
-					[mode === 'block' ? 'sadd' : 'srem'](`blocks:${id}`, userID)
+					.multi()[mode === 'block' ? 'sadd' : 'srem'](`blocks:${userID}`, id)[mode === 'block' ? 'sadd' : 'srem'](`blocks:${id}`, userID)
 					.hset(`${REDIS_KEYS.userSetsLastChange}:${userID}`, 'blocks', Date.now())
 					.hset(`${REDIS_KEYS.userSetsLastChange}:${id}`, 'blocks', Date.now())
 					.exec(),
@@ -230,10 +234,14 @@ const handlers = {
 export async function User(req, res) {
 	let con;
 	try {
+		// HANDLER VALIDATION ---------------------------------------------------
+		// Steps: validate mode exists before dispatching to prevent undefined function call crash.
+		const handler = handlers[req.body.mode];
+		if (!handler) throw new Error('invalidMode');
 		// CONNECTION POLICY ----------------------------------------------------
 		// Steps: profile reads may skip SQL when basiOnly+stable+id are present; all other modes need SQL.
 		con = req.body.mode !== 'profile' || !req.body.devIsStable || !req.body.id ? await Sql.getConnection() : null;
-		const payload = await handlers[req.body.mode](req.body, con);
+		const payload = await handler(req.body, con);
 		res.status(200)[payload ? 'json' : 'end'](payload);
 	} catch (e) {
 		if (e.code === 'ER_DUP_ENTRY') throw new Error('duplicateEntry');

@@ -248,7 +248,7 @@ async function processUserMetas({ data, is, newAttenMap, privUse, state, pipe, r
 			}
 
 			// Finalize user meta and distribute to cities
-			if (is !== 'rem' && attend.length) {
+			if (is !== 'rem' && Array.isArray(attend) && attend.length) {
 				const missingData = { cities: new Set(), privs: new Map() };
 
 				// Pass 1: Identify missing CityIDs

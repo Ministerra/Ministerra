@@ -41,6 +41,24 @@ export function Search(props) {
 	// LAYOUT HOOKS ------------------------------------------------------------
 	const contType = `${{ events: 'eve', pastEvents: 'eve', users: 'user', links: 'user', trusts: 'user', chats: 'chat' }[cat]}Strips`;
 	const [numOfCols] = useMasonResize({ wrapper: contentRef, brain, contType, contLength: content?.length });
+	const catsToShow = !isInvitations ? ['users', 'events', 'pastEvents', 'links', 'trusts'] : isInvitations === 'userToEvents' ? ['events'] : ['links', 'trusts', 'users'];
+	const availableCats = useMemo(() => {
+		return catsToShow.filter(b => {
+			if (!['trusts', 'links'].includes(b)) return true;
+			const linkUsers = (brain.user.unstableObj || brain.user).linkUsers || [];
+			if (b === 'links') return linkUsers.length > 0;
+			if (b === 'trusts') return linkUsers.some(link => link[1] === 'tru');
+			return false;
+		});
+	}, [catsToShow, brain.user.linkUsers, brain.user.unstableObj?.linkUsers]);
+
+	// AUTO-SELECT SINGLE CATEGORY ---------------------------------------------
+	useEffect(() => {
+		if (showCats && availableCats.length === 1) {
+			(setCat(availableCats[0]), setShowCats(false));
+			searchInput.current && searchInput.current.focus({ preventScroll: true });
+		}
+	}, [showCats, availableCats]);
 
 	// RESET EFFECT ------------------------------------------------------------
 	useEffect(() => {
@@ -255,7 +273,6 @@ export function Search(props) {
 	}, [content, numOfCols, selectedItems, selectedItems?.length, brain.chatSetupData?.members, chats, brain.openedChat, cat, stripMenu, manageMode, isChatSetup]);
 
 	const noResults = !content?.length && brain.user.noMore.search[cat]?.includes(searchQ);
-	const catsToShow = !isInvitations ? ['users', 'events', 'pastEvents', 'links', 'trusts'] : isInvitations === 'userToEvents' ? ['events'] : ['links', 'trusts', 'users'];
 	const SearchCats = () => (
 		<search-cat class={` bgTrans  aliStretch zinMenu block posRel ${!isInvitations ? 'posAbs botCen' : 'padTopXs'} w100 textAli `}>
 			{/* DIVIDER --- */}
@@ -299,21 +316,19 @@ export function Search(props) {
 			{/* CATEGORY SELECTOR MENU ----------------------------------------------------- */}
 			{showCats && searchCat !== 'chats' && (
 				<menu-bs class={` w100 flexCen wrap marAuto bInsetBlueTopXs2 posRel noBackground `}>
-					{catsToShow
-						.filter(b => !['trusts', 'links'].includes(b) || isInvitations || (b === 'links' && (brain.user.unstableObj || brain.user).linkUsers.length) || (b === 'trusts' && (brain.user.unstableObj || brain.user).linkUsers.some(link => link[1] === 'tru')))
-						.map(m => (
-							<button
-								key={m}
-								onClick={() => {
-									setShowCats(false);
-									if (cat !== m) (setContent(null), setCat(m));
-									searchInput.current && searchInput.current.focus({ preventScroll: true });
-								}}
-								className={`fs7 boldXs textSha bHover grow bgTransXs iw33 grow ${isInvitations ? (nowAt === 'home' ? 'imw4 padAllS' : 'imw8 padAllS') : 'imw10 padAllS'}`}>
-								{showCats && <img src={`/icons/${m === 'users' ? 'people' : m === 'links' ? 'indicators/1' : m === 'trusts' ? 'gallery/trusts' : m === 'pastEvents' ? 'history' : 'event'}.png`} alt={`${m} icon`} />}
-								{m === 'pastEvents' ? 'proběhlé' : m === 'links' ? 'spojence' : m === 'trusts' ? 'důvěrníky' : m === 'users' ? 'uživatele' : m === 'events' ? 'události' : m}
-							</button>
-						))}
+					{availableCats.map(m => (
+						<button
+							key={m}
+							onClick={() => {
+								setShowCats(false);
+								if (cat !== m) (setContent(null), setCat(m));
+								searchInput.current && searchInput.current.focus({ preventScroll: true });
+							}}
+							className={`fs7 boldXs textSha bHover grow bgTransXs iw33 grow ${isInvitations ? (nowAt === 'home' ? 'imw4 padAllS' : 'imw8 padAllS') : 'imw10 padAllS'}`}>
+							{showCats && <img src={`/icons/${m === 'users' ? 'people' : m === 'links' ? 'indicators/1' : m === 'trusts' ? 'gallery/trusts' : m === 'pastEvents' ? 'history' : 'event'}.png`} alt={`${m} icon`} />}
+							{m === 'pastEvents' ? 'proběhlé' : m === 'links' ? 'spojence' : m === 'trusts' ? 'důvěrníky' : m === 'users' ? 'uživatele' : m === 'events' ? 'události' : m}
+						</button>
+					))}
 				</menu-bs>
 			)}
 		</search-cat>
@@ -321,7 +336,7 @@ export function Search(props) {
 
 	// RENDER ------------------------------------------------------------------
 	return (
-		<search-menu onClick={e => setMenuView && cat !== 'chats' && e.target === e.currentTarget && setMenuView('')} class={` ${!isChatSetup && !isInvitations && menuView !== 'search' && cat !== 'chats' ? 'hide' : ''}  w100 block ${isChatSetup || selectedItems ? ' noBackground posRel' : content?.length ? `hvh100 ${!isInvitations ? 'bInsetBlueDark' : ''} bgTransXxs posRel mhvh100` : ''} justStart zinMax flexCol`}>
+		<search-menu onClick={e => setMenuView && cat !== 'chats' && e.target === e.currentTarget && setMenuView('')} class={` ${!isChatSetup && !isInvitations && menuView !== 'search' && cat !== 'chats' ? 'hide' : ''} marBotXxxxs borBotLight  w100 block ${isChatSetup || selectedItems ? ' noBackground posRel' : content?.length ? `hvh100 ${!isInvitations ? 'bInsetBlueDark' : ''} bgTransXxs posRel mhvh100` : ''} justStart zinMax flexCol`}>
 			{/* CONDITIONAL TOP ELEMENTS --- */}
 			{isInvitations && <SearchCats />}
 			{isChatSetup && (

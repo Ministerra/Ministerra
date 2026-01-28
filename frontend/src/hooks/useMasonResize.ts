@@ -3,9 +3,8 @@ import { useState, useLayoutEffect, useRef, useCallback } from 'react';
 // DYNAMIC SCALE FACTOR ---------------------------------------------------------
 // Steps: compute a scale factor from viewport width + DPI so masonry column count stays stable across zoom/DPR; recomputed on resize rather than frozen at module load.
 const getScaleFactor = () => {
-	const vw = window.visualViewport?.width || window.screen.width; // PREFER VISUAL VIEWPORT ---------------------------
-	const maxDimension = 1920, dpi = window.devicePixelRatio || 1;
-	return dpi === 1 ? 1 : Math.min(dpi * (vw / maxDimension), 1.5); // CAP AT 1.5 TO PREVENT OVER-SCALING ---------------------------
+	const dpi = window.devicePixelRatio || 1;
+	return dpi === 1 ? 1 : Math.min(dpi, 1.5); // CAP AT 1.5 TO PREVENT OVER-SCALING ---------------------------
 };
 
 /** ----------------------------------------------------------------------------
@@ -18,6 +17,12 @@ const useMasonResize = ({ wrapper, brain, contType, contLength, isMobile, contSe
 	const contViewCols = useRef({}), lastCols = useRef(null), scaleFactorRef = useRef(getScaleFactor()); // STORE SCALE FACTOR IN REF ---------------------------
 	const propsRef = useRef({ contType, contLength, isMobile, contSetter, fetching, disableResize, nowAt }); // REFS TO ALWAYS READ FRESH VALUES IN CALLBACK ---------------------------
 	propsRef.current = { contType, contLength, isMobile, contSetter, fetching, disableResize, nowAt };
+
+	// SYNC WITH BRAIN COLS ON TYPE CHANGE ------------------------------------
+	useLayoutEffect(() => {
+		const brainCols = brain.user.cols[contType];
+		if (brainCols !== numOfCols) setNumOfCols(brainCols), (lastCols.current = brainCols);
+	}, [contType]);
 
 	const handleResize = useCallback(() => {
 		// RESIZE HANDLER -----------------------------------------------------

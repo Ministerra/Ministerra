@@ -14,7 +14,7 @@ import { getSocketTransport, SOCKET_STATES } from './transport';
 const alertListeners = {
 	socket: null,
 	handlers: null,
-	deps: { brain: null, setAlertsData: null, setNotifDots: null, showToast: null, setMenuView: null, navigate: null },
+	deps: { brain: null, setAlertsData: null, setNotifDots: null, showToast: null, setMenuView: null, navigate: null, isDisposed: () => false },
 };
 
 const chatListeners = {
@@ -22,6 +22,7 @@ const chatListeners = {
 	handlers: null,
 	chatsRef: null, // STORED GLOBALLY TO SURVIVE COMPONENT REMOUNTS ---------------------------
 	depsRef: null,
+	isDisposed: () => false,
 };
 
 // ============================================================================
@@ -92,16 +93,26 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 					// STORE FUNCTION REFS FOR SOCKET HANDLERS ---------------------------
 					// Steps: put callbacks into depsRef so handlers can call latest run/man/processChatMembers without capturing old versions.
 					chatListeners.depsRef = { run, man, processChatMembers };
+					// MOUNT CHECK REFERENCE ------------------------------------------------
+					// Steps: store reference to disposedRef so handlers can check mount state before updating.
+					chatListeners.isDisposed = () => disposedRef.current;
+
+					// MOUNT-SAFE STATE SETTERS ---------------------------------------------
+					// Steps: wrap state setters to check isDisposed before calling to prevent updates on unmounted components.
+					const safeSetChats = (...args) => !chatListeners.isDisposed() && setChats?.(...args);
+					const safeSetNotifDots = (...args) => !chatListeners.isDisposed() && setNotifDots?.(...args);
+					const safeSetMenuView = (...args) => !chatListeners.isDisposed() && setMenuView?.(...args);
+					const safeSetScrollDir = (...args) => !chatListeners.isDisposed() && setScrollDir?.(...args);
 
 					const handlers = createChatsHandlers({
 						brain, // menuView is on brain.menuView ---------------------------
 						chatsRef,
-						setChats,
-						setNotifDots,
+						setChats: safeSetChats,
+						setNotifDots: safeSetNotifDots,
 						depsRef: chatListeners.depsRef, // ACCESS AS depsRef.run(), depsRef.man() ---------------------------
 						showToast,
-						setMenuView,
-						setScrollDir,
+						setMenuView: safeSetMenuView,
+						setScrollDir: safeSetScrollDir,
 						getTargetChat: id => chatsRef.current.find(c => Number(c.id) === Number(id)),
 						bottomScroll,
 					} as any);
@@ -150,25 +161,32 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 					}
 
 					// Update deps
-					Object.assign(alertListeners.deps, { brain, setAlertsData, setNotifDots, showToast, setMenuView, navigate });
+					// MOUNT CHECK REFERENCE ------------------------------------------------
+					// Steps: store reference to disposedRef so handlers can check mount state before updating.
+					Object.assign(alertListeners.deps, { brain, setAlertsData, setNotifDots, showToast, setMenuView, navigate, isDisposed: () => disposedRef.current });
 
 					// Create handlers with proxy to always get current deps
 					// Steps: proxy getters allow handler functions to always see latest brain/setters without re-registering listeners each render.
+					// MOUNT-SAFE STATE SETTERS ---------------------------------------------
+					// Steps: wrap state setters to check isDisposed before calling to prevent updates on unmounted components.
 					const deps = {
 						get brain() {
 							return alertListeners.deps.brain;
 						},
 						get setAlertsData() {
-							return alertListeners.deps.setAlertsData;
+							const setter = alertListeners.deps.setAlertsData;
+							return (...args) => !alertListeners.deps.isDisposed() && setter?.(...args);
 						},
 						get setNotifDots() {
-							return alertListeners.deps.setNotifDots;
+							const setter = alertListeners.deps.setNotifDots;
+							return (...args) => !alertListeners.deps.isDisposed() && setter?.(...args);
 						},
 						get showToast() {
 							return alertListeners.deps.showToast;
 						},
 						get setMenuView() {
-							return alertListeners.deps.setMenuView;
+							const setter = alertListeners.deps.setMenuView;
+							return (...args) => !alertListeners.deps.isDisposed() && setter?.(...args);
 						},
 						get navigate() {
 							return alertListeners.deps.navigate;
@@ -219,7 +237,7 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 					alertListeners.handlers = handlers;
 				} else if (setNotifDots && brain) {
 					// Just update deps for existing listeners
-					Object.assign(alertListeners.deps, { brain, setAlertsData, setNotifDots, showToast, setMenuView, navigate });
+					Object.assign(alertListeners.deps, { brain, setAlertsData, setNotifDots, showToast, setMenuView, navigate, isDisposed: () => disposedRef.current });
 				}
 
 				// UPDATE CHAT DEPS REF IF EXISTS ---------------------------
@@ -256,6 +274,10 @@ function useSocketIO({ brain, thisIs, setChats, chats, setNotifDots, processChat
 			disposedRef.current = true;
 			unsubscribe?.();
 		};
+		// INTENTIONALLY MINIMAL DEPS ---
+		// Steps: effect uses module-level refs (chatListeners.depsRef, alertListeners.deps) to access latest callbacks without stale closures.
+		// Adding all callbacks as deps would cause excessive re-runs. The ref pattern ensures handlers always call current versions.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [brain?.user?.id, thisIs]);
 
 	// Socket emit function

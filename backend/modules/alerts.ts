@@ -145,23 +145,28 @@ async function Alerts(req: { body: AlertRequest & { limit?: number } }, res: any
 			let rows: AlertRow[] = [];
 
 			// QUERY BUILDER ---
-			const conditions = ['user=?'];
-			const params: any[] = [userID];
+			// Steps: use named placeholders for the WHERE clause to ensure clear mapping; use literal for LIMIT since it's sanitized and prepared LIMIT can be finicky in some MySQL/driver versions.
+			const conditions = ['user = :userID'];
+			const namedParams: any = { userID };
+
 			if (cursor) {
-				conditions.push('id<?');
-				params.push(cursor);
+				conditions.push('id < :cursor');
+				namedParams.cursor = cursor;
 			}
 			if (lastID) {
-				conditions.push('id<?');
-				params.push(lastID);
+				conditions.push('id < :lastID');
+				namedParams.lastID = lastID;
 			}
 			if (firstID) {
-				conditions.push('id>?');
-				params.push(firstID);
+				conditions.push('id > :firstID');
+				namedParams.firstID = firstID;
 			}
 
-			const sql = `SELECT id, user, what, target, data, created, flag FROM user_alerts WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT ${Number(limit) + 1}`;
-			[rows] = await con.execute(sql, params);
+			// PARAMETERIZED LIMIT -----------------------------------------------------
+			// Steps: use sanitized literal for LIMIT; validate limit is a safe integer.
+			const safeLimit = Math.min(Math.max(1, Number(limit) || 20), 100) + 1;
+			const sql = `SELECT id, user, what, target, data, created, flag FROM user_alerts WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT ${Math.floor(safeLimit)}`;
+			[rows] = await con.execute(sql, namedParams);
 
 			const hasMore = rows.length > limit;
 			if (hasMore) rows.pop();

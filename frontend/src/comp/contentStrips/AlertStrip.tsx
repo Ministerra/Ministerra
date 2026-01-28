@@ -170,13 +170,13 @@ function AlertStrip(props) {
 
 				{/* RIGHT CONTENT --- */}
 				<right-side class={`h100 flexCol padRightS justCen ${!isToast ? '' : 'padTopXxxs'}`}>
-					<span className="textSha marRigXxs fs14 wordBreak ">{targetNode}</span>
+					<span className="textSha marRigXxs fs20 wordBreak ">{targetNode}</span>
 					<second-row class="flexRow aliCen gapXxs wrap textLeft">
 						<span className=" fs8 textSha  xBold tDarkBlue ">{typeNode}</span>
 						{subtitleNode}
 						{originalNode}
 					</second-row>
-					<first-row class="flexRow gapXxs fs6 tGrey wrap w100"> {createdText}</first-row>
+					<first-row class="flexRow gapXxs fs6 tGrey wrap w100 marTopXs"> {createdText}</first-row>
 
 					{status.inter || status.refused || status.accepted ? <ContentIndis status={{ alertAccepted: Boolean(status.inter || status.accepted), alertRefused: status.refused === true }} thisIs={'alert'} isCardOrStrip={true} brain={brain} obj={{}} /> : null}
 				</right-side>

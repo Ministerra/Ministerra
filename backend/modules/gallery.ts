@@ -139,6 +139,19 @@ const Gallery = async (req: { body: GalleryRequest }, res: any) => {
 		const { sql, order, orderNeedsUser } = buildQuery({ mode, sort: sort || '', devIsStable });
 		const { params } = buildParams({ mode, userID, sort: sort || '', devIsStable, eventID });
 
+		// SQL INJECTION PROTECTION ---------------------------------------------
+		// Steps: validate order clause against allowed values from sortMaps to prevent SQL injection via ORDER BY.
+		const allowedOrders = new Set([
+			...Object.values(sortMaps.links),
+			...Object.values(sortMaps.events),
+			...Object.values(sortMaps.created),
+			...Object.values(sortMaps.created).map(v => `tab.${v}`), // Blocks mode uses tab. prefix
+		]);
+		if (!allowedOrders.has(order)) {
+			logger.error('gallery.invalidOrder', { order, mode, userID });
+			return res.status(400).json({ error: 'invalidSort' });
+		}
+
 		if (orderNeedsUser) params.push(userID);
 		const finalSql = `${sql} ORDER BY ${order} LIMIT ? OFFSET ?`;
 		params.push(PAGE, safeOffset);

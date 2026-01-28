@@ -99,7 +99,7 @@ export function serializeError(err: any): any {
 // This is the last line of defense before log emission to keep payloads safe + bounded.
 // Steps: cap depth, detect circulars, normalize special types (Date/Error/Buffer), then sanitize arrays/objects with size caps and key redaction.
 export function sanitize(value: any, depth: number = 0, seen: WeakSet<any> = new WeakSet()): any {
-	if (depth > 4) return '[MaxDepth]';
+	if (depth > 5) return '[MaxDepth]';
 	if (value === null || value === undefined) return value;
 	if (typeof value === 'function') return `[Function: ${value.name || 'anonymous'}]`;
 	if (typeof value === 'string') return value.length > 1000 ? `${value.slice(0, 1000)}… [truncated]` : value;

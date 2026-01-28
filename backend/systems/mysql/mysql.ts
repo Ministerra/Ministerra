@@ -608,9 +608,10 @@ const rebuildReadPool = async (): Promise<void> => {
 // POOL MONITOR ---------------------------------------------------------------
 // Steps: grab a connection, derive rough pool stats from underlying mysql2 internals, emit warnings on high usage, then run SELECT 1; on failure, attempt pool rebuild.
 const monitorPool = (poolGetter: () => any, label: 'primary' | 'replica', rebuildFn: () => Promise<void>) => async (): Promise<void> => {
+	let conn: any = null;
 	try {
 		const pool: any = poolGetter();
-		const conn: any = await pool.getConnection();
+		conn = await pool.getConnection();
 		const underlying: any = pool.pool?.pool ?? pool.pool ?? null;
 		const totalConnections: number = underlying?._allConnections?.length ?? 0;
 		const idleConnections: number = underlying?._freeConnections?.length ?? 0;
@@ -625,6 +626,7 @@ const monitorPool = (poolGetter: () => any, label: 'primary' | 'replica', rebuil
 			activeConnections,
 		};
 		conn.release();
+		conn = null;
 		// POOL STATS LOGGING ----------------------------------------------------
 		// Avoid constant JSON.stringify/log spam across clustered workers; log only when nearing saturation unless explicitly enabled.
 		const usageRatio: number = stats.connectionLimit ? stats.totalConnections / stats.connectionLimit : 0;
@@ -633,6 +635,8 @@ const monitorPool = (poolGetter: () => any, label: 'primary' | 'replica', rebuil
 		if (usageRatio > 0.9) sqlLogger.alert(`High connection usage (${label}): ${stats.totalConnections}/${stats.connectionLimit}`);
 		await pool.execute('SELECT 1');
 	} catch (error: any) {
+		// ENSURE CONNECTION IS RELEASED ON ERROR ---
+		if (conn) try { conn.release(); } catch {}
 		Catcher({ origin: `${label}ConnectionHealthCheck`, error, req: null, res: null });
 		if (typeof rebuildFn === 'function') {
 			try {
@@ -770,18 +774,26 @@ const backupDatabase = async (filename: string, type: string, retries: number = 
 						const iv: Buffer = crypto.randomBytes(12);
 						const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 						const outEnc = fs.createWriteStream(`${backupFile}.enc`);
-						outEnc.write(Buffer.from('MSBK'));
-						outEnc.write(salt);
-						outEnc.write(iv);
-						await pipelineAsync(fs.createReadStream(backupFile), cipher, outEnc);
-						const authTag: Buffer = cipher.getAuthTag();
-						await fsp.appendFile(`${backupFile}.enc`, authTag);
-						await fsp.unlink(backupFile);
-						sqlLogger.info(`Backup saved at ${backupFile}.enc`);
-						resolve(`Backup completed successfully: ${backupFile}.enc`);
+						// STREAM CLEANUP ON ERROR ---
+						// Steps: ensure outEnc is closed if pipeline fails to prevent file handle leak.
+						try {
+							outEnc.write(Buffer.from('MSBK'));
+							outEnc.write(salt);
+							outEnc.write(iv);
+							await pipelineAsync(fs.createReadStream(backupFile), cipher, outEnc);
+							const authTag: Buffer = cipher.getAuthTag();
+							await fsp.appendFile(`${backupFile}.enc`, authTag);
+							await fsp.unlink(backupFile);
+							sqlLogger.info(`Backup saved at ${backupFile}.enc`);
+							resolve(`Backup completed successfully: ${backupFile}.enc`);
+						} catch (pipeError: any) {
+							outEnc.destroy();
+							throw pipeError;
+						}
 					} catch (encryptError: any) {
 						try {
 							await fsp.unlink(backupFile);
+							await fsp.unlink(`${backupFile}.enc`).catch(() => {});
 						} catch {}
 						reject(new Error(`Encryption error: ${encryptError.message}`));
 					}

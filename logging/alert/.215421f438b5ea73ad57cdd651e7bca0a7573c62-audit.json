@@ -9,6 +9,11 @@
             "date": 1767381978303,
             "name": "c:\\Ministerra\\logging\\alert\\alert-2026-01-02.log",
             "hash": "348dfe8566f4068fb9c2f94080ee1445537b79280f978685aede1b5bb72d11c2"
+        },
+        {
+            "date": 1769551572114,
+            "name": "c:\\Ministerra\\logging\\alert\\alert-2026-01-27.log",
+            "hash": "2c861413ed8798522aa62c068bf7385f0499714159086b5e1b64d5cef187dfbe"
         }
     ],
     "hashType": "sha256"
